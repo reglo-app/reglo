@@ -25,9 +25,6 @@ security:
                 password_path: password
                 success_handler: App\Security\LoginSuccessHandler
                 failure_handler: App\Security\LoginFailureHandler
-            # Failed logins limited per IP (see rate_limiter.yaml)
-            login_throttling:
-                limiter: App\Security\LoginRateLimiter
         # Every other request: authenticated with "Authorization: Bearer <token>"
         main:
             stateless: true
