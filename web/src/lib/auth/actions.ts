@@ -6,16 +6,20 @@ import { requestAccessToken } from "./api";
 import { safeRedirectPath } from "./redirect";
 import { clearSession, setSessionToken } from "./session";
 
+export type LoginField = "email" | "password";
+
 export type LoginState = {
     /** Message shown above the form. Never a technical detail (rule 3). */
     error?: string;
+    /** Fields shown in error. None when the problem is not the input. */
+    invalidFields?: LoginField[];
     /** Kept so the user does not have to type it again. */
     email?: string;
 };
 
 // The same message whether the e-mail or the password is wrong (US-02).
 const MESSAGES = {
-    missing: "Saisissez votre adresse e-mail et votre mot de passe.",
+    missing: "Saisissez vos identifiants.",
     invalid: "Identifiants incorrects",
     throttled:
         "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
@@ -31,12 +35,25 @@ export async function login(
     const password = String(formData.get("password") ?? "");
 
     if (!email || !password) {
-        return { error: MESSAGES.missing, email };
+        const invalidFields: LoginField[] = [];
+        if (!email) invalidFields.push("email");
+        if (!password) invalidFields.push("password");
+        return { error: MESSAGES.missing, invalidFields, email };
     }
 
     const result = await requestAccessToken(email, password);
 
+    if (result.status === "invalid") {
+        // Both fields: the message never says which one is wrong.
+        return {
+            error: MESSAGES.invalid,
+            invalidFields: ["email", "password"],
+            email,
+        };
+    }
+
     if (result.status !== "success") {
+        // Throttled or API down: nothing to fix in the fields.
         return { error: MESSAGES[result.status], email };
     }
 

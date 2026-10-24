@@ -1,10 +1,77 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { login } from "./actions";
 import { requestAccessToken } from "./api";
 import { DEFAULT_AFTER_LOGIN, safeRedirectPath } from "./redirect";
 
+// The session module needs a Next.js request (next/headers).
+vi.mock("./session", () => ({
+    setSessionToken: vi.fn(),
+    clearSession: vi.fn(),
+}));
+
 afterEach(() => {
     vi.unstubAllGlobals();
+});
+
+function formData(fields: Record<string, string>) {
+    const data = new FormData();
+    for (const [name, value] of Object.entries(fields)) {
+        data.set(name, value);
+    }
+    return data;
+}
+
+describe("login", () => {
+    it("asks for the credentials and marks only the empty fields", async () => {
+        expect(
+            await login({}, formData({ email: "ana@demo.test", password: "" })),
+        ).toEqual({
+            error: "Saisissez vos identifiants.",
+            invalidFields: ["password"],
+            email: "ana@demo.test",
+        });
+        expect(await login({}, formData({ email: "", password: "" }))).toEqual({
+            error: "Saisissez vos identifiants.",
+            invalidFields: ["email", "password"],
+            email: "",
+        });
+    });
+
+    it("marks both fields for wrong credentials", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue(new Response(null, { status: 401 })),
+        );
+
+        expect(
+            await login(
+                {},
+                formData({ email: "ana@demo.test", password: "x" }),
+            ),
+        ).toEqual({
+            error: "Identifiants incorrects",
+            invalidFields: ["email", "password"],
+            email: "ana@demo.test",
+        });
+    });
+
+    it("marks no field when the problem is not the input", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue(new Response(null, { status: 429 })),
+        );
+
+        const state = await login(
+            {},
+            formData({ email: "ana@demo.test", password: "x" }),
+        );
+
+        expect(state.invalidFields).toBeUndefined();
+        expect(state.error).toBe(
+            "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
+        );
+    });
 });
 
 describe("safeRedirectPath", () => {
