@@ -27,6 +27,8 @@ final class AuthControllerTest extends WebTestCase
         $this->client = static::createClient();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
         self::resetDatabase($this->entityManager);
+        // Login throttling is kept in the cache, shared between tests
+        static::getContainer()->get('cache.rate_limiter')->clear();
     }
 
     public function testLoginWithValidCredentialsReturnsAToken(): void
@@ -157,6 +159,98 @@ final class AuthControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(401);
     }
 
+    public function testIpIsThrottledAfterTooManyFailedLogins(): void
+    {
+        $this->createUser();
+        for ($i = 0; $i < 50; ++$i) {
+            $this->login(\sprintf('unknown-%d@example.com', $i), 'wrong-password-123');
+            self::assertResponseStatusCodeSame(401);
+        }
+
+        // Even the right password is refused from this IP
+        $this->login(self::EMAIL, self::PASSWORD);
+
+        self::assertResponseStatusCodeSame(429);
+        self::assertSame(['error' => LoginFailureHandler::THROTTLED_MESSAGE], $this->responseData());
+        self::assertFalse($this->client->getResponse()->headers->has('Retry-After'));
+    }
+
+    public function testSuccessfulLoginClearsTheIpCounter(): void
+    {
+        $this->createUser();
+        for ($i = 0; $i < 49; ++$i) {
+            $this->login(self::EMAIL, 'wrong-password-123');
+        }
+        $this->login(self::EMAIL, self::PASSWORD);
+        self::assertResponseIsSuccessful();
+
+        // 51st attempt from this IP: refused as a wrong password, not throttled
+        $this->login(self::EMAIL, 'wrong-password-123');
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testThrottlingIsPerIp(): void
+    {
+        $this->createUser();
+        for ($i = 0; $i < 50; ++$i) {
+            $this->login(self::EMAIL, 'wrong-password-123');
+        }
+
+        $this->client->jsonRequest(
+            'POST',
+            '/api/auth/login',
+            ['email' => self::EMAIL, 'password' => self::PASSWORD],
+            ['REMOTE_ADDR' => '203.0.113.7'],
+        );
+
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testLogoutDeletesTheAccessToken(): void
+    {
+        $this->createUser();
+        $token = $this->loginToken();
+
+        $this->client->request('POST', '/api/auth/logout', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
+
+        self::assertResponseStatusCodeSame(204);
+        $repository = $this->entityManager->getRepository(AccessToken::class);
+        self::assertNull($repository->findOneBy(['tokenHash' => AccessTokenManager::hash($token)]));
+
+        $this->client->request('GET', '/api/auth/me', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testLogoutKeepsTheOtherTokensOfTheUser(): void
+    {
+        $this->createUser();
+        $first = $this->loginToken();
+        $second = $this->loginToken();
+
+        $this->client->request('POST', '/api/auth/logout', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$first]);
+        $this->client->request('GET', '/api/auth/me', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$second]);
+
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testLogoutWithoutTokenIsUnauthorized(): void
+    {
+        $this->client->request('POST', '/api/auth/logout');
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testLogoutOnlyAcceptsPost(): void
+    {
+        $this->createUser();
+
+        $this->client->request('GET', '/api/auth/logout', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$this->loginToken()]);
+
+        self::assertResponseStatusCodeSame(405);
+    }
+
     public function testHealthStaysPublic(): void
     {
         $this->client->request('GET', '/health');
@@ -181,6 +275,14 @@ final class AuthControllerTest extends WebTestCase
         $this->entityManager->flush();
 
         return $user;
+    }
+
+    private function loginToken(): string
+    {
+        $this->login(self::EMAIL, self::PASSWORD);
+        self::assertResponseIsSuccessful();
+
+        return (string) $this->responseData()['token'];
     }
 
     private function login(string $email, string $password): void

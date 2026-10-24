@@ -1,0 +1,9 @@
+framework:
+    rate_limiter:
+        # Login attempts per client IP (see App\Security\LoginRateLimiter).
+        # A successful login clears the counter, so in practice this is the
+        # number of failed logins allowed from one IP.
+        login_ip:
+            policy: sliding_window
+            limit: 50
+            interval: '15 minutes'

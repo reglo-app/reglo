@@ -13,7 +13,7 @@ import { Check, CircleAlert, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { login, type LoginState } from "@/lib/auth/actions";
+import { login, type LoginField, type LoginState } from "@/lib/auth/actions";
 
 export type LoginFormProps = {
     /** Page to open after login (validated again by the server action). */
@@ -56,13 +56,43 @@ export function LoginForm({ next, action = login }: LoginFormProps) {
         {},
     );
     const [showPassword, setShowPassword] = useState(false);
-    const hasError = Boolean(state.error);
+    // Fields typed in since the last answer: a new answer starts empty.
+    const [edits, setEdits] = useState<{
+        state: LoginState;
+        fields: LoginField[];
+    }>({ state, fields: [] });
+    const editedFields = edits.state === state ? edits.fields : [];
+    const invalidFields = state.invalidFields ?? [];
+    // A field stays in error until the user types in it; the message goes
+    // once every field in error has been typed in. A message with no field
+    // in error (throttled, API down) stays until the next submit.
+    const isInvalid = (field: LoginField) =>
+        invalidFields.includes(field) && !editedFields.includes(field);
+    const showError =
+        Boolean(state.error) &&
+        (invalidFields.length === 0 || invalidFields.some(isInvalid));
     const rememberedEmail = useSyncExternalStore(
         noSubscription,
         readRememberedEmail,
         () => null,
     );
     const rememberRef = useRef<HTMLInputElement>(null);
+
+    function markEdited(field: LoginField) {
+        if (!editedFields.includes(field)) {
+            setEdits({ state, fields: [...editedFields, field] });
+        }
+    }
+
+    /** Error props of a field: red border and link to the message. */
+    function errorProps(field: LoginField) {
+        const invalid = showError && isInvalid(field);
+        return {
+            "aria-invalid": invalid || undefined,
+            "aria-describedby": invalid ? "login-error" : undefined,
+            onChange: () => markEdited(field),
+        };
+    }
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         const email = new FormData(event.currentTarget).get("email");
@@ -80,7 +110,7 @@ export function LoginForm({ next, action = login }: LoginFormProps) {
             className="flex flex-col gap-5"
             noValidate
         >
-            {state.error && (
+            {showError && (
                 <Alert variant="destructive" id="login-error">
                     <CircleAlert aria-hidden="true" />
                     <AlertDescription>{state.error}</AlertDescription>
@@ -105,8 +135,7 @@ export function LoginForm({ next, action = login }: LoginFormProps) {
                     // Resets the field to the returned value after a failure,
                     // or to the remembered e-mail once storage is read.
                     key={state.email ?? rememberedEmail ?? ""}
-                    aria-invalid={hasError || undefined}
-                    aria-describedby={hasError ? "login-error" : undefined}
+                    {...errorProps("email")}
                 />
             </div>
 
@@ -122,8 +151,7 @@ export function LoginForm({ next, action = login }: LoginFormProps) {
                         autoComplete="current-password"
                         required
                         className="pr-11"
-                        aria-invalid={hasError || undefined}
-                        aria-describedby={hasError ? "login-error" : undefined}
+                        {...errorProps("password")}
                     />
                     <button
                         type="button"

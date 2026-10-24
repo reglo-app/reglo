@@ -41,6 +41,7 @@ describe("LoginForm", () => {
     it("shows the error, keeps the e-mail and marks the fields invalid", async () => {
         const action = vi.fn().mockResolvedValue({
             error: "Identifiants incorrects",
+            invalidFields: ["email", "password"],
             email: "ana@demo.test",
         });
         render(<LoginForm action={action} />);
@@ -61,6 +62,79 @@ describe("LoginForm", () => {
         expect(email).toHaveValue("ana@demo.test");
         expect(email).toHaveAttribute("aria-invalid", "true");
         expect(email).toHaveAccessibleDescription("Identifiants incorrects");
+    });
+
+    describe("clearing the error", () => {
+        async function submitWithError(state: object) {
+            render(<LoginForm action={vi.fn().mockResolvedValue(state)} />);
+            await userEvent.click(
+                screen.getByRole("button", { name: "Se connecter" }),
+            );
+            await screen.findByRole("alert");
+        }
+
+        const wrongCredentials = {
+            error: "Identifiants incorrects",
+            invalidFields: ["email", "password"],
+            email: "ana@demo.test",
+        };
+
+        it("clears the red border of a field as soon as the user types in it", async () => {
+            await submitWithError(wrongCredentials);
+
+            await userEvent.type(screen.getByLabelText("Mot de passe"), "n");
+
+            expect(screen.getByLabelText("Mot de passe")).not.toHaveAttribute(
+                "aria-invalid",
+            );
+            expect(screen.getByLabelText("Adresse e-mail")).toHaveAttribute(
+                "aria-invalid",
+                "true",
+            );
+            expect(screen.getByRole("alert")).toBeInTheDocument();
+        });
+
+        it("hides the message once every field in error was typed in", async () => {
+            await submitWithError(wrongCredentials);
+
+            await userEvent.type(screen.getByLabelText("Mot de passe"), "n");
+            await userEvent.type(screen.getByLabelText("Adresse e-mail"), "a");
+
+            expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+            expect(screen.getByLabelText("Adresse e-mail")).not.toHaveAttribute(
+                "aria-invalid",
+            );
+        });
+
+        it("only marks the missing field", async () => {
+            await submitWithError({
+                error: "Saisissez vos identifiants.",
+                invalidFields: ["password"],
+                email: "ana@demo.test",
+            });
+
+            expect(screen.getByLabelText("Adresse e-mail")).not.toHaveAttribute(
+                "aria-invalid",
+            );
+            await userEvent.type(screen.getByLabelText("Mot de passe"), "n");
+
+            expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        });
+
+        it("keeps a message that is not about the fields until the next submit", async () => {
+            await submitWithError({
+                error: "La connexion est impossible pour le moment. Réessayez plus tard.",
+                email: "ana@demo.test",
+            });
+
+            expect(screen.getByLabelText("Adresse e-mail")).not.toHaveAttribute(
+                "aria-invalid",
+            );
+            await userEvent.type(screen.getByLabelText("Mot de passe"), "n");
+            await userEvent.type(screen.getByLabelText("Adresse e-mail"), "a");
+
+            expect(screen.getByRole("alert")).toBeInTheDocument();
+        });
     });
 
     it("shows and hides the password", async () => {
