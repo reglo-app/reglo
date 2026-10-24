@@ -1,8 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import {
+    useActionState,
+    useRef,
+    useState,
+    useSyncExternalStore,
+    type FormEvent,
+} from "react";
 import { useSearchParams } from "next/navigation";
-import { CircleAlert, Eye, EyeOff, LoaderCircle } from "lucide-react";
+import { Check, CircleAlert, Eye, EyeOff, LoaderCircle } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -16,6 +22,34 @@ export type LoginFormProps = {
     action?: typeof login;
 };
 
+/** Remembered e-mail, kept on this device only when the user asks for it. */
+export const REMEMBERED_EMAIL_KEY = "reglo.rememberedEmail";
+
+function readRememberedEmail(): string | null {
+    try {
+        return window.localStorage.getItem(REMEMBERED_EMAIL_KEY);
+    } catch {
+        // Storage can be blocked (private mode, site data disabled).
+        return null;
+    }
+}
+
+function writeRememberedEmail(email: string | null) {
+    try {
+        if (email) {
+            window.localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+        } else {
+            window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        }
+    } catch {
+        // Not critical: the user just types the e-mail next time.
+    }
+}
+
+// Only read once on load: the value is written on submit, right before
+// leaving the page, so there is nothing to subscribe to.
+const noSubscription = () => () => {};
+
 export function LoginForm({ next, action = login }: LoginFormProps) {
     const [state, formAction, isPending] = useActionState<LoginState, FormData>(
         action,
@@ -23,9 +57,29 @@ export function LoginForm({ next, action = login }: LoginFormProps) {
     );
     const [showPassword, setShowPassword] = useState(false);
     const hasError = Boolean(state.error);
+    const rememberedEmail = useSyncExternalStore(
+        noSubscription,
+        readRememberedEmail,
+        () => null,
+    );
+    const rememberRef = useRef<HTMLInputElement>(null);
+
+    function handleSubmit(event: FormEvent<HTMLFormElement>) {
+        const email = new FormData(event.currentTarget).get("email");
+        writeRememberedEmail(
+            rememberRef.current?.checked && typeof email === "string"
+                ? email.trim()
+                : null,
+        );
+    }
 
     return (
-        <form action={formAction} className="flex flex-col gap-5" noValidate>
+        <form
+            action={formAction}
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-5"
+            noValidate
+        >
             {state.error && (
                 <Alert variant="destructive" id="login-error">
                     <CircleAlert aria-hidden="true" />
@@ -36,7 +90,7 @@ export function LoginForm({ next, action = login }: LoginFormProps) {
             {next && <input type="hidden" name="next" value={next} />}
 
             <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="text-sm font-medium">
+                <label htmlFor="email" className="text-base font-medium">
                     Adresse e-mail
                 </label>
                 <Input
@@ -45,17 +99,19 @@ export function LoginForm({ next, action = login }: LoginFormProps) {
                     type="email"
                     autoComplete="username"
                     inputMode="email"
+                    placeholder="vous@entreprise.fr"
                     required
-                    defaultValue={state.email}
-                    // Resets the field to the returned value after a failure.
-                    key={state.email}
+                    defaultValue={state.email ?? rememberedEmail ?? undefined}
+                    // Resets the field to the returned value after a failure,
+                    // or to the remembered e-mail once storage is read.
+                    key={state.email ?? rememberedEmail ?? ""}
                     aria-invalid={hasError || undefined}
                     aria-describedby={hasError ? "login-error" : undefined}
                 />
             </div>
 
             <div className="flex flex-col gap-1.5">
-                <label htmlFor="password" className="text-sm font-medium">
+                <label htmlFor="password" className="text-base font-medium">
                     Mot de passe
                 </label>
                 <div className="relative">
@@ -85,7 +141,45 @@ export function LoginForm({ next, action = login }: LoginFormProps) {
                 </div>
             </div>
 
-            <Button type="submit" size="lg" disabled={isPending}>
+            <div className="flex items-center justify-between gap-4 text-sm">
+                <label className="flex cursor-pointer items-center gap-2">
+                    {/* Real checkbox restyled (keyboard, label and checked
+                        state stay native); the tick is a Lucide icon on top,
+                        smaller than the browser's one. */}
+                    <span className="relative flex size-4 shrink-0 items-center justify-center">
+                        <input
+                            ref={rememberRef}
+                            type="checkbox"
+                            defaultChecked={rememberedEmail !== null}
+                            key={String(rememberedEmail !== null)}
+                            className="peer size-4 cursor-pointer appearance-none rounded-sm border border-border-strong bg-white transition-colors duration-200 checked:border-green-700 checked:bg-green-700"
+                        />
+                        <Check
+                            aria-hidden="true"
+                            strokeWidth={3}
+                            className="pointer-events-none absolute size-3 text-white opacity-0 transition-opacity duration-200 peer-checked:opacity-100"
+                        />
+                    </span>
+                    Se souvenir de moi
+                </label>
+                {/* TODO: password reset page (not in scope of US-02 yet). */}
+                <a
+                    href="#"
+                    onClick={(event) => event.preventDefault()}
+                    className="link-underline font-medium text-green-700"
+                >
+                    Mot de passe oublié ?
+                </a>
+            </div>
+
+            <Button
+                type="submit"
+                size="lg"
+                disabled={isPending}
+                // Same hover transition as the dashboard action (`transition`
+                // also animates the brightness).
+                className="text-base transition duration-200"
+            >
                 {isPending && (
                     <LoaderCircle aria-hidden="true" className="animate-spin" />
                 )}

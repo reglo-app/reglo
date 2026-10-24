@@ -1,75 +1,66 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
+import { cacheLife } from "next/cache";
 
+import { BrandCarousel } from "@/components/auth/brand-carousel";
 import { LoginForm, LoginFormWithRedirect } from "@/components/auth/login-form";
-import { DOMAIN_KEYS, DOMAINS } from "@/lib/domains";
 
 export const metadata: Metadata = { title: "Connexion" };
 
-export default function LoginPage() {
+/** Cached: reading the clock is not allowed in a prerendered page. */
+async function copyrightYear() {
+    "use cache";
+    cacheLife("days");
+    return new Date().getFullYear();
+}
+
+export default async function LoginPage() {
+    const year = await copyrightYear();
+
     return (
-        <main className="grid min-h-full flex-1 lg:grid-cols-2">
-            {/* Brand panel, desktop only: decorative, the form is enough. */}
-            <section
-                aria-hidden="true"
-                className="hidden flex-col justify-between bg-brand-gradient p-12 text-white lg:flex"
-            >
-                <div className="flex items-center gap-3">
+        <main className="grid min-h-full flex-1 bg-auth-panel lg:grid-cols-2">
+            {/* Brand panel, desktop only. The right padding keeps the content
+                centred in the part the form panel does not cover. */}
+            <div className="hidden items-center justify-center p-12 pr-[calc(3rem+2.5rem)] lg:flex">
+                <BrandCarousel />
+            </div>
+
+            {/* Form panel: on desktop it slides over the brand panel like a
+                drawer (negative margin, rounded left edge, shadow). */}
+            <div className="relative z-10 flex flex-col bg-white px-4 py-6 sm:px-8 lg:-ml-10 lg:rounded-l-[2.5rem] lg:px-12 lg:shadow-(--shadow-drawer)">
+                {/* Single column only. Under 750px: the symbol alone, centred;
+                    from 750px: symbol and wordmark on the left. The image
+                    carries the name, so the wordmark is hidden from screen
+                    readers to avoid reading it twice. */}
+                <div className="flex items-center justify-center gap-3 min-[750px]:justify-start lg:hidden">
                     <Image
                         src="/brand/reglo-symbol.png"
-                        alt=""
+                        alt="REGLO"
                         width={36}
                         height={28}
                         priority
                     />
-                    <span className="font-display text-2xl font-extrabold">
+                    <span
+                        aria-hidden="true"
+                        className="hidden font-display text-2xl font-extrabold text-brand-teal min-[750px]:inline"
+                    >
                         REGLO
                     </span>
                 </div>
-                <div className="flex flex-col gap-6">
-                    <p className="font-display max-w-md text-3xl font-extrabold tracking-wide uppercase">
-                        Humain en mouvement vers l&apos;avenir
-                    </p>
-                    <p className="max-w-md text-lg">
-                        Pilotez votre démarche QHSE au même endroit :
-                        diagnostic, plan d&apos;actions, justificatifs et
-                        formations.
-                    </p>
-                    <ul className="flex flex-wrap gap-2">
-                        {DOMAIN_KEYS.map((key) => (
-                            <li
-                                key={key}
-                                className="rounded-sm border border-white/40 px-3 py-1 text-sm font-medium"
-                            >
-                                {DOMAINS[key].label}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </section>
 
-            <div className="flex items-center justify-center px-4 py-12 sm:px-8">
-                <div className="w-full max-w-sm">
-                    <div className="mb-8 flex items-center gap-3 lg:hidden">
-                        <Image
-                            src="/brand/reglo-symbol.png"
-                            alt=""
-                            width={36}
-                            height={28}
-                            priority
-                        />
-                        <span className="font-display text-2xl font-extrabold text-brand-teal">
-                            REGLO
-                        </span>
-                    </div>
+                <div className="flex flex-1 items-center justify-center py-12">
+                    <div className="w-full max-w-sm">
+                        <div className="mb-8 text-center">
+                            <h1 className="text-2xl font-semibold">
+                                Ravi de vous revoir !
+                            </h1>
+                            <p className="mt-2 text-ink-muted">
+                                Connectez-vous pour retrouver votre espace
+                                Réglo.
+                            </p>
+                        </div>
 
-                    <h1 className="text-2xl font-semibold">Connexion</h1>
-                    <p className="mt-1 mb-8 text-ink-muted">
-                        Accédez à l&apos;espace de votre organisation.
-                    </p>
-
-                    <div className="rounded-lg border border-border bg-white p-6">
                         {/* useSearchParams needs a boundary; the fallback is
                             the same form, so nothing moves. */}
                         <Suspense fallback={<LoginForm />}>
@@ -77,6 +68,19 @@ export default function LoginPage() {
                         </Suspense>
                     </div>
                 </div>
+
+                {/* Same padding on both texts, so the separator sits in the
+                    middle. */}
+                <footer className="flex items-center justify-center gap-1 text-sm text-ink-muted">
+                    <span className="px-1">© {year} REGLO</span>
+                    <span aria-hidden="true">-</span>
+                    <a
+                        href="mailto:contact@reglo.site"
+                        className="rounded-md px-1 py-1 transition-colors duration-200 hover:bg-green-50 hover:text-ink"
+                    >
+                        Contact
+                    </a>
+                </footer>
             </div>
         </main>
     );

@@ -20,7 +20,7 @@ const buttonVariants = cva(
                     "border-border bg-white text-ink hover:border-border-strong hover:bg-green-50",
                 ghost: "text-ink hover:bg-green-50",
                 destructive: "bg-danger text-white hover:bg-danger-700",
-                link: "h-auto px-0 text-green-700 underline-offset-4 hover:underline",
+                link: "link-underline h-auto px-0 text-green-700",
                 // Topbar controls (menu toggle, search, notifications):
                 // compact, light border and small shadow; on hover a darker
                 // border, very light green and a slightly larger shadow.

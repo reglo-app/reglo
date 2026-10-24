@@ -47,6 +47,33 @@
     --radius-4xl: 32px;
 }
 
+/*
+ * Text links: the underline draws from left to right on hover and keyboard
+ * focus, in the link's own colour. Use it on every text link. It sets its
+ * own transition: do not add a `transition-*` class next to it.
+ */
+@utility link-underline {
+    text-decoration: none;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    background-size: 0% 2px;
+    /* Pushes the line 1px below the text. */
+    padding-bottom: 1px;
+    transition:
+        background-size 300ms ease-out,
+        color 150ms ease-out;
+
+    &:hover,
+    &:focus-visible {
+        background-size: 100% 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
+}
+
 @layer base {
     * {
         @apply border-border outline-ring/50;
