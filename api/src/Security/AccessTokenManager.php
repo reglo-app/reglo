@@ -47,6 +47,21 @@ final class AccessTokenManager
         return $token;
     }
 
+    /**
+     * Deletes the stored token, so it can no longer be used (logout).
+     */
+    public function revoke(string $plainToken): void
+    {
+        $token = $this->repository->findOneByTokenHash(self::hash($plainToken));
+
+        if (null === $token) {
+            return;
+        }
+
+        $this->entityManager->remove($token);
+        $this->entityManager->flush();
+    }
+
     public static function hash(string $plainToken): string
     {
         return hash('sha256', $plainToken);
