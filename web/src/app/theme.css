@@ -71,6 +71,77 @@
     /* Topbar controls (search, menu toggle, notifications, account). */
     --radius-control: 6px;
     --shadow-overlay: 0 8px 32px rgba(11, 62, 63, 0.18);
+    /* Login: form panel sliding over the brand panel like a drawer. */
+    --shadow-drawer: -16px 0 48px rgba(7, 42, 43, 0.35);
+}
+
+/*
+ * Glass tile on dark backgrounds (login logo). Flat take on the Figma "Glass"
+ * effect (light 71°): frosted fill, thin edge and highlight brighter on the
+ * light side. No outer shadow or glow, so it stays flat.
+ */
+@utility glass {
+    position: relative;
+    isolation: isolate;
+    background: linear-gradient(
+        161deg,
+        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0.05) 55%,
+        rgba(255, 255, 255, 0.1)
+    );
+    -webkit-backdrop-filter: blur(16px) saturate(170%);
+    backdrop-filter: blur(16px) saturate(170%);
+
+    /* Edge brighter on the light side (71°). */
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        padding: 1px;
+        border-radius: inherit;
+        background: linear-gradient(
+            71deg,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.45)
+        );
+        mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+
+    /* Specular highlight where the light hits. */
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: inherit;
+        background: radial-gradient(
+            circle at 82% 18%,
+            rgba(255, 255, 255, 0.12),
+            transparent 55%
+        );
+        pointer-events: none;
+    }
+}
+
+/* Login brand panel: deep teal with a soft green glow. */
+@utility bg-auth-panel {
+    background-color: var(--color-teal-900);
+    background-image:
+        radial-gradient(
+            ellipse at 30% 0%,
+            rgba(67, 153, 133, 0.45),
+            transparent 60%
+        ),
+        radial-gradient(
+            ellipse at 70% 100%,
+            rgba(163, 206, 255, 0.12),
+            transparent 55%
+        );
 }
 
 /* Brand gradient (teal to green, left to right): primary button and

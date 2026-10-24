@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import Link from "next/link";
 import { ChevronDown, LogOut, UserRound } from "lucide-react";
 
@@ -11,6 +12,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { logout } from "@/lib/auth/actions";
 
 export type UserMenuProps = {
     fullName: string;
@@ -32,6 +34,8 @@ export function UserMenu({
     roleLabel,
     organizationName,
 }: UserMenuProps) {
+    const [isLoggingOut, startLogout] = useTransition();
+
     return (
         // Not modal: opening the menu must not lock the page scroll (that
         // hid the scrollbar and shifted the layout).
@@ -69,8 +73,10 @@ export function UserMenu({
                         Mon profil
                     </Link>
                 </DropdownMenuItem>
-                {/* Logout is wired with authentication (US-02). */}
-                <DropdownMenuItem disabled>
+                <DropdownMenuItem
+                    disabled={isLoggingOut}
+                    onSelect={() => startLogout(() => logout())}
+                >
                     <LogOut aria-hidden="true" />
                     Se déconnecter
                 </DropdownMenuItem>
