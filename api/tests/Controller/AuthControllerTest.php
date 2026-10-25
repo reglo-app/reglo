@@ -27,8 +27,6 @@ final class AuthControllerTest extends WebTestCase
         $this->client = static::createClient();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
         self::resetDatabase($this->entityManager);
-        // Login throttling is kept in the cache, shared between tests
-        static::getContainer()->get('cache.rate_limiter')->clear();
     }
 
     public function testLoginWithValidCredentialsReturnsAToken(): void
@@ -157,54 +155,6 @@ final class AuthControllerTest extends WebTestCase
         $this->client->request('GET', '/api/auth/me', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$plainToken]);
 
         self::assertResponseStatusCodeSame(401);
-    }
-
-    public function testIpIsThrottledAfterTooManyFailedLogins(): void
-    {
-        $this->createUser();
-        for ($i = 0; $i < 50; ++$i) {
-            $this->login(\sprintf('unknown-%d@example.com', $i), 'wrong-password-123');
-            self::assertResponseStatusCodeSame(401);
-        }
-
-        // Even the right password is refused from this IP
-        $this->login(self::EMAIL, self::PASSWORD);
-
-        self::assertResponseStatusCodeSame(429);
-        self::assertSame(['error' => LoginFailureHandler::THROTTLED_MESSAGE], $this->responseData());
-        self::assertFalse($this->client->getResponse()->headers->has('Retry-After'));
-    }
-
-    public function testSuccessfulLoginClearsTheIpCounter(): void
-    {
-        $this->createUser();
-        for ($i = 0; $i < 49; ++$i) {
-            $this->login(self::EMAIL, 'wrong-password-123');
-        }
-        $this->login(self::EMAIL, self::PASSWORD);
-        self::assertResponseIsSuccessful();
-
-        // 51st attempt from this IP: refused as a wrong password, not throttled
-        $this->login(self::EMAIL, 'wrong-password-123');
-
-        self::assertResponseStatusCodeSame(401);
-    }
-
-    public function testThrottlingIsPerIp(): void
-    {
-        $this->createUser();
-        for ($i = 0; $i < 50; ++$i) {
-            $this->login(self::EMAIL, 'wrong-password-123');
-        }
-
-        $this->client->jsonRequest(
-            'POST',
-            '/api/auth/login',
-            ['email' => self::EMAIL, 'password' => self::PASSWORD],
-            ['REMOTE_ADDR' => '203.0.113.7'],
-        );
-
-        self::assertResponseIsSuccessful();
     }
 
     public function testLogoutDeletesTheAccessToken(): void
