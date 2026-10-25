@@ -5,12 +5,15 @@ import { ROLE_LABELS, api } from "@/lib/api";
 /** Loads the signed-in user and renders the topbar user menu. */
 export async function CurrentUserMenu() {
     const user = await api.getCurrentUser();
+    // The e-mail stands in for the name until accounts have one (US-01).
+    const fullName =
+        [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
 
     return (
         <UserMenu
-            fullName={`${user.firstName} ${user.lastName}`}
+            fullName={fullName}
             roleLabel={ROLE_LABELS[user.role]}
-            organizationName={user.organization.name}
+            organizationName={user.organization?.name ?? null}
         />
     );
 }

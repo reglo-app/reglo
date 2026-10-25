@@ -42,9 +42,11 @@ services:
     container_name: ${ENV_NAME}-web
     restart: unless-stopped
     environment:
-      # Login is done by the Next.js server: it calls the API container of the
-      # same environment (both are on the "proxy" network).
+      # Only the Next.js server calls the API: the API container of the same
+      # environment (both are on the "proxy" network).
       API_INTERNAL_URL: http://${ENV_NAME}-api
+      # Features still on mock data (see .env.example). Empty: the default list
+      API_MOCKS: ${API_MOCKS:-}
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000 || exit 1"]
       interval: 10s

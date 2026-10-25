@@ -17,7 +17,8 @@ import { logout } from "@/lib/auth/actions";
 export type UserMenuProps = {
     fullName: string;
     roleLabel: string;
-    organizationName: string;
+    /** null until the account belongs to an organization (US-01). */
+    organizationName: string | null;
 };
 
 function initials(fullName: string): string {
@@ -43,7 +44,11 @@ export function UserMenu({
             {/* Round avatar and chevron only; name, role and organization
                 are in the menu. */}
             <DropdownMenuTrigger
-                aria-label={`Menu de ${fullName}, ${organizationName}`}
+                aria-label={
+                    organizationName
+                        ? `Menu de ${fullName}, ${organizationName}`
+                        : `Menu de ${fullName}`
+                }
                 className="pl-1 flex items-center gap-1 rounded-full py-0.75 px-0.5 pr-1.5 transition-[background-color,box-shadow] hover:bg-brand-green/10 aria-expanded:bg-green-50 duration-200"
             >
                 <span
@@ -63,7 +68,9 @@ export function UserMenu({
                         {fullName}
                     </span>
                     <span className="block text-xs text-ink-muted">
-                        {roleLabel} · {organizationName}
+                        {organizationName
+                            ? `${roleLabel} · ${organizationName}`
+                            : roleLabel}
                     </span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

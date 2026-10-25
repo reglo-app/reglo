@@ -11,7 +11,9 @@ export function safeRedirectPath(target: unknown): string {
         !target.startsWith("/") ||
         target.startsWith("//") ||
         target.startsWith("/\\") ||
-        target.startsWith("/login")
+        target.startsWith("/login") ||
+        // It signs out: never a page to open after login.
+        target.startsWith("/session-expired")
     ) {
         return DEFAULT_AFTER_LOGIN;
     }

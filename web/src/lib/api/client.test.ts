@@ -2,19 +2,53 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DOMAIN_KEYS } from "@/lib/domains";
 
-import { ApiError, createApi } from "./client";
+import {
+    API_FEATURES,
+    ApiError,
+    createApi,
+    parseMocks,
+    type ApiOptions,
+} from "./client";
 
 afterEach(() => {
     vi.unstubAllGlobals();
 });
 
+/** Stands in for redirect(): it never returns. */
+function unauthorized(): ApiOptions["onUnauthorized"] {
+    return vi.fn(() => {
+        throw new Error("redirected to /session-expired");
+    });
+}
+
+describe("parseMocks", () => {
+    it("mocks the features without endpoints by default, not the user", () => {
+        for (const value of [undefined, "", "  "]) {
+            expect([...parseMocks(value)]).toEqual([
+                "dashboard",
+                "domains",
+                "news",
+            ]);
+        }
+    });
+
+    it("understands all, none and a list", () => {
+        expect([...parseMocks("all")]).toEqual([...API_FEATURES]);
+        expect([...parseMocks("none")]).toEqual([]);
+        expect([...parseMocks("news, me ,unknown")]).toEqual(["me", "news"]);
+    });
+});
+
 describe("mock api", () => {
-    const api = createApi(true);
+    const api = createApi({
+        mocks: new Set(API_FEATURES),
+        getToken: async () => "token",
+    });
 
     it("returns a user attached to an organization", async () => {
         const user = await api.getCurrentUser();
         expect(user.role).toBe("admin");
-        expect(user.organization.name).toBeTruthy();
+        expect(user.organization?.name).toBeTruthy();
     });
 
     it("returns one score per QHSE domain, between 0 and 100", async () => {
@@ -59,21 +93,60 @@ describe("mock api", () => {
 });
 
 describe("http api", () => {
-    const api = createApi(false);
+    function httpApi(overrides: Partial<ApiOptions> = {}) {
+        return createApi({
+            mocks: new Set(),
+            baseUrl: "http://api:8000",
+            getToken: async () => "abc123",
+            onUnauthorized: unauthorized(),
+            ...overrides,
+        });
+    }
 
-    it("calls the API with the session cookie", async () => {
+    it("sends the session token to the API, from the server", async () => {
         const fetchMock = vi
             .fn()
-            .mockResolvedValue(Response.json({ id: "1", firstName: "Ana" }));
+            .mockResolvedValue(Response.json({ id: "1", email: "ana@x.test" }));
         vi.stubGlobal("fetch", fetchMock);
 
-        const user = await api.getCurrentUser();
+        const user = await httpApi().getCurrentUser();
 
-        expect(user.firstName).toBe("Ana");
+        expect(user.email).toBe("ana@x.test");
         expect(fetchMock).toHaveBeenCalledWith(
-            expect.stringMatching(/\/api\/me$/),
-            expect.objectContaining({ credentials: "include" }),
+            "http://api:8000/api/auth/me",
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    Authorization: "Bearer abc123",
+                }),
+            }),
         );
+    });
+
+    it("leaves the session when the API refuses the token", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue(new Response(null, { status: 401 })),
+        );
+        const onUnauthorized = unauthorized();
+
+        await expect(
+            httpApi({ onUnauthorized }).getCurrentUser(),
+        ).rejects.toThrow("redirected");
+        expect(onUnauthorized).toHaveBeenCalledOnce();
+    });
+
+    it("does not call the API without a session", async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+        const onUnauthorized = unauthorized();
+
+        await expect(
+            httpApi({
+                getToken: async () => null,
+                onUnauthorized,
+            }).getCurrentUser(),
+        ).rejects.toThrow("redirected");
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it("returns null for an article the API does not know", async () => {
@@ -81,19 +154,42 @@ describe("http api", () => {
             "fetch",
             vi.fn().mockResolvedValue(new Response(null, { status: 404 })),
         );
-        expect(await api.getNewsArticle("news-9")).toBeNull();
+        expect(await httpApi().getNewsArticle("news-9")).toBeNull();
     });
 
-    it("throws an ApiError with the status on failure", async () => {
+    it("throws an ApiError with the status on other failures", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn().mockResolvedValue(new Response(null, { status: 401 })),
+            vi.fn().mockResolvedValue(new Response(null, { status: 500 })),
         );
 
-        await expect(api.getCurrentUser()).rejects.toMatchObject({
+        await expect(httpApi().getDashboardSummary()).rejects.toMatchObject({
             name: "ApiError",
-            status: 401,
+            status: 500,
         });
-        await expect(api.getCurrentUser()).rejects.toBeInstanceOf(ApiError);
+        await expect(httpApi().getDashboardSummary()).rejects.toBeInstanceOf(
+            ApiError,
+        );
+    });
+});
+
+describe("mixed mocks", () => {
+    it("calls the API for the user while the dashboard stays on mocks", async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue(Response.json({ id: "1", email: "ana@x.test" }));
+        vi.stubGlobal("fetch", fetchMock);
+        const api = createApi({
+            mocks: parseMocks(undefined),
+            baseUrl: "http://api:8000",
+            getToken: async () => "abc123",
+            onUnauthorized: unauthorized(),
+        });
+
+        await api.getDashboardSummary();
+        expect(fetchMock).not.toHaveBeenCalled();
+
+        expect((await api.getCurrentUser()).email).toBe("ana@x.test");
+        expect(fetchMock).toHaveBeenCalledOnce();
     });
 });

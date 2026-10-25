@@ -41,12 +41,34 @@ final class AuthController
         return new Response(status: Response::HTTP_NO_CONTENT);
     }
 
+    /**
+     * Shape of CurrentUser in web/src/lib/api/types.ts. Names and organization
+     * are null until organization onboarding (US-01) adds them.
+     */
     #[Route('/me', name: 'me', methods: ['GET'])]
     public function me(#[CurrentUser] User $user): JsonResponse
     {
         return new JsonResponse([
+            'id' => (string) $user->getId(),
             'email' => $user->getEmail(),
-            'roles' => $user->getRoles(),
+            'firstName' => null,
+            'lastName' => null,
+            'role' => self::roleKey($user),
+            'organization' => null,
         ]);
+    }
+
+    /**
+     * Role key of the web app: "admin", "member" (default) or "reader".
+     */
+    private static function roleKey(User $user): string
+    {
+        $roles = $user->getRoles();
+
+        return match (true) {
+            \in_array('ROLE_ADMIN', $roles, true) => 'admin',
+            \in_array('ROLE_READER', $roles, true) => 'reader',
+            default => 'member',
+        };
     }
 }

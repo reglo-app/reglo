@@ -13,6 +13,13 @@ const PUBLIC_PATHS = ["/login"];
  */
 export function proxy(request: NextRequest) {
     const { pathname, search } = request.nextUrl;
+
+    // Deletes a refused session (app/session-expired/route.ts): it must run
+    // whether the cookie is there or not.
+    if (pathname === "/session-expired") {
+        return NextResponse.next();
+    }
+
     const isSignedIn = request.cookies.has(SESSION_COOKIE);
     const isPublic = PUBLIC_PATHS.includes(pathname);
 
