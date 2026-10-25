@@ -84,6 +84,13 @@ Every `/api` route requires a token, except `/api/auth/login` and `/api/docs`. `
 
 `make test-api` creates and migrates the test database (`reglo_test`) before running PHPUnit.
 
+## Database
+
+PostgreSQL 16, one separate database per environment. The schema only changes through Doctrine migrations (run automatically on each deployment, by hand in local).
+
+- **Local**: open `localhost:5432` with any client (DBeaver, pgAdmin...), user `reglo`, password `reglo`, database `reglo`.
+- **Pre-production and production**: https://db.reglo.site (Adminer, password-protected, pick the database in the login form). Setup and access: [deploy/adminer/README.md](deploy/adminer/README.md). The databases themselves have no public port.
+
 ## Editor setup (VS Code)
 
 Install the "**EditorConfig**" VS Code extension. It applies the project's indentation (4 spaces) automatically.

@@ -195,7 +195,7 @@ reglo/
   api/            Backend: Symfony + API Platform (PHP)
   web/            Frontend: Next.js (TypeScript)
   data-service/   Data service: Python / FastAPI and other data tools
-  deploy/         Compose file used on the server (pre-production and production)
+  deploy/         Compose files used on the server (pre-production and production, Adminer)
   .github/        CI and deploy workflows, CODEOWNERS, PR template
 ```
 
