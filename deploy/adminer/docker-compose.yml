@@ -1,0 +1,27 @@
+# Adminer: web interface to look at the pre-production and production
+# databases. Runs on the server in its own folder (/srv/reglo-adminer), next
+# to both stacks. Setup and security: see README.md in this folder.
+services:
+  adminer:
+    image: adminer:6.1.2
+    container_name: adminer
+    restart: unless-stopped
+    volumes:
+      # Drop-down of the two databases in the login form
+      - ./login-servers.php:/var/www/html/plugins-enabled/login-servers.php:ro
+    networks:
+      # Caddy reaches Adminer through this network
+      - proxy
+      # Networks of the two stacks: the only way to reach their databases
+      - preprod_internal
+      - prod_internal
+
+networks:
+  proxy:
+    external: true
+  preprod_internal:
+    external: true
+    name: reglo-preprod_internal
+  prod_internal:
+    external: true
+    name: reglo-prod_internal

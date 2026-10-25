@@ -13,6 +13,23 @@ jobs:
     defaults:
       run:
         working-directory: api
+    services:
+      db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: reglo
+          POSTGRES_USER: reglo
+          POSTGRES_PASSWORD: reglo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reglo -d reglo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Test credentials of the CI database only (the "_test" suffix is added by Doctrine)
+      DATABASE_URL: postgresql://reglo:reglo@127.0.0.1:5432/reglo?serverVersion=16&charset=utf8
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +47,13 @@ jobs:
 
       - name: PHPStan
         run: vendor/bin/phpstan analyse
+
+      - name: Prepare the test database
+        run: |
+          php bin/console doctrine:database:create --if-not-exists --no-interaction
+          php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+        env:
+          APP_ENV: test
 
       - name: PHPUnit
         run: vendor/bin/phpunit

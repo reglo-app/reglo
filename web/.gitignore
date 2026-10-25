@@ -43,3 +43,5 @@ next-env.d.ts
 # playwright reports
 /playwright-report/
 /test-results/
+# FinalSix font: not committed until the licence is confirmed (see docs/design/charte.md)
+/public/fonts/final-six/

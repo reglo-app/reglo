@@ -31,7 +31,9 @@ logs: ## Follow the logs
 
 test: test-api test-web ## Run all tests
 
-test-api: ## Run the API tests
+test-api: ## Prepare the test database and run the API tests
+	docker compose exec -e APP_ENV=test api php bin/console doctrine:database:create --if-not-exists --no-interaction
+	docker compose exec -e APP_ENV=test api php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
 	docker compose exec -e APP_ENV=test api vendor/bin/phpunit
 
 test-web: ## Run the web unit tests

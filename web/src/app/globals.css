@@ -1,26 +1,91 @@
 @import "tailwindcss";
+@import "./theme.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-    --background: #ffffff;
-    --foreground: #171717;
-}
-
+/*
+ * shadcn/ui semantic colours mapped to the charter tokens (theme.css).
+ * No colour value here: only references to charter tokens.
+ */
 @theme inline {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
+    --font-heading: var(--font-display);
+
+    --color-background: var(--color-white);
+    --color-foreground: var(--color-ink);
+    --color-card: var(--color-white);
+    --color-card-foreground: var(--color-ink);
+    --color-popover: var(--color-white);
+    --color-popover-foreground: var(--color-ink);
+    --color-primary: var(--color-brand-teal);
+    --color-primary-foreground: var(--color-white);
+    --color-secondary: var(--color-teal-50);
+    --color-secondary-foreground: var(--color-ink);
+    --color-muted: var(--color-surface-subtle);
+    --color-muted-foreground: var(--color-ink-muted);
+    --color-accent: var(--color-green-50);
+    --color-accent-foreground: var(--color-ink);
+    --color-destructive: var(--color-danger);
+    --color-input: var(--color-border-strong);
+    --color-ring: var(--color-focus-ring);
+
+    --color-chart-1: var(--color-quality);
+    --color-chart-2: var(--color-hygiene);
+    --color-chart-3: var(--color-safety);
+    --color-chart-4: var(--color-environment);
+
+    --color-sidebar: var(--color-white);
+    --color-sidebar-foreground: var(--color-ink);
+    --color-sidebar-primary: var(--color-brand-teal);
+    --color-sidebar-primary-foreground: var(--color-white);
+    --color-sidebar-accent: var(--color-green-50);
+    --color-sidebar-accent-foreground: var(--color-ink);
+    --color-sidebar-border: var(--color-border);
+    --color-sidebar-ring: var(--color-focus-ring);
+
+    --radius-2xl: 20px;
+    --radius-3xl: 24px;
+    --radius-4xl: 32px;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
+/*
+ * Text links: the underline draws from left to right on hover and keyboard
+ * focus, in the link's own colour. Use it on every text link. It sets its
+ * own transition: do not add a `transition-*` class next to it.
+ */
+@utility link-underline {
+    text-decoration: none;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    background-size: 0% 2px;
+    /* Pushes the line 1px below the text. */
+    padding-bottom: 1px;
+    transition:
+        background-size 300ms ease-out,
+        color 150ms ease-out;
+
+    &:hover,
+    &:focus-visible {
+        background-size: 100% 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
     }
 }
 
-body {
-    background: var(--background);
-    color: var(--foreground);
-    font-family: Arial, Helvetica, sans-serif;
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    html {
+        @apply font-sans;
+    }
+    body {
+        @apply bg-surface-subtle text-ink;
+    }
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
 }

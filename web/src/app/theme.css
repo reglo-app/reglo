@@ -1,0 +1,170 @@
+/*
+ * REGLO design tokens (Tailwind v4). Source: docs/design/charte.md.
+ * This is the only file allowed to contain colour values.
+ * Imported by globals.css right after `@import "tailwindcss";`.
+ */
+
+/*
+ * FinalSix (display titles). The font file is NOT committed until the licence
+ * is confirmed: drop FinalSix-Heavy.otf in public/fonts/final-six/ locally.
+ * Without the file, titles fall back to Outfit.
+ */
+@font-face {
+    font-family: "FinalSix";
+    src: url("/fonts/final-six/FinalSix-Heavy.otf") format("opentype");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@theme {
+    /* Remove Tailwind's default palette: only charter colours can be used. */
+    --color-*: initial;
+
+    /* --font-outfit is set by next/font in layout.tsx */
+    --font-sans: var(--font-outfit), system-ui, sans-serif;
+    --font-display: "FinalSix", var(--font-outfit), system-ui, sans-serif;
+
+    --color-white: #ffffff;
+
+    --color-brand-teal: #0b3e3f;
+    --color-brand-green: #439985;
+    --color-brand-blue: #a3ceff;
+    --color-brand-yellow: #f7e419;
+
+    --color-green-600: #34806f;
+    --color-green-700: #2c6e5f;
+    --color-green-50: #e8f4f1;
+    --color-blue-700: #1f5f9e;
+    --color-blue-800: #174a7c;
+    --color-blue-50: #eaf3ff;
+    --color-yellow-800: #7a6f00;
+    --color-yellow-900: #5c5400;
+    --color-yellow-50: #fdfbd9;
+    --color-teal-900: #072a2b;
+    --color-teal-700: #154a48;
+    --color-teal-50: #e7eeee;
+    --color-surface-subtle: #f4f8f7;
+    --color-ink: #0b3e3f;
+    --color-ink-muted: #4a6665;
+    --color-border: #d3e0dd;
+    --color-border-strong: #6f8c89;
+    --color-focus-ring: #1f5f9e;
+    --color-danger: #b3261e;
+    --color-danger-50: #fdecea;
+    --color-danger-700: #8c1d18;
+
+    /* QHSE domains (mapping to confirm with DAs) */
+    --color-quality: #0b3e3f;
+    --color-quality-50: #e7eeee;
+    --color-hygiene: #a3ceff;
+    --color-hygiene-50: #eaf3ff;
+    --color-safety: #f7e419;
+    --color-safety-50: #fdfbd9;
+    --color-environment: #439985;
+    --color-environment-50: #e8f4f1;
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    /* Topbar controls (search, menu toggle, notifications, account). */
+    --radius-control: 6px;
+    --shadow-overlay: 0 8px 32px rgba(11, 62, 63, 0.18);
+    /* Login: form panel sliding over the brand panel like a drawer. */
+    --shadow-drawer: -16px 0 48px rgba(7, 42, 43, 0.35);
+}
+
+/*
+ * Glass tile on dark backgrounds (login logo). Flat take on the Figma "Glass"
+ * effect (light 71°): frosted fill, thin edge and highlight brighter on the
+ * light side. No outer shadow or glow, so it stays flat.
+ */
+@utility glass {
+    position: relative;
+    isolation: isolate;
+    background: linear-gradient(
+        161deg,
+        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0.05) 55%,
+        rgba(255, 255, 255, 0.1)
+    );
+    -webkit-backdrop-filter: blur(16px) saturate(170%);
+    backdrop-filter: blur(16px) saturate(170%);
+
+    /* Edge brighter on the light side (71°). */
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        padding: 1px;
+        border-radius: inherit;
+        background: linear-gradient(
+            71deg,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.45)
+        );
+        mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+
+    /* Specular highlight where the light hits. */
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: inherit;
+        background: radial-gradient(
+            circle at 82% 18%,
+            rgba(255, 255, 255, 0.12),
+            transparent 55%
+        );
+        pointer-events: none;
+    }
+}
+
+/* Login brand panel: deep teal with a soft green glow. */
+@utility bg-auth-panel {
+    background-color: var(--color-teal-900);
+    background-image:
+        radial-gradient(
+            ellipse at 30% 0%,
+            rgba(67, 153, 133, 0.45),
+            transparent 60%
+        ),
+        radial-gradient(
+            ellipse at 70% 100%,
+            rgba(163, 206, 255, 0.12),
+            transparent 55%
+        );
+}
+
+/* Brand gradient (teal to green, left to right): primary button and
+   teal/green highlight cards. Text on it: white, large or bold. */
+@utility bg-brand-gradient {
+    background-image: linear-gradient(
+        to right,
+        var(--color-teal-700),
+        var(--color-brand-green)
+    );
+    /* Start under the border too, or a transparent border shows the
+       gradient repeated (a dark line on the right edge). */
+    background-origin: border-box;
+}
+
+@layer base {
+    body {
+        color: var(--color-ink);
+        background: var(--color-surface-subtle);
+        font-family: var(--font-sans);
+    }
+    :focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+    }
+}

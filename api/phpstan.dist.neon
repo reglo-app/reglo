@@ -6,3 +6,8 @@ parameters:
         - public/
         - src/
         - tests/
+    ignoreErrors:
+        # Entity ids are assigned by Doctrine, which PHPStan cannot see
+        -
+            identifier: property.unusedType
+            path: src/Entity/*
