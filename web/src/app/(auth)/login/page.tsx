@@ -71,12 +71,12 @@ export default async function LoginPage() {
 
                 {/* Same padding on both texts, so the separator sits in the
                     middle. */}
-                <footer className="flex items-center justify-center gap-1 text-sm text-ink-muted">
+                <footer className="flex items-center justify-center gap-px text-sm text-ink-muted">
                     <span className="px-1">© {year} REGLO</span>
                     <span aria-hidden="true">-</span>
                     <a
                         href="mailto:contact@reglo.site"
-                        className="rounded-md px-1 py-1 transition-colors duration-200 hover:bg-green-50 hover:text-ink"
+                        className="rounded-md px-1 py-1 transition-all duration-200 hover:text-brand-teal"
                     >
                         Contact
                     </a>
