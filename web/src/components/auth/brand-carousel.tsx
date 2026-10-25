@@ -280,7 +280,7 @@ export function BrandCarousel() {
                 })}
             </div>
 
-            <div className="relative mt-8 flex items-center">
+            <div className="relative mt-7.5 flex items-center">
                 {SLIDES.map((slide, index) => (
                     <button
                         key={slide.title}
@@ -291,7 +291,7 @@ export function BrandCarousel() {
                         // The button follows the indicator width plus the same
                         // padding, so the visible gaps stay equal whether the
                         // bar is first, in the middle or last. Hit area: 24px.
-                        className="group flex h-6 items-center justify-center rounded-full px-1.5"
+                        className="group flex h-6 items-center justify-center rounded-full px-1.25"
                     >
                         <span
                             className={cn(
