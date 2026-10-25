@@ -8,6 +8,7 @@ use App\Security\AccessTokenManager;
 use App\Security\LoginFailureHandler;
 use App\Tests\DatabaseResetTrait;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -110,14 +111,46 @@ final class AuthControllerTest extends WebTestCase
 
     public function testMeReturnsTheCurrentUserWithAValidToken(): void
     {
-        $this->createUser();
+        $user = $this->createUser();
         $this->login(self::EMAIL, self::PASSWORD);
         $token = (string) $this->responseData()['token'];
 
         $this->client->request('GET', '/api/auth/me', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['email' => self::EMAIL, 'roles' => ['ROLE_USER']], $this->responseData());
+        self::assertSame([
+            'id' => (string) $user->getId(),
+            'email' => self::EMAIL,
+            'firstName' => null,
+            'lastName' => null,
+            'role' => 'member',
+            'organization' => null,
+        ], $this->responseData());
+    }
+
+    /**
+     * @return iterable<string, array{list<string>, string}>
+     */
+    public static function roleKeys(): iterable
+    {
+        yield 'administrator' => [['ROLE_ADMIN'], 'admin'];
+        yield 'reader' => [['ROLE_READER'], 'reader'];
+        yield 'no role: member' => [[], 'member'];
+    }
+
+    /**
+     * @param list<string> $roles
+     */
+    #[DataProvider('roleKeys')]
+    public function testMeReturnsTheRoleKeyOfTheWebApp(array $roles, string $expected): void
+    {
+        $user = $this->createUser();
+        $user->setRoles($roles);
+        $this->entityManager->flush();
+
+        $this->client->request('GET', '/api/auth/me', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$this->loginToken()]);
+
+        self::assertSame($expected, $this->responseData()['role']);
     }
 
     public function testMeWithoutTokenIsUnauthorized(): void

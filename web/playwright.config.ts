@@ -1,7 +1,12 @@
 import { defineConfig } from "@playwright/test";
 
-// E2E_BASE_URL lets you target a server on another port (default: 3000).
-const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+// The tests start their own server, with every feature on mock data: the
+// signed-in pages then never call the API (the session cookie below is not a
+// real token). Port 3100, so the Docker dev server (port 3000, real API for
+// the signed-in user) is never reused. E2E_BASE_URL targets another server
+// instead, which must run with API_MOCKS=all.
+const PORT = 3100;
+const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
     testDir: "./e2e",
@@ -26,9 +31,12 @@ export default defineConfig({
             origins: [],
         },
     },
-    webServer: {
-        command: "npm run dev",
-        url: baseURL,
-        reuseExistingServer: true,
-    },
+    webServer: process.env.E2E_BASE_URL
+        ? undefined
+        : {
+              command: `npm run dev -- --port ${PORT}`,
+              url: baseURL,
+              reuseExistingServer: !process.env.CI,
+              env: { API_MOCKS: "all" },
+          },
 });

@@ -46,10 +46,10 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
-      # Used by the Next.js server (login): the API seen from the web container
+      # Only the Next.js server calls the API: the API seen from the web container
       API_INTERNAL_URL: http://api:8000
-      NEXT_PUBLIC_USE_MOCKS: ${NEXT_PUBLIC_USE_MOCKS:-true}
+      # Features still on mock data (see .env.example). Empty: the default list
+      API_MOCKS: ${API_MOCKS:-}
       WATCHPACK_POLLING: "true"
     volumes:
       - ./web:/app

@@ -78,9 +78,18 @@ curl -X POST http://localhost:8000/api/auth/login \
 # {"token": "..."}
 
 curl http://localhost:8000/api/auth/me -H 'Authorization: Bearer <token>'
+# {"id": "1", "email": "...", "firstName": null, "lastName": null, "role": "member", "organization": null}
+
+curl -X POST http://localhost:8000/api/auth/logout -H 'Authorization: Bearer <token>'
+# 204: the token no longer works
 ```
 
 Every `/api` route requires a token, except `/api/auth/login` and `/api/docs`. `/health` is public. The e-mail is case-insensitive. Wrong credentials always return the same generic message.
+
+In the web app, only the Next.js server calls the API (server components and actions, through `API_INTERNAL_URL`): the browser never does. The token is kept in an `HttpOnly` cookie and sent by the server as `Authorization: Bearer`. When the API refuses it (expired or revoked), `/session-expired` deletes the cookie and opens the login page.
+
+### Mock data
+Features whose API endpoints do not exist yet still use the data of `web/src/lib/api/mocks.ts`. `API_MOCKS` (see `.env.example`) lists them; by default `dashboard,domains,news`, while the signed-in user (`me`) comes from the API. It is read by the server at runtime. The Playwright tests start their own server with `API_MOCKS=all` on port 3100.
 
 `make test-api` creates and migrates the test database (`reglo_test`) before running PHPUnit.
 

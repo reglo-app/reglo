@@ -1,17 +1,31 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { login } from "./actions";
-import { requestAccessToken } from "./api";
+import { login, logout } from "./actions";
+import {
+    isAccessTokenValid,
+    requestAccessToken,
+    revokeAccessToken,
+} from "./api";
 import { DEFAULT_AFTER_LOGIN, safeRedirectPath } from "./redirect";
+import { clearSession, getSessionToken } from "./session";
 
 // The session module needs a Next.js request (next/headers).
 vi.mock("./session", () => ({
     setSessionToken: vi.fn(),
+    getSessionToken: vi.fn(),
     clearSession: vi.fn(),
+}));
+
+// redirect() never returns: it throws, like in Next.js.
+vi.mock("next/navigation", () => ({
+    redirect: vi.fn((url: string) => {
+        throw new Error(`redirect:${url}`);
+    }),
 }));
 
 afterEach(() => {
     vi.unstubAllGlobals();
+    vi.clearAllMocks();
 });
 
 function formData(fields: Record<string, string>) {
@@ -90,6 +104,7 @@ describe("safeRedirectPath", () => {
         "//evil.test",
         "/\\evil.test",
         "/login",
+        "/session-expired",
     ])("falls back to the dashboard for %j", (target) => {
         expect(safeRedirectPath(target)).toBe(DEFAULT_AFTER_LOGIN);
     });
@@ -146,5 +161,65 @@ describe("requestAccessToken", () => {
         expect(await requestAccessToken("a@b.test", "x")).toEqual({
             status: "unavailable",
         });
+    });
+});
+
+describe("logout", () => {
+    it("revokes the token on the API, then forgets it", async () => {
+        vi.mocked(getSessionToken).mockResolvedValue("abc123");
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue(new Response(null, { status: 204 }));
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(logout()).rejects.toThrow("redirect:/login");
+
+        expect(fetchMock).toHaveBeenCalledWith(
+            expect.stringMatching(/\/api\/auth\/logout$/),
+            expect.objectContaining({
+                method: "POST",
+                headers: { Authorization: "Bearer abc123" },
+            }),
+        );
+        expect(clearSession).toHaveBeenCalledOnce();
+    });
+
+    it("still signs out when the API cannot be reached", async () => {
+        vi.mocked(getSessionToken).mockResolvedValue("abc123");
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError()));
+
+        await expect(logout()).rejects.toThrow("redirect:/login");
+        expect(clearSession).toHaveBeenCalledOnce();
+    });
+
+    it("does not call the API without a session", async () => {
+        vi.mocked(getSessionToken).mockResolvedValue(null);
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(logout()).rejects.toThrow("redirect:/login");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("revokeAccessToken / isAccessTokenValid", () => {
+    it("never throws when the API cannot be reached", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError()));
+
+        await expect(revokeAccessToken("abc123")).resolves.toBeUndefined();
+        expect(await isAccessTokenValid("abc123")).toBe(false);
+    });
+
+    it("says whether the API accepts the token", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi
+                .fn()
+                .mockResolvedValueOnce(Response.json({ id: "1" }))
+                .mockResolvedValueOnce(new Response(null, { status: 401 })),
+        );
+
+        expect(await isAccessTokenValid("good")).toBe(true);
+        expect(await isAccessTokenValid("revoked")).toBe(false);
     });
 });

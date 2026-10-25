@@ -1,9 +1,4 @@
-/**
- * Server-side URL of the API. In Docker the web container reaches the API
- * by its service name, not by the public URL used in the browser.
- */
-const API_INTERNAL_URL =
-    process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "";
+import { API_INTERNAL_URL } from "@/lib/api/internal-url";
 
 export type LoginResult =
     | { status: "success"; token: string }
@@ -48,4 +43,36 @@ export async function requestAccessToken(
     return typeof body?.token === "string"
         ? { status: "success", token: body.token }
         : { status: "unavailable" };
+}
+
+/**
+ * `POST /api/auth/logout`: the token stops working at once. Best effort:
+ * even when the API cannot be reached, the browser forgets the token.
+ */
+export async function revokeAccessToken(token: string): Promise<void> {
+    try {
+        await fetch(`${API_INTERNAL_URL}/api/auth/logout`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+        });
+    } catch {
+        // Nothing to do: the token expires on its own (1 h).
+    }
+}
+
+/** True only when the API accepts the token (`GET /api/auth/me`). */
+export async function isAccessTokenValid(token: string): Promise<boolean> {
+    try {
+        const response = await fetch(`${API_INTERNAL_URL}/api/auth/me`, {
+            headers: {
+                Accept: "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            cache: "no-store",
+        });
+        return response.ok;
+    } catch {
+        return false;
+    }
 }

@@ -16,14 +16,17 @@ export type Organization = {
     name: string;
 };
 
-/** `GET /api/me`: the signed-in user and their organization (US-02). */
+/**
+ * `GET /api/auth/me`: the signed-in user and their organization (US-02).
+ * Names and organization are null until organization onboarding (US-01).
+ */
 export type CurrentUser = {
     id: string;
     email: string;
-    firstName: string;
-    lastName: string;
+    firstName: string | null;
+    lastName: string | null;
     role: RoleKey;
-    organization: Organization;
+    organization: Organization | null;
 };
 
 /** Score of one QHSE domain, from 0 to 100 (DATA-01 / US-06). */

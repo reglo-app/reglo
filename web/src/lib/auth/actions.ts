@@ -2,9 +2,9 @@
 
 import { redirect } from "next/navigation";
 
-import { requestAccessToken } from "./api";
+import { requestAccessToken, revokeAccessToken } from "./api";
 import { safeRedirectPath } from "./redirect";
-import { clearSession, setSessionToken } from "./session";
+import { clearSession, getSessionToken, setSessionToken } from "./session";
 
 export type LoginField = "email" | "password";
 
@@ -62,8 +62,11 @@ export async function login(
 }
 
 export async function logout(): Promise<void> {
-    // The API has no revoke endpoint yet: the token stays valid until it
-    // expires (1 h), but the browser no longer has it.
+    const token = await getSessionToken();
+    if (token) {
+        // The token stops working on the API side too, not only here.
+        await revokeAccessToken(token);
+    }
     await clearSession();
     redirect("/login");
 }
