@@ -8,10 +8,10 @@ const SESSION_COOKIE = "reglo_session";
 const PUBLIC_PATHS = ["/login"];
 
 /**
- * Pages reachable whether signed in or not: an activation link must work
- * even if someone else is signed in on this browser.
+ * Pages reachable whether signed in or not: links of e-mails (activation,
+ * new address) must work even if someone else is signed in on this browser.
  */
-const ALWAYS_PUBLIC_PATHS = ["/activation"];
+const ALWAYS_PUBLIC_PATHS = ["/activation", "/email-confirmation"];
 
 /**
  * Optimistic check on the cookie only: the API still checks the token on

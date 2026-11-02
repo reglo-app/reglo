@@ -12,6 +12,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { UserAvatar } from "@/components/profile/user-avatar";
+import type { CurrentUser } from "@/lib/api";
 import { logout } from "@/lib/auth/actions";
 
 export type UserMenuProps = {
@@ -19,21 +21,17 @@ export type UserMenuProps = {
     roleLabel: string;
     /** null until the account belongs to an organization (US-01). */
     organizationName: string | null;
+    /** Profile photo; the initials without it. */
+    avatar?: Pick<CurrentUser, "id" | "avatarVersion">;
 };
 
-function initials(fullName: string): string {
-    return fullName
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join("");
-}
+const NO_AVATAR = { id: "", avatarVersion: null };
 
 export function UserMenu({
     fullName,
     roleLabel,
     organizationName,
+    avatar = NO_AVATAR,
 }: UserMenuProps) {
     const [isLoggingOut, startLogout] = useTransition();
 
@@ -51,12 +49,7 @@ export function UserMenu({
                 }
                 className="pl-1 flex items-center gap-1 rounded-full py-0.75 px-0.5 pr-1.5 transition-[background-color,box-shadow] hover:bg-brand-green/10 aria-expanded:bg-green-50 duration-200"
             >
-                <span
-                    aria-hidden="true"
-                    className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-teal text-xs font-semibold text-white"
-                >
-                    {initials(fullName)}
-                </span>
+                <UserAvatar user={avatar} fullName={fullName} />
                 <ChevronDown
                     aria-hidden="true"
                     className="size-4 text-ink-muted"

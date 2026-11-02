@@ -62,6 +62,15 @@ final class AccessTokenManager
         $this->entityManager->flush();
     }
 
+    /**
+     * Logs the user out everywhere (password or e-mail changed), except,
+     * when given, the session that made the change.
+     */
+    public function revokeAllForUser(User $user, ?string $exceptPlainToken = null): void
+    {
+        $this->repository->deleteAllForUser($user, null === $exceptPlainToken ? null : self::hash($exceptPlainToken));
+    }
+
     public static function hash(string $plainToken): string
     {
         return hash('sha256', $plainToken);

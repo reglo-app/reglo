@@ -138,6 +138,8 @@ final class AuthControllerTest extends WebTestCase
             'email' => self::EMAIL,
             'firstName' => null,
             'lastName' => null,
+            'jobTitle' => null,
+            'avatarVersion' => null,
             'role' => 'member',
             'organization' => null,
         ], $this->responseData());

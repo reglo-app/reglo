@@ -2,20 +2,18 @@
 
 namespace App\Controller;
 
-use App\Command\CreateUserCommand;
 use App\Mailer\ActivationMailer;
 use App\Repository\ActivationTokenRepository;
 use App\Repository\UserRepository;
 use App\Security\ActivationTokenManager;
+use App\Security\PasswordPolicy;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\PasswordHasher\PasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -41,7 +39,7 @@ final class ActivationController
     #[Route('/check', name: 'check', methods: ['POST'])]
     public function check(Request $request): JsonResponse
     {
-        $token = $this->tokenManager->findValid(self::stringField($request, 'token'));
+        $token = $this->tokenManager->findValid(JsonBody::string($request, 'token'));
 
         if (null === $token) {
             return self::invalidLink();
@@ -62,18 +60,17 @@ final class ActivationController
         UserPasswordHasherInterface $passwordHasher,
         EntityManagerInterface $entityManager,
     ): JsonResponse|Response {
-        $token = $this->tokenManager->findValid(self::stringField($request, 'token'));
+        $token = $this->tokenManager->findValid(JsonBody::string($request, 'token'));
 
         if (null === $token) {
             return self::invalidLink();
         }
 
-        $password = self::stringField($request, 'password');
-        $length = mb_strlen($password);
+        $password = JsonBody::string($request, 'password');
 
-        if ($length < CreateUserCommand::MIN_PASSWORD_LENGTH || \strlen($password) > PasswordHasherInterface::MAX_PASSWORD_LENGTH) {
+        if (!PasswordPolicy::isAcceptable($password)) {
             return new JsonResponse([
-                'error' => \sprintf('Le mot de passe doit contenir au moins %d caractères.', CreateUserCommand::MIN_PASSWORD_LENGTH),
+                'error' => PasswordPolicy::errorMessage(),
                 'code' => 'weak_password',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
@@ -98,7 +95,7 @@ final class ActivationController
         ActivationMailer $activationMailer,
         LoggerInterface $logger,
     ): Response {
-        $user = $userRepository->findOneByEmail(self::stringField($request, 'email'));
+        $user = $userRepository->findOneByEmail(JsonBody::string($request, 'email'));
         $latest = null === $user ? null : $tokenRepository->findLatestForUser($user);
         $tooSoon = null !== $latest
             && $latest->getCreatedAt() > new \DateTimeImmutable(\sprintf('-%d seconds', self::RESEND_COOLDOWN));
@@ -117,20 +114,5 @@ final class ActivationController
     private static function invalidLink(): JsonResponse
     {
         return new JsonResponse(['error' => self::INVALID_LINK, 'code' => 'invalid_token'], Response::HTTP_GONE);
-    }
-
-    /**
-     * Reads a string from the JSON body; anything else (missing field,
-     * number, invalid JSON) gives an empty string.
-     */
-    private static function stringField(Request $request, string $name): string
-    {
-        try {
-            $value = $request->toArray()[$name] ?? '';
-        } catch (JsonException) {
-            return '';
-        }
-
-        return \is_string($value) ? $value : '';
     }
 }

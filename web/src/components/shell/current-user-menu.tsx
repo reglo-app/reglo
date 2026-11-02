@@ -14,6 +14,7 @@ export async function CurrentUserMenu() {
             fullName={fullName}
             roleLabel={ROLE_LABELS[user.role]}
             organizationName={user.organization?.name ?? null}
+            avatar={user}
         />
     );
 }

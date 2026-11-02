@@ -1,6 +1,9 @@
 FROM dunglas/frankenphp:1-php8.3
 
-RUN install-php-extensions intl pdo_pgsql zip opcache
+# gd: re-encodes uploaded profile photos (JPEG, PNG and WebP)
+RUN install-php-extensions intl pdo_pgsql zip opcache gd
+
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

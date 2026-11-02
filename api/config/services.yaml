@@ -11,6 +11,11 @@ parameters:
     app.access_token_ttl: 3600
     # Lifetime of an account activation link, in seconds (48 hours)
     app.activation_token_ttl: 172800
+    # Lifetime of the link confirming a new e-mail address, in seconds (24 hours)
+    app.email_change_ttl: 86400
+    # Uploaded files (profile photos...): outside the public folder, only
+    # served through the authenticated API. A Docker volume on the servers.
+    app.uploads_dir: '%kernel.project_dir%/var/uploads'
 
 services:
     # default configuration for services in *this* file
@@ -25,3 +30,8 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+when@test:
+    parameters:
+        # Kept apart from the files of the dev environment
+        app.uploads_dir: '%kernel.project_dir%/var/uploads-test'

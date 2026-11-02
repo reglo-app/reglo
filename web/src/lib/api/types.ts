@@ -25,6 +25,10 @@ export type CurrentUser = {
     email: string;
     firstName: string | null;
     lastName: string | null;
+    /** e.g. "Responsable QHSE", set in "Mon profil". */
+    jobTitle: string | null;
+    /** Changes with each new profile photo; null without photo. */
+    avatarVersion: string | null;
     role: RoleKey;
     organization: Organization | null;
 };

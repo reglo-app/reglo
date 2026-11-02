@@ -19,6 +19,8 @@ export const mockCurrentUser: CurrentUser = {
     email: "camille.martin@atelier-demo.test",
     firstName: "Camille",
     lastName: "Martin",
+    jobTitle: "Responsable QHSE",
+    avatarVersion: null,
     role: "admin",
     organization: {
         id: "0192f0c4-7a3e-7c3a-9b1e-5d2a1c0000a1",

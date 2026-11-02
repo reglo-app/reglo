@@ -1,0 +1,13 @@
+Bonjour{% if first_name %} {{ first_name }}{% endif %},
+
+Vous avez demandé à utiliser cette adresse e-mail pour votre compte Réglo.
+Pour confirmer le changement, ouvrez ce lien :
+
+{{ confirmation_url }}
+
+Ce lien est valable {{ valid_hours }} heures et ne peut être utilisé qu'une seule fois.
+Tant qu'il n'est pas ouvert, votre ancienne adresse reste celle du compte.
+
+Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : rien ne changera.
+
+L'équipe Réglo

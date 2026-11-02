@@ -14,13 +14,15 @@ use Symfony\Component\Security\Core\User\UserInterface;
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     public const MAX_NAME_LENGTH = 100;
+    public const MAX_JOB_TITLE_LENGTH = 100;
+    public const MAX_EMAIL_LENGTH = 180;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 180)]
+    #[ORM\Column(length: self::MAX_EMAIL_LENGTH)]
     private string $email;
 
     /** @var list<string> */
@@ -35,6 +37,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: self::MAX_NAME_LENGTH, nullable: true)]
     private ?string $lastName = null;
+
+    /** Job title shown to the team, e.g. "Responsable QHSE". */
+    #[ORM\Column(length: self::MAX_JOB_TITLE_LENGTH, nullable: true)]
+    private ?string $jobTitle = null;
+
+    /**
+     * Random file name of the profile photo in the uploads folder (see
+     * AvatarStorage). Never sent to clients.
+     */
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $avatarFile = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $avatarUpdatedAt = null;
 
     /**
      * Null for platform administrators (REGLO team), who belong to no client.
@@ -75,6 +91,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getEmail(): string
     {
         return $this->email;
+    }
+
+    /**
+     * Only once the new address is confirmed (see EmailChangeManager).
+     */
+    public function changeEmail(string $email): static
+    {
+        $this->email = self::normalizeEmail($email);
+
+        return $this;
     }
 
     /**
@@ -136,6 +162,44 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->firstName = trim($firstName);
         $this->lastName = trim($lastName);
+
+        return $this;
+    }
+
+    public function getJobTitle(): ?string
+    {
+        return $this->jobTitle;
+    }
+
+    /**
+     * An empty title is stored as null.
+     */
+    public function setJobTitle(?string $jobTitle): static
+    {
+        $jobTitle = trim((string) $jobTitle);
+        $this->jobTitle = '' === $jobTitle ? null : $jobTitle;
+
+        return $this;
+    }
+
+    public function getAvatarFile(): ?string
+    {
+        return $this->avatarFile;
+    }
+
+    public function getAvatarUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->avatarUpdatedAt;
+    }
+
+    /**
+     * Null removes the photo. The date changes the photo URL, so browsers
+     * never show an old one from their cache.
+     */
+    public function setAvatarFile(?string $avatarFile): static
+    {
+        $this->avatarFile = $avatarFile;
+        $this->avatarUpdatedAt = null === $avatarFile ? null : new \DateTimeImmutable();
 
         return $this;
     }
