@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Security\AccessTokenManager;
+use App\Security\BearerToken;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,48 +33,18 @@ final class AuthController
     public function logout(Request $request, AccessTokenManager $tokenManager): Response
     {
         // The firewall already authenticated the request with this header
-        $authorization = (string) $request->headers->get('Authorization');
+        $token = BearerToken::fromRequest($request);
 
-        if (1 === preg_match('/^Bearer\s+(\S+)$/i', $authorization, $matches)) {
-            $tokenManager->revoke($matches[1]);
+        if (null !== $token) {
+            $tokenManager->revoke($token);
         }
 
         return new Response(status: Response::HTTP_NO_CONTENT);
     }
 
-    /**
-     * Shape of CurrentUser in web/src/lib/api/types.ts. Organization is null
-     * for accounts outside any client (REGLO team).
-     */
     #[Route('/me', name: 'me', methods: ['GET'])]
     public function me(#[CurrentUser] User $user): JsonResponse
     {
-        $organization = $user->getOrganization();
-
-        return new JsonResponse([
-            'id' => (string) $user->getId(),
-            'email' => $user->getEmail(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
-            'role' => self::roleKey($user),
-            'organization' => null === $organization ? null : [
-                'id' => (string) $organization->getId(),
-                'name' => $organization->getName(),
-            ],
-        ]);
-    }
-
-    /**
-     * Role key of the web app: "admin", "member" (default) or "reader".
-     */
-    private static function roleKey(User $user): string
-    {
-        $roles = $user->getRoles();
-
-        return match (true) {
-            \in_array('ROLE_ADMIN', $roles, true) => 'admin',
-            \in_array('ROLE_READER', $roles, true) => 'reader',
-            default => 'member',
-        };
+        return new JsonResponse(CurrentUserView::of($user));
     }
 }

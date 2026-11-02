@@ -27,6 +27,9 @@ services:
       MAILER_DSN: ${MAILER_DSN}
       MAILER_FROM: ${MAILER_FROM}
       APP_WEB_URL: ${APP_WEB_URL}
+    volumes:
+      # Uploaded files (profile photos...): kept across deployments
+      - uploads:/app/var/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -66,3 +69,4 @@ networks:
 
 volumes:
   db_data:
+  uploads:

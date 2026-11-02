@@ -38,6 +38,7 @@ security:
         - { path: ^/api/auth/login$, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/activation, roles: PUBLIC_ACCESS }
+        - { path: ^/api/email-change, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

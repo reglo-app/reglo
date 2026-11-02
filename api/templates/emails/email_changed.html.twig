@@ -1,0 +1,14 @@
+{% extends 'emails/layout.html.twig' %}
+
+{% block title %}Votre adresse e-mail Réglo a été modifiée{% endblock %}
+
+{% block content %}
+    <p style="margin: 0 0 16px; font-size: 16px;">Bonjour{% if first_name %} {{ first_name }}{% endif %},</p>
+    <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5;">
+        L'adresse e-mail de votre compte Réglo vient d'être remplacée par <strong>{{ new_email }}</strong>.
+        Vous recevrez désormais nos e-mails à cette adresse, et c'est avec elle que vous vous connecterez.
+    </p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #4b5856;">
+        Si vous n'êtes pas à l'origine de ce changement, contactez l'administrateur de votre organisation au plus vite.
+    </p>
+{% endblock %}

@@ -1,48 +1,22 @@
-<!DOCTYPE html>
-<html lang="fr">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Activez votre compte Réglo</title>
-    </head>
-    <body style="margin: 0; padding: 24px; background: #f4f6f5; font-family: Arial, Helvetica, sans-serif; color: #1f2a28;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-                <td align="center">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; background: #ffffff; border-radius: 12px; padding: 32px;">
-                        <tr>
-                            <td>
-                                {# Embedded (not linked) so it shows even when remote images are blocked.
-                                   Empty alt: the wordmark next to it already gives the name. #}
-                                <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
-                                    <tr>
-                                        <td style="padding-right: 10px; vertical-align: middle;">
-                                            <img src="{{ email.image('@email_images/reglo-symbol.png') }}" width="36" height="28" alt="" style="display: block; border: 0;">
-                                        </td>
-                                        <td style="vertical-align: middle; font-size: 22px; font-weight: bold; color: #0f6b63;">REGLO</td>
-                                    </tr>
-                                </table>
-                                <p style="margin: 0 0 16px; font-size: 16px;">Bonjour{% if first_name %} {{ first_name }}{% endif %},</p>
-                                <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5;">
-                                    Un compte administrateur a été créé pour vous sur Réglo{% if organization_name %} pour l'organisation <strong>{{ organization_name }}</strong>{% endif %}.
-                                    Pour l'activer, choisissez votre mot de passe :
-                                </p>
-                                <p style="margin: 24px 0; text-align: center;">
-                                    <a href="{{ activation_url }}" style="display: inline-block; padding: 12px 24px; background: #0f6b63; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px;">Activer mon compte</a>
-                                </p>
-                                <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.5; color: #4b5856;">
-                                    Ce lien est valable {{ valid_hours }} heures et ne peut être utilisé qu'une seule fois.
-                                    S'il ne fonctionne pas, copiez cette adresse dans votre navigateur :<br>
-                                    <a href="{{ activation_url }}" style="color: #0f6b63; word-break: break-all;">{{ activation_url }}</a>
-                                </p>
-                                <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #4b5856;">
-                                    Si vous n'attendiez pas cet e-mail, vous pouvez l'ignorer.
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-</html>
+{% extends 'emails/layout.html.twig' %}
+
+{% block title %}Activez votre compte Réglo{% endblock %}
+
+{% block content %}
+    <p style="margin: 0 0 16px; font-size: 16px;">Bonjour{% if first_name %} {{ first_name }}{% endif %},</p>
+    <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5;">
+        Un compte administrateur a été créé pour vous sur Réglo{% if organization_name %} pour l'organisation <strong>{{ organization_name }}</strong>{% endif %}.
+        Pour l'activer, choisissez votre mot de passe :
+    </p>
+    <p style="margin: 24px 0; text-align: center;">
+        <a href="{{ activation_url }}" style="display: inline-block; padding: 12px 24px; background: #0f6b63; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px;">Activer mon compte</a>
+    </p>
+    <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.5; color: #4b5856;">
+        Ce lien est valable {{ valid_hours }} heures et ne peut être utilisé qu'une seule fois.
+        S'il ne fonctionne pas, copiez cette adresse dans votre navigateur :<br>
+        <a href="{{ activation_url }}" style="color: #0f6b63; word-break: break-all;">{{ activation_url }}</a>
+    </p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #4b5856;">
+        Si vous n'attendiez pas cet e-mail, vous pouvez l'ignorer.
+    </p>
+{% endblock %}
