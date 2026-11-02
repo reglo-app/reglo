@@ -67,6 +67,19 @@ final class CreateOrganizationCommandTest extends KernelTestCase
         self::assertMatchesRegularExpression('#http://localhost:3000/activation\?token=[0-9a-f]{64}#', (string) $email->getTextBody());
     }
 
+    public function testEmbedsTheLogoInTheActivationEmail(): void
+    {
+        $this->create('Acme', 'claire.dupont@acme.test', 'Claire', 'Dupont');
+
+        $email = self::getMailerMessage();
+        self::assertInstanceOf(Email::class, $email);
+        $attachments = $email->getAttachments();
+        self::assertCount(1, $attachments);
+        self::assertSame('image/png', $attachments[0]->getContentType());
+        self::assertSame('inline', $attachments[0]->getDisposition());
+        self::assertEmailHtmlBodyContains($email, 'src="cid:');
+    }
+
     public function testStoresOnlyTheHashOfTheActivationToken(): void
     {
         $this->create('Acme', 'claire.dupont@acme.test', 'Claire', 'Dupont');

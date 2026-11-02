@@ -12,7 +12,16 @@
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; background: #ffffff; border-radius: 12px; padding: 32px;">
                         <tr>
                             <td>
-                                <p style="margin: 0 0 24px; font-size: 22px; font-weight: bold; color: #0f6b63;">REGLO</p>
+                                {# Embedded (not linked) so it shows even when remote images are blocked.
+                                   Empty alt: the wordmark next to it already gives the name. #}
+                                <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+                                    <tr>
+                                        <td style="padding-right: 10px; vertical-align: middle;">
+                                            <img src="{{ email.image('@email_images/reglo-symbol.png') }}" width="36" height="28" alt="" style="display: block; border: 0;">
+                                        </td>
+                                        <td style="vertical-align: middle; font-size: 22px; font-weight: bold; color: #0f6b63;">REGLO</td>
+                                    </tr>
+                                </table>
                                 <p style="margin: 0 0 16px; font-size: 16px;">Bonjour{% if first_name %} {{ first_name }}{% endif %},</p>
                                 <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5;">
                                     Un compte administrateur a été créé pour vous sur Réglo{% if organization_name %} pour l'organisation <strong>{{ organization_name }}</strong>{% endif %}.
