@@ -42,19 +42,24 @@ final class AuthController
     }
 
     /**
-     * Shape of CurrentUser in web/src/lib/api/types.ts. Names and organization
-     * are null until organization onboarding (US-01) adds them.
+     * Shape of CurrentUser in web/src/lib/api/types.ts. Organization is null
+     * for accounts outside any client (REGLO team).
      */
     #[Route('/me', name: 'me', methods: ['GET'])]
     public function me(#[CurrentUser] User $user): JsonResponse
     {
+        $organization = $user->getOrganization();
+
         return new JsonResponse([
             'id' => (string) $user->getId(),
             'email' => $user->getEmail(),
-            'firstName' => null,
-            'lastName' => null,
+            'firstName' => $user->getFirstName(),
+            'lastName' => $user->getLastName(),
             'role' => self::roleKey($user),
-            'organization' => null,
+            'organization' => null === $organization ? null : [
+                'id' => (string) $organization->getId(),
+                'name' => $organization->getName(),
+            ],
         ]);
     }
 

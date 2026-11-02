@@ -19,6 +19,7 @@ security:
             pattern: ^/api/auth/login$
             stateless: true
             provider: app_user_provider
+            user_checker: App\Security\UserChecker
             json_login:
                 check_path: auth_login
                 username_path: email
@@ -36,6 +37,7 @@ security:
     access_control:
         - { path: ^/api/auth/login$, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+        - { path: ^/api/activation, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

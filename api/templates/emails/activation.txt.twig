@@ -1,0 +1,12 @@
+Bonjour{% if first_name %} {{ first_name }}{% endif %},
+
+Un compte administrateur a été créé pour vous sur Réglo{% if organization_name %} pour l'organisation {{ organization_name }}{% endif %}.
+Pour l'activer, choisissez votre mot de passe en ouvrant ce lien :
+
+{{ activation_url }}
+
+Ce lien est valable {{ valid_hours }} heures et ne peut être utilisé qu'une seule fois.
+
+Si vous n'attendiez pas cet e-mail, vous pouvez l'ignorer.
+
+L'équipe Réglo

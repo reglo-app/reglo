@@ -3,6 +3,7 @@
 namespace App\Tests\Controller;
 
 use App\Entity\AccessToken;
+use App\Entity\Organization;
 use App\Entity\User;
 use App\Security\AccessTokenManager;
 use App\Security\LoginFailureHandler;
@@ -87,6 +88,20 @@ final class AuthControllerTest extends WebTestCase
         self::assertSame($wrongPasswordBody, $this->client->getResponse()->getContent());
     }
 
+    public function testLoginOfANotActivatedUserReturnsTheSameError(): void
+    {
+        $user = new User(self::EMAIL);
+        $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
+        $user->setPassword($hasher->hashPassword($user, self::PASSWORD));
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
+
+        $this->login(self::EMAIL, self::PASSWORD);
+
+        self::assertResponseStatusCodeSame(401);
+        self::assertSame(['error' => LoginFailureHandler::MESSAGE], $this->responseData());
+    }
+
     public function testLoginWithMissingPasswordIsRejected(): void
     {
         $this->client->jsonRequest('POST', '/api/auth/login', ['email' => self::EMAIL]);
@@ -126,6 +141,22 @@ final class AuthControllerTest extends WebTestCase
             'role' => 'member',
             'organization' => null,
         ], $this->responseData());
+    }
+
+    public function testMeReturnsTheNamesAndTheOrganization(): void
+    {
+        $organization = new Organization('Acme');
+        $user = $this->createUser();
+        $user->setName('Jeanne', 'Martin')->setOrganization($organization);
+        $this->entityManager->persist($organization);
+        $this->entityManager->flush();
+
+        $this->client->request('GET', '/api/auth/me', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$this->loginToken()]);
+
+        $data = $this->responseData();
+        self::assertSame('Jeanne', $data['firstName']);
+        self::assertSame('Martin', $data['lastName']);
+        self::assertSame(['id' => (string) $organization->getId(), 'name' => 'Acme'], $data['organization']);
     }
 
     /**
@@ -252,7 +283,7 @@ final class AuthControllerTest extends WebTestCase
     {
         $user = new User(self::EMAIL);
         $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
-        $user->setPassword($hasher->hashPassword($user, self::PASSWORD));
+        $user->activate($hasher->hashPassword($user, self::PASSWORD));
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();

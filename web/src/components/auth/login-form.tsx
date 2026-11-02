@@ -8,7 +8,14 @@ import {
     type FormEvent,
 } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, CircleAlert, Eye, EyeOff, LoaderCircle } from "lucide-react";
+import {
+    Check,
+    CircleAlert,
+    CircleCheck,
+    Eye,
+    EyeOff,
+    LoaderCircle,
+} from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -20,7 +27,13 @@ export type LoginFormProps = {
     next?: string;
     /** Injected in tests; the server action by default. */
     action?: typeof login;
+    /** Success message shown until the first submit (account activated). */
+    notice?: string;
 };
+
+/** Shown after the activation page redirects here (`?activated=1`). */
+export const ACTIVATED_NOTICE =
+    "Votre compte est activé. Connectez-vous avec votre nouveau mot de passe.";
 
 /** Remembered e-mail, kept on this device only when the user asks for it. */
 export const REMEMBERED_EMAIL_KEY = "reglo.rememberedEmail";
@@ -50,7 +63,7 @@ function writeRememberedEmail(email: string | null) {
 // leaving the page, so there is nothing to subscribe to.
 const noSubscription = () => () => {};
 
-export function LoginForm({ next, action = login }: LoginFormProps) {
+export function LoginForm({ next, action = login, notice }: LoginFormProps) {
     const [state, formAction, isPending] = useActionState<LoginState, FormData>(
         action,
         {},
@@ -110,6 +123,13 @@ export function LoginForm({ next, action = login }: LoginFormProps) {
             className="flex flex-col gap-5"
             noValidate
         >
+            {notice && !state.error && (
+                <Alert variant="success">
+                    <CircleCheck aria-hidden="true" />
+                    <AlertDescription>{notice}</AlertDescription>
+                </Alert>
+            )}
+
             {showError && (
                 <Alert variant="destructive" id="login-error">
                     <CircleAlert aria-hidden="true" />
@@ -217,8 +237,14 @@ export function LoginForm({ next, action = login }: LoginFormProps) {
     );
 }
 
-/** Reads ?next= set by the proxy when a private page was requested. */
+/**
+ * Reads ?next= set by the proxy when a private page was requested, and
+ * ?activated=1 set by the activation page.
+ */
 export function LoginFormWithRedirect() {
-    const next = useSearchParams().get("next") ?? undefined;
-    return <LoginForm next={next} />;
+    const searchParams = useSearchParams();
+    const next = searchParams.get("next") ?? undefined;
+    const notice =
+        searchParams.get("activated") === "1" ? ACTIVATED_NOTICE : undefined;
+    return <LoginForm next={next} notice={notice} />;
 }
