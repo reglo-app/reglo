@@ -126,6 +126,18 @@ Optional scope: `feat(api): add organization endpoint`, `fix(web): correct score
 - Lint and tests must pass locally before pushing.
 - Never commit secrets, passwords, tokens or `.env` files. Use `.env.example` for variable names only.
 - Database changes go through Doctrine migrations (see section 7).
+- Data of an organization is isolated and tested (see below).
+
+### Tenant isolation
+One organization = one client company. A user must never read or write the data of another organization. The API enforces it centrally (`api/src/Tenant/`), so you do not filter by hand, but you must plug every new entity into it:
+
+1. **An entity that belongs to an organization** implements `OrganizationOwnedInterface` and uses `OrganizationOwnedTrait` (a non-nullable `organization` relation, never read nor written through the API).
+   - Reading: every ORM query on it (API Platform, repositories, `find()`, relations) only returns rows of the logged-in user's organization. Another organization's item answers **404**. A user without organization (REGLO team) sees nothing.
+   - Writing: a new item always gets the logged-in user's organization, whatever the request sent, and an item never moves to another organization.
+   - Console commands are not filtered: they set the organization themselves.
+   - Native SQL (`$connection->executeQuery()`) is **not** filtered: avoid it, or filter by organization yourself.
+2. **An API resource of that entity** is added to `TenantIsolationTest::organizationOwnedResources()` (`api/tests/Tenant/TenantIsolationTest.php`). This runs the generic isolation tests on it: list, read, update, delete and create across two organizations.
+3. `OrganizationOwnershipTest` fails if an entity linked to an organization skips step 1, or an API resource skips step 2.
 
 ## 6. Continuous integration
 
@@ -248,3 +260,4 @@ Symfony regenerates it. Do not commit it: `git restore --staged api/config/refer
 4. One PR per user story, reviewed by someone else.
 5. Squash and merge into `develop`, merge commit into `main`.
 6. Never commit secrets.
+7. Every entity of an organization is isolated and in the isolation tests.
