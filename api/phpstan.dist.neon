@@ -10,4 +10,6 @@ parameters:
         # Entity ids are assigned by Doctrine, which PHPStan cannot see
         -
             identifier: property.unusedType
-            path: src/Entity/*
+            paths:
+                - src/Entity/*
+                - tests/Fixtures/Entity/*

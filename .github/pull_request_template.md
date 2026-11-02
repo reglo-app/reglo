@@ -13,6 +13,7 @@ Trello card:
 ## Checklist
 - [ ] Acceptance criteria of the user story are met
 - [ ] Tests added or updated
+- [ ] Isolation tested: new organization data uses `OrganizationOwnedInterface` and is in `TenantIsolationTest` (or not applicable)
 - [ ] Lint and tests pass locally
 - [ ] No secret or sensitive data in the code
 - [ ] Documentation updated if needed (README, .env.example)

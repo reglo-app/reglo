@@ -26,12 +26,28 @@ doctrine:
                 alias: App
         controller_resolver:
             auto_mapping: false
+        filters:
+            # Tenant isolation: turned on for each HTTP request by
+            # App\Tenant\EnableOrganizationFilterListener
+            organization:
+                class: App\Tenant\OrganizationFilter
+                enabled: false
 
 when@test:
     doctrine:
         dbal:
             # "TEST_TOKEN" is typically set by ParaTest
             dbname_suffix: '_test%env(default::TEST_TOKEN)%'
+        orm:
+            mappings:
+                # Test-only entities (tests/Fixtures/Entity), e.g. the
+                # resource used by the tenant isolation tests
+                TestFixtures:
+                    type: attribute
+                    is_bundle: false
+                    dir: '%kernel.project_dir%/tests/Fixtures/Entity'
+                    prefix: 'App\Tests\Fixtures\Entity'
+                    alias: TestFixtures
 
 when@prod:
     doctrine:
