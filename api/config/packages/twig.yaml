@@ -1,5 +1,8 @@
 twig:
     file_name_pattern: '*.twig'
+    paths:
+        # Images embedded in e-mails: {{ email.image('@email_images/...') }}
+        '%kernel.project_dir%/assets/email': email_images
 
 when@test:
     twig:

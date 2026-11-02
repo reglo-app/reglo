@@ -12,6 +12,7 @@ import {
     type ActivationField,
     type ActivationState,
 } from "@/lib/auth/activation";
+import { storeActivatedEmail } from "@/lib/auth/activated-email";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password";
 
 export type ActivationFormProps = {
@@ -71,7 +72,13 @@ export function ActivationForm({
     }
 
     return (
-        <form action={formAction} className="flex flex-col gap-5" noValidate>
+        <form
+            action={formAction}
+            // The login page opened next prefills this e-mail.
+            onSubmit={() => storeActivatedEmail(email)}
+            className="flex flex-col gap-5"
+            noValidate
+        >
             {state.error && (
                 <Alert variant="destructive" id="activation-error">
                     <CircleAlert aria-hidden="true" />

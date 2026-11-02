@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ActivationForm } from "./activation-form";
 import { ResendActivationForm } from "./resend-activation-form";
+import { ACTIVATED_EMAIL_KEY } from "@/lib/auth/activated-email";
 
 const EMAIL = "claire@acme.test";
 
@@ -47,6 +48,21 @@ describe("ActivationForm", () => {
             password: "correct-horse-battery",
             confirmation: "correct-horse-battery",
         });
+    });
+
+    it("hands the e-mail to the login page opened next", async () => {
+        render(
+            <ActivationForm
+                token="t"
+                email={EMAIL}
+                action={vi.fn().mockResolvedValue({})}
+            />,
+        );
+
+        await submit("correct-horse-battery");
+
+        expect(sessionStorage.getItem(ACTIVATED_EMAIL_KEY)).toBe(EMAIL);
+        sessionStorage.clear();
     });
 
     it("shows the error and marks the field in error", async () => {

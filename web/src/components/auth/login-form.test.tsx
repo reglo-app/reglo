@@ -7,6 +7,7 @@ import {
     LoginForm,
     REMEMBERED_EMAIL_KEY,
 } from "./login-form";
+import { ACTIVATED_EMAIL_KEY } from "@/lib/auth/activated-email";
 
 describe("LoginForm", () => {
     it("has labelled fields with the right autocomplete", () => {
@@ -145,7 +146,7 @@ describe("LoginForm", () => {
         const action = vi
             .fn()
             .mockResolvedValue({ error: "Identifiants incorrects" });
-        render(<LoginForm action={action} notice={ACTIVATED_NOTICE} />);
+        render(<LoginForm action={action} activated />);
 
         expect(screen.getByRole("alert")).toHaveTextContent(ACTIVATED_NOTICE);
 
@@ -217,6 +218,45 @@ describe("LoginForm", () => {
                 "ana@demo.test",
             );
             expect(screen.getByLabelText("Se souvenir de moi")).toBeChecked();
+        });
+
+        describe("after an activation", () => {
+            afterEach(() => sessionStorage.clear());
+
+            it("prefills the activated e-mail, never the remembered one", () => {
+                localStorage.setItem(REMEMBERED_EMAIL_KEY, "ana@demo.test");
+                sessionStorage.setItem(ACTIVATED_EMAIL_KEY, "claire@acme.test");
+                render(<LoginForm action={vi.fn()} activated />);
+
+                expect(screen.getByLabelText("Adresse e-mail")).toHaveValue(
+                    "claire@acme.test",
+                );
+                expect(
+                    screen.getByLabelText("Se souvenir de moi"),
+                ).not.toBeChecked();
+            });
+
+            it("leaves the e-mail empty when none was stored", () => {
+                localStorage.setItem(REMEMBERED_EMAIL_KEY, "ana@demo.test");
+                render(<LoginForm action={vi.fn()} activated />);
+
+                expect(screen.getByLabelText("Adresse e-mail")).toHaveValue("");
+            });
+
+            it("forgets the activated e-mail once the form is sent", async () => {
+                sessionStorage.setItem(ACTIVATED_EMAIL_KEY, "claire@acme.test");
+                render(
+                    <LoginForm
+                        action={vi.fn().mockResolvedValue({})}
+                        activated
+                    />,
+                );
+                await userEvent.click(
+                    screen.getByRole("button", { name: "Se connecter" }),
+                );
+
+                expect(sessionStorage.getItem(ACTIVATED_EMAIL_KEY)).toBeNull();
+            });
         });
 
         it("does not send the checkbox to the server", async () => {

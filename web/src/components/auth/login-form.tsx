@@ -21,14 +21,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { login, type LoginField, type LoginState } from "@/lib/auth/actions";
+import {
+    clearActivatedEmail,
+    readActivatedEmail,
+} from "@/lib/auth/activated-email";
 
 export type LoginFormProps = {
     /** Page to open after login (validated again by the server action). */
     next?: string;
     /** Injected in tests; the server action by default. */
     action?: typeof login;
-    /** Success message shown until the first submit (account activated). */
-    notice?: string;
+    /** Opened right after an account activation: notice and its e-mail. */
+    activated?: boolean;
 };
 
 /** Shown after the activation page redirects here (`?activated=1`). */
@@ -63,7 +67,11 @@ function writeRememberedEmail(email: string | null) {
 // leaving the page, so there is nothing to subscribe to.
 const noSubscription = () => () => {};
 
-export function LoginForm({ next, action = login, notice }: LoginFormProps) {
+export function LoginForm({
+    next,
+    action = login,
+    activated = false,
+}: LoginFormProps) {
     const [state, formAction, isPending] = useActionState<LoginState, FormData>(
         action,
         {},
@@ -84,11 +92,14 @@ export function LoginForm({ next, action = login, notice }: LoginFormProps) {
     const showError =
         Boolean(state.error) &&
         (invalidFields.length === 0 || invalidFields.some(isInvalid));
-    const rememberedEmail = useSyncExternalStore(
+    // Right after an activation, the new account's e-mail, never the one
+    // remembered for another account.
+    const prefilledEmail = useSyncExternalStore(
         noSubscription,
-        readRememberedEmail,
+        activated ? readActivatedEmail : readRememberedEmail,
         () => null,
     );
+    const isRemembered = !activated && prefilledEmail !== null;
     const rememberRef = useRef<HTMLInputElement>(null);
 
     function markEdited(field: LoginField) {
@@ -109,6 +120,7 @@ export function LoginForm({ next, action = login, notice }: LoginFormProps) {
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         const email = new FormData(event.currentTarget).get("email");
+        clearActivatedEmail();
         writeRememberedEmail(
             rememberRef.current?.checked && typeof email === "string"
                 ? email.trim()
@@ -123,10 +135,10 @@ export function LoginForm({ next, action = login, notice }: LoginFormProps) {
             className="flex flex-col gap-5"
             noValidate
         >
-            {notice && !state.error && (
+            {activated && !state.error && (
                 <Alert variant="success">
                     <CircleCheck aria-hidden="true" />
-                    <AlertDescription>{notice}</AlertDescription>
+                    <AlertDescription>{ACTIVATED_NOTICE}</AlertDescription>
                 </Alert>
             )}
 
@@ -151,10 +163,10 @@ export function LoginForm({ next, action = login, notice }: LoginFormProps) {
                     inputMode="email"
                     placeholder="vous@entreprise.fr"
                     required
-                    defaultValue={state.email ?? rememberedEmail ?? undefined}
+                    defaultValue={state.email ?? prefilledEmail ?? undefined}
                     // Resets the field to the returned value after a failure,
-                    // or to the remembered e-mail once storage is read.
-                    key={state.email ?? rememberedEmail ?? ""}
+                    // or to the stored e-mail once storage is read.
+                    key={state.email ?? prefilledEmail ?? ""}
                     {...errorProps("email")}
                 />
             </div>
@@ -198,8 +210,8 @@ export function LoginForm({ next, action = login, notice }: LoginFormProps) {
                         <input
                             ref={rememberRef}
                             type="checkbox"
-                            defaultChecked={rememberedEmail !== null}
-                            key={String(rememberedEmail !== null)}
+                            defaultChecked={isRemembered}
+                            key={String(isRemembered)}
                             className="peer size-4 cursor-pointer appearance-none rounded-sm border border-border-strong bg-white transition-colors duration-200 checked:border-green-700 checked:bg-green-700"
                         />
                         <Check
@@ -244,7 +256,6 @@ export function LoginForm({ next, action = login, notice }: LoginFormProps) {
 export function LoginFormWithRedirect() {
     const searchParams = useSearchParams();
     const next = searchParams.get("next") ?? undefined;
-    const notice =
-        searchParams.get("activated") === "1" ? ACTIVATED_NOTICE : undefined;
-    return <LoginForm next={next} notice={notice} />;
+    const activated = searchParams.get("activated") === "1";
+    return <LoginForm next={next} activated={activated} />;
 }
