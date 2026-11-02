@@ -62,11 +62,17 @@ npm run test:e2e
 
 The API uses opaque access tokens (valid 1 hour, `app.access_token_ttl` in `api/config/services.yaml`). Only a SHA-256 hash of each token is stored in the database.
 
-Apply the migrations, then create an account (the password is asked, 12 characters minimum):
+Apply the migrations, then onboard a client: this creates the organization and its first administrator, who receives an e-mail (in Mailpit locally) with a link to choose a password. The link is valid 48 hours and works once; an expired link lets the user ask for a new one.
 
 ```
 docker compose exec api php bin/console doctrine:migrations:migrate
-docker compose exec api php bin/console app:user:create jeanne.martin@example.com
+docker compose exec api php bin/console app:create-organization "Acme SAS" jeanne.martin@example.com Jeanne Martin
+```
+
+Accounts outside any organization (REGLO team, `--platform-admin` gives `ROLE_PLATFORM_ADMIN`) are created already activated, the password is asked (12 characters minimum):
+
+```
+docker compose exec api php bin/console app:user:create team@reglo.site --platform-admin
 ```
 
 Log in, then send the token in the `Authorization` header:
@@ -78,13 +84,13 @@ curl -X POST http://localhost:8000/api/auth/login \
 # {"token": "..."}
 
 curl http://localhost:8000/api/auth/me -H 'Authorization: Bearer <token>'
-# {"id": "1", "email": "...", "firstName": null, "lastName": null, "role": "member", "organization": null}
+# {"id": "1", "email": "...", "firstName": "Jeanne", "lastName": "Martin", "role": "admin", "organization": {"id": "1", "name": "Acme SAS"}}
 
 curl -X POST http://localhost:8000/api/auth/logout -H 'Authorization: Bearer <token>'
 # 204: the token no longer works
 ```
 
-Every `/api` route requires a token, except `/api/auth/login` and `/api/docs`. `/health` is public. The e-mail is case-insensitive. Wrong credentials always return the same generic message.
+Every `/api` route requires a token, except `/api/auth/login`, `/api/activation/*` (the activation token is the proof) and `/api/docs`. A user who has not activated their account cannot log in. `/health` is public. The e-mail is case-insensitive. Wrong credentials always return the same generic message.
 
 In the web app, only the Next.js server calls the API (server components and actions, through `API_INTERNAL_URL`): the browser never does. The token is kept in an `HttpOnly` cookie and sent by the server as `Authorization: Bearer`. When the API refuses it (expired or revoked), `/session-expired` deletes the cookie and opens the login page.
 

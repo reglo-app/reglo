@@ -76,3 +76,108 @@ export async function isAccessTokenValid(token: string): Promise<boolean> {
         return false;
     }
 }
+
+export type ActivationInvite = {
+    email: string;
+    firstName: string | null;
+    organizationName: string | null;
+};
+
+export type ActivationCheckResult =
+    | { status: "valid"; invite: ActivationInvite }
+    | { status: "invalid" }
+    | { status: "unavailable" };
+
+export type ActivationResult =
+    | { status: "success" }
+    | { status: "invalid" }
+    | { status: "weak_password" }
+    | { status: "unavailable" };
+
+function postJson(path: string, body: unknown): Promise<Response> {
+    return fetch(`${API_INTERNAL_URL}${path}`, {
+        method: "POST",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        cache: "no-store",
+    });
+}
+
+/**
+ * `POST /api/activation/check`: who the activation link is for, or
+ * "invalid" when it expired or was already used (US-01).
+ */
+export async function checkActivationToken(
+    token: string,
+): Promise<ActivationCheckResult> {
+    let response: Response;
+    try {
+        response = await postJson("/api/activation/check", { token });
+    } catch {
+        return { status: "unavailable" };
+    }
+
+    if (response.status === 410) {
+        return { status: "invalid" };
+    }
+    if (!response.ok) {
+        return { status: "unavailable" };
+    }
+
+    const body = (await response
+        .json()
+        .catch(() => null)) as Partial<ActivationInvite> | null;
+
+    if (typeof body?.email !== "string") {
+        return { status: "unavailable" };
+    }
+
+    return {
+        status: "valid",
+        invite: {
+            email: body.email,
+            firstName: body.firstName ?? null,
+            organizationName: body.organizationName ?? null,
+        },
+    };
+}
+
+/** `POST /api/activation`: sets the password chosen by the new user. */
+export async function submitActivation(
+    token: string,
+    password: string,
+): Promise<ActivationResult> {
+    let response: Response;
+    try {
+        response = await postJson("/api/activation", { token, password });
+    } catch {
+        return { status: "unavailable" };
+    }
+
+    if (response.status === 204) {
+        return { status: "success" };
+    }
+    if (response.status === 410) {
+        return { status: "invalid" };
+    }
+    if (response.status === 422) {
+        return { status: "weak_password" };
+    }
+    return { status: "unavailable" };
+}
+
+/**
+ * `POST /api/activation/resend`: the API always answers 202, whether the
+ * account exists or not, so false only means it could not be reached.
+ */
+export async function requestActivationLink(email: string): Promise<boolean> {
+    try {
+        const response = await postJson("/api/activation/resend", { email });
+        return response.ok;
+    } catch {
+        return false;
+    }
+}

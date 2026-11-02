@@ -28,6 +28,8 @@ services:
     environment:
       APP_ENV: dev
       DATABASE_URL: postgresql://${POSTGRES_USER:-reglo}:${POSTGRES_PASSWORD:-reglo}@db:5432/${POSTGRES_DB:-reglo}?serverVersion=16&charset=utf8
+      # E-mails are caught by Mailpit (http://localhost:8025)
+      MAILER_DSN: smtp://mailpit:1025
     volumes:
       - ./api:/app
       - api_vendor:/app/vendor

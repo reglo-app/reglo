@@ -8,6 +8,12 @@ const SESSION_COOKIE = "reglo_session";
 const PUBLIC_PATHS = ["/login"];
 
 /**
+ * Pages reachable whether signed in or not: an activation link must work
+ * even if someone else is signed in on this browser.
+ */
+const ALWAYS_PUBLIC_PATHS = ["/activation"];
+
+/**
  * Optimistic check on the cookie only: the API still checks the token on
  * every request and answers 401 if it is invalid or expired.
  */
@@ -16,7 +22,10 @@ export function proxy(request: NextRequest) {
 
     // Deletes a refused session (app/session-expired/route.ts): it must run
     // whether the cookie is there or not.
-    if (pathname === "/session-expired") {
+    if (
+        pathname === "/session-expired" ||
+        ALWAYS_PUBLIC_PATHS.includes(pathname)
+    ) {
         return NextResponse.next();
     }
 

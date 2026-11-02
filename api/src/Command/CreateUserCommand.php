@@ -9,6 +9,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -16,11 +17,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
- * Temporary way to create accounts until organization onboarding (US-01)
- * exists. The password is asked interactively so it never appears in the
- * shell history.
+ * Creates an account outside any organization, already activated: REGLO
+ * team members (--platform-admin) or test accounts. Client accounts are
+ * created with app:create-organization. The password is asked
+ * interactively so it never appears in the shell history.
  */
-#[AsCommand(name: 'app:user:create', description: 'Create a user account')]
+#[AsCommand(name: 'app:user:create', description: 'Create a user account without organization')]
 final class CreateUserCommand extends Command
 {
     public const MIN_PASSWORD_LENGTH = 12;
@@ -36,7 +38,9 @@ final class CreateUserCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('email', InputArgument::REQUIRED, 'E-mail of the user');
+        $this
+            ->addArgument('email', InputArgument::REQUIRED, 'E-mail of the user')
+            ->addOption('platform-admin', null, InputOption::VALUE_NONE, 'Give the ROLE_PLATFORM_ADMIN role (REGLO team)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -71,7 +75,11 @@ final class CreateUserCommand extends Command
         }
 
         $user = new User($email);
-        $user->setPassword($this->passwordHasher->hashPassword($user, $password));
+        $user->activate($this->passwordHasher->hashPassword($user, $password));
+
+        if ($input->getOption('platform-admin')) {
+            $user->setRoles(['ROLE_PLATFORM_ADMIN']);
+        }
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();

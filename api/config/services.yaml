@@ -9,6 +9,8 @@
 parameters:
     # Lifetime of an API access token, in seconds (1 hour)
     app.access_token_ttl: 3600
+    # Lifetime of an account activation link, in seconds (48 hours)
+    app.activation_token_ttl: 172800
 
 services:
     # default configuration for services in *this* file

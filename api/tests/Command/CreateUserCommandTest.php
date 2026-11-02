@@ -42,6 +42,21 @@ final class CreateUserCommandTest extends KernelTestCase
         self::assertSame('jeanne.martin@example.com', $user->getEmail());
         self::assertNotSame(self::PASSWORD, $user->getPassword());
         self::assertTrue(static::getContainer()->get(UserPasswordHasherInterface::class)->isPasswordValid($user, self::PASSWORD));
+        self::assertTrue($user->isActivated());
+        self::assertNull($user->getOrganization());
+        self::assertNotContains('ROLE_PLATFORM_ADMIN', $user->getRoles());
+    }
+
+    public function testCreatesAPlatformAdministrator(): void
+    {
+        $this->tester->setInputs([self::PASSWORD, self::PASSWORD]);
+
+        $status = $this->tester->execute(['email' => 'team@reglo.site', '--platform-admin' => true]);
+
+        self::assertSame(Command::SUCCESS, $status);
+        $user = $this->userRepository->findOneByEmail('team@reglo.site');
+        self::assertInstanceOf(User::class, $user);
+        self::assertContains('ROLE_PLATFORM_ADMIN', $user->getRoles());
     }
 
     public function testRejectsAShortPassword(): void

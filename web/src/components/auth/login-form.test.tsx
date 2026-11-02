@@ -2,7 +2,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { LoginForm, REMEMBERED_EMAIL_KEY } from "./login-form";
+import {
+    ACTIVATED_NOTICE,
+    LoginForm,
+    REMEMBERED_EMAIL_KEY,
+} from "./login-form";
 
 describe("LoginForm", () => {
     it("has labelled fields with the right autocomplete", () => {
@@ -135,6 +139,24 @@ describe("LoginForm", () => {
 
             expect(screen.getByRole("alert")).toBeInTheDocument();
         });
+    });
+
+    it("shows the activation notice until an error replaces it", async () => {
+        const action = vi
+            .fn()
+            .mockResolvedValue({ error: "Identifiants incorrects" });
+        render(<LoginForm action={action} notice={ACTIVATED_NOTICE} />);
+
+        expect(screen.getByRole("alert")).toHaveTextContent(ACTIVATED_NOTICE);
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Se connecter" }),
+        );
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "Identifiants incorrects",
+        );
+        expect(screen.queryByText(ACTIVATED_NOTICE)).not.toBeInTheDocument();
     });
 
     it("shows and hides the password", async () => {
