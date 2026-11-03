@@ -1,0 +1,337 @@
+{
+    "_avertissement": "Questionnaire QHSE PROVISOIRE (US-05), au format de data-service/service/reglo_data/questionnaire_example.json. Questions, pondérations et barème sont à valider avec la data et le marketing (DATA-01) : remplacer ce fichier suffit, sans changer le code.",
+    "version": "qhse-provisoire-1",
+    "proof_cap": 50,
+    "pillars": [
+        {
+            "id": "quality",
+            "label": "Qualité",
+            "weight": 1,
+            "themes": [
+                {
+                    "id": "pilotage",
+                    "label": "Pilotage et objectifs",
+                    "weight": 1,
+                    "questions": [
+                        {
+                            "id": "quality.pilotage.01",
+                            "label": "Votre entreprise a-t-elle fixé des objectifs qualité mesurables ?",
+                            "help": "Par exemple : taux de réclamations, délais de livraison, taux de produits non conformes.",
+                            "type": "yes_no",
+                            "weight": 2
+                        },
+                        {
+                            "id": "quality.pilotage.02",
+                            "label": "À quelle fréquence la direction fait-elle le point sur ces objectifs ?",
+                            "type": "scale",
+                            "levels": ["Jamais", "Une fois par an", "Chaque trimestre", "Chaque mois"],
+                            "weight": 1
+                        }
+                    ]
+                },
+                {
+                    "id": "clients",
+                    "label": "Satisfaction client et réclamations",
+                    "weight": 1,
+                    "questions": [
+                        {
+                            "id": "quality.clients.01",
+                            "label": "Les réclamations de vos clients sont-elles enregistrées et traitées ?",
+                            "type": "scale",
+                            "levels": ["Non", "Au cas par cas", "Enregistrées", "Enregistrées et analysées"],
+                            "weight": 2
+                        },
+                        {
+                            "id": "quality.clients.02",
+                            "label": "Mesurez-vous la satisfaction de vos clients ?",
+                            "type": "single_choice",
+                            "weight": 1,
+                            "options": [
+                                {"id": "never", "label": "Jamais", "points": 0},
+                                {"id": "informal", "label": "De manière informelle", "points": 40},
+                                {"id": "yearly", "label": "Par une enquête au moins une fois par an", "points": 80},
+                                {"id": "continuous", "label": "En continu, après chaque prestation", "points": 100}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "processus",
+                    "label": "Processus et non-conformités",
+                    "weight": 1,
+                    "questions": [
+                        {
+                            "id": "quality.processus.01",
+                            "label": "Vos procédures clés sont-elles écrites et accessibles aux salariés ?",
+                            "type": "yes_no",
+                            "weight": 1,
+                            "requires_proof": true
+                        },
+                        {
+                            "id": "quality.processus.02",
+                            "label": "Quand un défaut est détecté, que se passe-t-il ?",
+                            "type": "single_choice",
+                            "weight": 2,
+                            "options": [
+                                {"id": "fixed", "label": "Il est corrigé, sans suite", "points": 20},
+                                {"id": "logged", "label": "Il est enregistré", "points": 50},
+                                {"id": "analysed", "label": "Ses causes sont analysées", "points": 80},
+                                {"id": "followed", "label": "Une action corrective est suivie jusqu'à son efficacité", "points": 100}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "hygiene",
+            "label": "Hygiène-Santé",
+            "weight": 1,
+            "themes": [
+                {
+                    "id": "locaux",
+                    "label": "Hygiène des locaux et des postes",
+                    "weight": 1,
+                    "questions": [
+                        {
+                            "id": "hygiene.locaux.01",
+                            "label": "Un plan de nettoyage des locaux et des postes de travail est-il appliqué ?",
+                            "type": "yes_no",
+                            "weight": 1
+                        },
+                        {
+                            "id": "hygiene.locaux.02",
+                            "label": "Les salariés disposent-ils d'installations sanitaires et d'un espace de restauration adaptés ?",
+                            "type": "yes_no",
+                            "weight": 1,
+                            "reference": "Code du travail, art. R4228-1 et suivants"
+                        }
+                    ]
+                },
+                {
+                    "id": "sante",
+                    "label": "Santé au travail",
+                    "weight": 2,
+                    "questions": [
+                        {
+                            "id": "hygiene.sante.01",
+                            "label": "Tous les salariés sont-ils suivis par un service de prévention et de santé au travail ?",
+                            "type": "yes_no",
+                            "weight": 3,
+                            "reference": "Code du travail, art. L4624-1"
+                        },
+                        {
+                            "id": "hygiene.sante.02",
+                            "label": "Les risques psychosociaux (stress, charge de travail…) sont-ils évalués ?",
+                            "type": "scale",
+                            "levels": ["Non", "Évoqués", "Évalués", "Évalués, avec un plan d'actions"],
+                            "weight": 2
+                        }
+                    ]
+                },
+                {
+                    "id": "secours",
+                    "label": "Premiers secours et ergonomie",
+                    "weight": 1,
+                    "questions": [
+                        {
+                            "id": "hygiene.secours.01",
+                            "label": "Combien de sauveteurs secouristes du travail (SST) formés comptez-vous ?",
+                            "type": "single_choice",
+                            "weight": 2,
+                            "reference": "Code du travail, art. R4224-15",
+                            "options": [
+                                {"id": "none", "label": "Aucun", "points": 0},
+                                {"id": "one", "label": "Un seul", "points": 50},
+                                {"id": "per_team", "label": "Au moins un par site ou par équipe", "points": 80},
+                                {"id": "several", "label": "Plusieurs par site ou par équipe", "points": 100}
+                            ]
+                        },
+                        {
+                            "id": "hygiene.secours.02",
+                            "label": "Quels aménagements limitent les gestes pénibles sur les postes de travail ?",
+                            "help": "Plusieurs réponses possibles.",
+                            "type": "multi_choice",
+                            "weight": 1,
+                            "allow_na": true,
+                            "options": [
+                                {"id": "handling", "label": "Aides à la manutention", "points": 30},
+                                {"id": "screens", "label": "Postes sur écran réglables", "points": 30},
+                                {"id": "noise", "label": "Réduction du bruit", "points": 20},
+                                {"id": "training", "label": "Formation gestes et postures", "points": 20}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "safety",
+            "label": "Sécurité",
+            "weight": 1,
+            "themes": [
+                {
+                    "id": "risques",
+                    "label": "Évaluation des risques",
+                    "weight": 2,
+                    "questions": [
+                        {
+                            "id": "safety.risques.01",
+                            "label": "Votre document unique d'évaluation des risques (DUERP) est-il à jour ?",
+                            "type": "single_choice",
+                            "weight": 3,
+                            "requires_proof": true,
+                            "reference": "Code du travail, art. R4121-1 et R4121-2",
+                            "options": [
+                                {"id": "none", "label": "Nous n'en avons pas", "points": 0},
+                                {"id": "old", "label": "Il date de plus d'un an", "points": 30},
+                                {"id": "year", "label": "Il a été mis à jour cette année", "points": 80},
+                                {"id": "event", "label": "Mis à jour cette année et après chaque changement", "points": 100}
+                            ]
+                        },
+                        {
+                            "id": "safety.risques.02",
+                            "label": "Les accidents et presque-accidents sont-ils analysés ?",
+                            "type": "scale",
+                            "levels": ["Jamais", "Parfois", "Souvent", "Systématiquement"],
+                            "weight": 2
+                        }
+                    ]
+                },
+                {
+                    "id": "equipements",
+                    "label": "Équipements et vérifications",
+                    "weight": 1,
+                    "questions": [
+                        {
+                            "id": "safety.equipements.01",
+                            "label": "Les équipements de protection individuelle (EPI) sont-ils fournis et portés ?",
+                            "type": "scale",
+                            "levels": ["Non", "Fournis", "Fournis et portés", "Fournis, portés et contrôlés"],
+                            "weight": 2,
+                            "allow_na": true
+                        },
+                        {
+                            "id": "safety.equipements.02",
+                            "label": "Quelles vérifications périodiques sont réalisées et tracées ?",
+                            "help": "Plusieurs réponses possibles.",
+                            "type": "multi_choice",
+                            "weight": 2,
+                            "requires_proof": true,
+                            "options": [
+                                {"id": "electrical", "label": "Installations électriques", "points": 25},
+                                {"id": "fire", "label": "Extincteurs et alarmes incendie", "points": 25},
+                                {"id": "lifting", "label": "Appareils de levage", "points": 25},
+                                {"id": "machines", "label": "Machines et équipements de travail", "points": 25}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "incendie",
+                    "label": "Incendie et habilitations",
+                    "weight": 1,
+                    "questions": [
+                        {
+                            "id": "safety.incendie.01",
+                            "label": "Un exercice d'évacuation a-t-il eu lieu au cours des 6 derniers mois ?",
+                            "type": "yes_no",
+                            "weight": 1,
+                            "reference": "Code du travail, art. R4227-39"
+                        },
+                        {
+                            "id": "safety.incendie.02",
+                            "label": "Les habilitations et formations obligatoires (électrique, conduite d'engins…) sont-elles à jour ?",
+                            "type": "scale",
+                            "levels": ["Non", "En partie", "Toutes", "Toutes, avec un suivi des échéances"],
+                            "weight": 2,
+                            "allow_na": true
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "environment",
+            "label": "Environnement",
+            "weight": 1,
+            "themes": [
+                {
+                    "id": "dechets",
+                    "label": "Déchets",
+                    "weight": 1,
+                    "questions": [
+                        {
+                            "id": "environment.dechets.01",
+                            "label": "Le tri des déchets est-il organisé ?",
+                            "type": "scale",
+                            "levels": ["Non", "Partiellement", "Oui", "Oui, avec un suivi des quantités"],
+                            "weight": 2
+                        },
+                        {
+                            "id": "environment.dechets.02",
+                            "label": "Conservez-vous les bordereaux de suivi de vos déchets dangereux ?",
+                            "type": "yes_no",
+                            "weight": 2,
+                            "allow_na": true,
+                            "requires_proof": true
+                        }
+                    ]
+                },
+                {
+                    "id": "energie",
+                    "label": "Énergie et eau",
+                    "weight": 1,
+                    "questions": [
+                        {
+                            "id": "environment.energie.01",
+                            "label": "Suivez-vous vos consommations d'énergie et d'eau ?",
+                            "type": "single_choice",
+                            "weight": 2,
+                            "options": [
+                                {"id": "no", "label": "Non", "points": 0},
+                                {"id": "invoices", "label": "Seulement via les factures", "points": 40},
+                                {"id": "monthly", "label": "Chaque mois", "points": 80},
+                                {"id": "targets", "label": "Chaque mois, avec des objectifs de réduction", "points": 100}
+                            ]
+                        },
+                        {
+                            "id": "environment.energie.02",
+                            "label": "Quelles actions de réduction des consommations avez-vous engagées ?",
+                            "help": "Plusieurs réponses possibles.",
+                            "type": "multi_choice",
+                            "weight": 1,
+                            "options": [
+                                {"id": "lighting", "label": "Éclairage basse consommation", "points": 30},
+                                {"id": "heating", "label": "Chauffage et climatisation", "points": 40},
+                                {"id": "mobility", "label": "Mobilité des salariés", "points": 30},
+                                {"id": "equipment", "label": "Équipements et machines", "points": 30}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "conformite",
+                    "label": "Conformité et produits dangereux",
+                    "weight": 1,
+                    "questions": [
+                        {
+                            "id": "environment.conformite.01",
+                            "label": "Connaissez-vous les obligations environnementales de votre activité (installations classées, rejets…) ?",
+                            "type": "scale",
+                            "levels": ["Non", "En partie", "Oui", "Oui, avec une veille réglementaire"],
+                            "weight": 2
+                        },
+                        {
+                            "id": "environment.conformite.02",
+                            "label": "Les produits dangereux sont-ils stockés sur rétention, avec leurs fiches de données de sécurité ?",
+                            "type": "yes_no",
+                            "weight": 2,
+                            "allow_na": true
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -6,6 +6,7 @@ import type { DomainKey } from "@/lib/domains";
 
 import type {
     ActionSummary,
+    CurrentDiagnostic,
     CurrentUser,
     DashboardSummary,
     DomainDetail,
@@ -13,6 +14,7 @@ import type {
     Invitation,
     Member,
     NewsArticle,
+    Questionnaire,
     ThemeScore,
 } from "./types";
 
@@ -451,4 +453,136 @@ export const mockDomainDetails: Record<DomainKey, DomainDetail> = {
     hygiene: mockDomainDetail("hygiene"),
     safety: mockDomainDetail("safety"),
     environment: mockDomainDetail("environment"),
+};
+
+/** A short questionnaire with every type of question (two per pillar). */
+export const mockQuestionnaire: Questionnaire = {
+    version: "mock-1",
+    pillars: [
+        {
+            id: "quality",
+            label: "Qualité",
+            themes: [
+                {
+                    id: "pilotage",
+                    label: "Pilotage et objectifs",
+                    questions: [
+                        {
+                            id: "quality.pilotage.01",
+                            label: "Votre entreprise a-t-elle fixé des objectifs qualité mesurables ?",
+                            help: "Par exemple : taux de réclamations, délais de livraison.",
+                            type: "yes_no",
+                        },
+                        {
+                            id: "quality.pilotage.02",
+                            label: "À quelle fréquence la direction fait-elle le point sur ces objectifs ?",
+                            type: "scale",
+                            levels: [
+                                "Jamais",
+                                "Une fois par an",
+                                "Chaque trimestre",
+                                "Chaque mois",
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            id: "hygiene",
+            label: "Hygiène-Santé",
+            themes: [
+                {
+                    id: "sante",
+                    label: "Santé au travail",
+                    questions: [
+                        {
+                            id: "hygiene.sante.01",
+                            label: "Tous les salariés sont-ils suivis par un service de prévention et de santé au travail ?",
+                            reference: "Code du travail, art. L4624-1",
+                            type: "yes_no",
+                        },
+                        {
+                            id: "hygiene.secours.02",
+                            label: "Quels aménagements limitent les gestes pénibles sur les postes de travail ?",
+                            help: "Plusieurs réponses possibles.",
+                            type: "multi_choice",
+                            allow_na: true,
+                            options: [
+                                {
+                                    id: "handling",
+                                    label: "Aides à la manutention",
+                                },
+                                {
+                                    id: "screens",
+                                    label: "Postes sur écran réglables",
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            id: "safety",
+            label: "Sécurité",
+            themes: [
+                {
+                    id: "risques",
+                    label: "Évaluation des risques",
+                    questions: [
+                        {
+                            id: "safety.risques.01",
+                            label: "Votre document unique d'évaluation des risques (DUERP) est-il à jour ?",
+                            reference: "Code du travail, art. R4121-1",
+                            type: "single_choice",
+                            options: [
+                                { id: "none", label: "Nous n'en avons pas" },
+                                { id: "old", label: "Il date de plus d'un an" },
+                                {
+                                    id: "year",
+                                    label: "Il a été mis à jour cette année",
+                                },
+                            ],
+                        },
+                        {
+                            id: "safety.incendie.01",
+                            label: "Un exercice d'évacuation a-t-il eu lieu au cours des 6 derniers mois ?",
+                            type: "yes_no",
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            id: "environment",
+            label: "Environnement",
+            themes: [
+                {
+                    id: "dechets",
+                    label: "Déchets",
+                    questions: [
+                        {
+                            id: "environment.dechets.01",
+                            label: "Le tri des déchets est-il organisé ?",
+                            type: "scale",
+                            levels: ["Non", "Partiellement", "Oui"],
+                        },
+                        {
+                            id: "environment.dechets.02",
+                            label: "Conservez-vous les bordereaux de suivi de vos déchets dangereux ?",
+                            type: "yes_no",
+                            allow_na: true,
+                        },
+                    ],
+                },
+            ],
+        },
+    ],
+};
+
+/** No diagnostic started yet: the page opens on its introduction. */
+export const mockCurrentDiagnostic: CurrentDiagnostic = {
+    draft: null,
+    lastSubmittedAt: null,
 };

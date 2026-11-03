@@ -31,7 +31,7 @@ type ErrorBody = {
  * page, like every private page (see client.ts).
  */
 export async function callApi<T = null>(
-    method: "PATCH" | "POST" | "DELETE",
+    method: "PATCH" | "POST" | "PUT" | "DELETE",
     path: string,
     body?: Record<string, unknown> | FormData,
 ): Promise<ApiCallResult<T>> {

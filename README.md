@@ -103,6 +103,12 @@ Features whose API endpoints do not exist yet still use the data of `web/src/lib
 
 `make test-api` creates and migrates the test database (`reglo_test`) before running PHPUnit.
 
+## QHSE diagnostic
+
+The questionnaire of the diagnostic (US-05) is `api/config/questionnaire/qhse-v1.json`, in the format of the data service (`data-service/service/reglo_data/questionnaire_example.json`, checked by its `validate_questionnaire()`). The current one is **provisional**: replace the file with the one of DATA-01, no code change needed. Its `version` is stored on each diagnostic.
+
+Each organization has at most one draft, shared by its members and saved answer by answer (`PUT /api/diagnostics/current/answers`); `POST /api/diagnostics/current/submit` validates it once every mandatory question is answered. Readers only consult.
+
 ## Database
 
 PostgreSQL 16, one separate database per environment. The schema only changes through Doctrine migrations (run automatically on each deployment, by hand in local).

@@ -5,26 +5,31 @@ import type { DomainKey } from "@/lib/domains";
 
 import { API_INTERNAL_URL } from "./internal-url";
 import {
+    mockCurrentDiagnostic,
     mockCurrentUser,
     mockDashboardSummary,
     mockDomainDetails,
     mockInvitations,
     mockMembers,
     mockNewsArticles,
+    mockQuestionnaire,
 } from "./mocks";
 import type {
+    CurrentDiagnostic,
     CurrentUser,
     DashboardSummary,
     DomainDetail,
     Invitation,
     Member,
     NewsArticle,
+    Questionnaire,
 } from "./types";
 
 /** Parts of the app that can still run on mock data. */
 export const API_FEATURES = [
     "me",
     "team",
+    "diagnostic",
     "dashboard",
     "domains",
     "news",
@@ -70,6 +75,9 @@ export type Api = {
     getMembers(): Promise<Member[]>;
     /** Pending invitations: administrators only (403 otherwise). */
     getInvitations(): Promise<Invitation[]>;
+    getQuestionnaire(): Promise<Questionnaire>;
+    /** The shared draft of the organization (US-05). */
+    getCurrentDiagnostic(): Promise<CurrentDiagnostic>;
 };
 
 export type ApiOptions = {
@@ -148,6 +156,18 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
                 "team",
                 () => mockInvitations,
                 () => request<Invitation[]>("/api/invitations"),
+            ),
+        getQuestionnaire: () =>
+            load(
+                "diagnostic",
+                () => mockQuestionnaire,
+                () => request<Questionnaire>("/api/questionnaire"),
+            ),
+        getCurrentDiagnostic: () =>
+            load(
+                "diagnostic",
+                () => mockCurrentDiagnostic,
+                () => request<CurrentDiagnostic>("/api/diagnostics/current"),
             ),
         getDashboardSummary: () =>
             load(
