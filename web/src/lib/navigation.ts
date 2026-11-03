@@ -3,6 +3,7 @@ import {
     GraduationCap,
     LayoutDashboard,
     Settings,
+    Users,
     type LucideIcon,
 } from "lucide-react";
 
@@ -54,6 +55,7 @@ export const NAV_SECTIONS: NavSection[] = [
             HOME_ITEM,
             { href: "/documents", label: "Justificatifs", icon: FileCheck },
             { href: "/trainings", label: "Formations", icon: GraduationCap },
+            { href: "/team", label: "Équipe", icon: Users },
         ],
     },
     {

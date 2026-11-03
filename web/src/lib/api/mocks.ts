@@ -10,6 +10,8 @@ import type {
     DashboardSummary,
     DomainDetail,
     ExpiringDocument,
+    Invitation,
+    Member,
     NewsArticle,
     ThemeScore,
 } from "./types";
@@ -27,6 +29,62 @@ export const mockCurrentUser: CurrentUser = {
         name: "Atelier Démo",
     },
 };
+
+export const mockMembers: Member[] = [
+    {
+        id: "0192f0c4-7a3e-7c3a-9b1e-5d2a1c000002",
+        email: "hugo.bernard@atelier-demo.test",
+        firstName: "Hugo",
+        lastName: "Bernard",
+        jobTitle: "Chef d'atelier",
+        avatarVersion: null,
+        role: "member",
+        activated: true,
+    },
+    {
+        id: mockCurrentUser.id,
+        email: mockCurrentUser.email,
+        firstName: mockCurrentUser.firstName,
+        lastName: mockCurrentUser.lastName,
+        jobTitle: mockCurrentUser.jobTitle,
+        avatarVersion: null,
+        role: "admin",
+        activated: true,
+    },
+    {
+        id: "0192f0c4-7a3e-7c3a-9b1e-5d2a1c000003",
+        email: "ines.petit@atelier-demo.test",
+        firstName: "Inès",
+        lastName: "Petit",
+        jobTitle: null,
+        avatarVersion: null,
+        role: "reader",
+        activated: true,
+    },
+];
+
+export const mockInvitations: Invitation[] = [
+    {
+        id: "1",
+        email: "lucas.moreau@atelier-demo.test",
+        firstName: "Lucas",
+        lastName: "Moreau",
+        invitedBy: "Camille Martin",
+        sentAt: "2026-10-14T09:30:00.000Z",
+        expiresAt: "2026-10-21T09:30:00.000Z",
+        expired: false,
+    },
+    {
+        id: "2",
+        email: "nora.lambert@atelier-demo.test",
+        firstName: null,
+        lastName: null,
+        invitedBy: "Camille Martin",
+        sentAt: "2026-10-01T14:00:00.000Z",
+        expiresAt: "2026-10-08T14:00:00.000Z",
+        expired: true,
+    },
+];
 
 export const mockDashboardSummary: DashboardSummary = {
     generatedAt: "2026-10-16T08:00:00.000Z",

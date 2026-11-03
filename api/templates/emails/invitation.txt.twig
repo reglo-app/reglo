@@ -1,0 +1,13 @@
+Bonjour{% if first_name %} {{ first_name }}{% endif %},
+
+{% if inviter_name %}{{ inviter_name }} vous invite{% else %}Vous êtes invité(e){% endif %} à rejoindre {{ organization_name }} sur Réglo, l'outil qui aide votre entreprise à suivre sa démarche QHSE : diagnostic, plan d'actions, justificatifs et formations.
+
+Pour accepter l'invitation, choisissez votre mot de passe :
+
+{{ invitation_url }}
+
+Ce lien est valable {{ valid_days }} jours et ne peut être utilisé qu'une seule fois.
+
+Vous ne connaissez pas cette entreprise ? Ignorez cet e-mail : aucun compte ne sera créé.
+
+L'équipe Réglo

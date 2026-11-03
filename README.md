@@ -69,6 +69,8 @@ docker compose exec api php bin/console doctrine:migrations:migrate
 docker compose exec api php bin/console app:create-organization "Acme SAS" jeanne.martin@example.com Jeanne Martin
 ```
 
+The administrator then invites their collaborators from the "Équipe" page (`/team`): each one receives a link valid 7 days, chooses a password and joins the organization as a member. An administrator can send at most 20 invitations per hour.
+
 Accounts outside any organization (REGLO team, `--platform-admin` gives `ROLE_PLATFORM_ADMIN`) are created already activated, the password is asked (12 characters minimum):
 
 ```
@@ -90,7 +92,7 @@ curl -X POST http://localhost:8000/api/auth/logout -H 'Authorization: Bearer <to
 # 204: the token no longer works
 ```
 
-Every `/api` route requires a token, except `/api/auth/login`, `/api/activation/*` (the activation token is the proof) and `/api/docs`. A user who has not activated their account cannot log in. `/health` is public. The e-mail is case-insensitive. Wrong credentials always return the same generic message.
+Every `/api` route requires a token, except `/api/auth/login`, `/api/activation/*`, `/api/email-change/*` and `/api/invitations/check|accept` (the token of the e-mail link is the proof) and `/api/docs`. A user who has not activated their account cannot log in. `/health` is public. The e-mail is case-insensitive. Wrong credentials always return the same generic message.
 
 In the web app, only the Next.js server calls the API (server components and actions, through `API_INTERNAL_URL`): the browser never does. The token is kept in an `HttpOnly` cookie and sent by the server as `Authorization: Bearer`. When the API refuses it (expired or revoked), `/session-expired` deletes the cookie and opens the login page.
 

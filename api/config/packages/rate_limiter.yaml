@@ -1,0 +1,15 @@
+framework:
+    rate_limiter:
+        # Invitations (new or sent again) per administrator: limits abuse of
+        # the e-mails sent on behalf of Réglo.
+        invitation:
+            policy: sliding_window
+            limit: 20
+            interval: '1 hour'
+            # Emptied by the tests (InvitationControllerTest)
+            cache_pool: cache.rate_limiter_state
+
+    cache:
+        pools:
+            cache.rate_limiter_state:
+                adapter: cache.app
