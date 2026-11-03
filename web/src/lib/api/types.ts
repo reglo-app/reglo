@@ -197,3 +197,76 @@ export type Invitation = {
     /** The link no longer works: the invitation must be sent again. */
     expired: boolean;
 };
+
+/** An answer choice of a question (`single_choice`, `multi_choice`). */
+export type QuestionOption = { id: string; label: string; points?: number };
+
+type QuestionBase = {
+    id: string;
+    label: string;
+    /** Example or precision shown under the question. */
+    help?: string;
+    /** Legal or normative reference, e.g. "Code du travail, art. R4121-1". */
+    reference?: string;
+    /** True unless false: needed before submitting. */
+    mandatory?: boolean;
+    /** "Non concerné" is allowed. */
+    allow_na?: boolean;
+};
+
+/**
+ * A question of the diagnostic, in the format of the data service. The
+ * answer value depends on the type: "yes" / "no" / "partial", the index of
+ * the level, an option id, a list of option ids, a text.
+ */
+export type Question =
+    | (QuestionBase & { type: "yes_no" })
+    | (QuestionBase & { type: "scale"; levels: string[] })
+    | (QuestionBase & {
+          type: "single_choice" | "multi_choice";
+          options: QuestionOption[];
+      })
+    | (QuestionBase & { type: "text" });
+
+export type QuestionnaireTheme = {
+    id: string;
+    label: string;
+    questions: Question[];
+};
+
+export type QuestionnairePillar = {
+    id: DomainKey;
+    label: string;
+    themes: QuestionnaireTheme[];
+};
+
+/** `GET /api/questionnaire`: the QHSE questionnaire (US-05). */
+export type Questionnaire = {
+    version: string;
+    pillars: QuestionnairePillar[];
+};
+
+export type AnswerValue = string | number | string[];
+
+export type DiagnosticAnswer = {
+    value: AnswerValue | null;
+    notApplicable: boolean;
+};
+
+export type Diagnostic = {
+    id: string;
+    status: "draft" | "submitted";
+    questionnaireVersion: string;
+    startedAt: string;
+    updatedAt: string;
+    submittedAt: string | null;
+    /** By question id. */
+    answers: Record<string, DiagnosticAnswer>;
+};
+
+/** `GET /api/diagnostics/current`: the shared draft of the organization. */
+export type CurrentDiagnostic = {
+    draft: Diagnostic | null;
+    /** ISO 8601 date the last diagnostic was submitted; null if never. */
+    lastSubmittedAt: string | null;
+};

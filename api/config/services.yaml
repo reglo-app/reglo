@@ -15,6 +15,9 @@ parameters:
     app.email_change_ttl: 86400
     # Lifetime of the link inviting a collaborator, in seconds (7 days)
     app.invitation_ttl: 604800
+    # QHSE questionnaire of the diagnostic (US-05), in the format of the
+    # data service. Provisional until DATA-01 delivers the real one.
+    app.questionnaire_file: '%kernel.project_dir%/config/questionnaire/qhse-v1.json'
     # Uploaded files (profile photos...): outside the public folder, only
     # served through the authenticated API. A Docker volume on the servers.
     app.uploads_dir: '%kernel.project_dir%/var/uploads'
