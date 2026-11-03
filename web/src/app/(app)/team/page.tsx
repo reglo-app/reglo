@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { InvitationList } from "@/components/team/invitation-list";
 import { InviteDialog } from "@/components/team/invite-dialog";
-import { MemberList } from "@/components/team/member-list";
+import { MemberTable } from "@/components/team/member-table";
 import {
     Card,
     CardDescription,
@@ -12,7 +12,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api, ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Équipe" };
 
@@ -33,44 +33,26 @@ async function TeamContent() {
         <>
             <PageHeader
                 title="Équipe"
-                description={`Les personnes de ${organizationName} qui utilisent Réglo.`}
-                action={
-                    isAdmin && (
-                        <InviteDialog organizationName={organizationName} />
-                    )
+                description={
+                    isAdmin
+                        ? `Les personnes de ${organizationName} qui utilisent Réglo, leurs rôles et les invitations en attente.`
+                        : `Les personnes de ${organizationName} qui utilisent Réglo. Seul un administrateur invite et change les rôles.`
                 }
             />
 
             <div className="flex flex-col gap-6">
                 <Card className="gap-0 pb-0">
-                    <CardHeader className="border-b border-border pb-4">
-                        <CardTitle>
-                            <h2>{`Membres (${members.length})`}</h2>
-                        </CardTitle>
-                        {isAdmin ? (
-                            <ul className="text-sm text-ink-muted">
-                                {(["admin", "member", "reader"] as const).map(
-                                    (role) => (
-                                        <li key={role}>
-                                            <span className="font-medium text-ink">
-                                                {ROLE_LABELS[role]}
-                                            </span>{" "}
-                                            : {ROLE_DESCRIPTIONS[role]}
-                                        </li>
-                                    ),
-                                )}
-                            </ul>
-                        ) : (
-                            <CardDescription>
-                                Seul un administrateur peut inviter de nouveaux
-                                membres et changer les rôles.
-                            </CardDescription>
-                        )}
-                    </CardHeader>
-                    <MemberList
+                    <MemberTable
                         members={members}
                         currentUserId={user.id}
                         canManage={isAdmin}
+                        action={
+                            isAdmin && (
+                                <InviteDialog
+                                    organizationName={organizationName}
+                                />
+                            )
+                        }
                     />
                 </Card>
 
@@ -78,7 +60,12 @@ async function TeamContent() {
                     <Card className="gap-0 pb-0">
                         <CardHeader className="border-b border-border pb-4">
                             <CardTitle>
-                                <h2>{`Invitations en attente (${invitations.length})`}</h2>
+                                <h2>
+                                    Invitations en attente{" "}
+                                    <span className="text-ink/70">
+                                        ({invitations.length})
+                                    </span>
+                                </h2>
                             </CardTitle>
                             <CardDescription>
                                 Une invitation expirée peut être renvoyée : un

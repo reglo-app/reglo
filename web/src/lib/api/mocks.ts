@@ -30,17 +30,8 @@ export const mockCurrentUser: CurrentUser = {
     },
 };
 
+/** Members of "Atelier Démo": enough of them for two pages of the table. */
 export const mockMembers: Member[] = [
-    {
-        id: "0192f0c4-7a3e-7c3a-9b1e-5d2a1c000002",
-        email: "hugo.bernard@atelier-demo.test",
-        firstName: "Hugo",
-        lastName: "Bernard",
-        jobTitle: "Chef d'atelier",
-        avatarVersion: null,
-        role: "member",
-        activated: true,
-    },
     {
         id: mockCurrentUser.id,
         email: mockCurrentUser.email,
@@ -50,17 +41,84 @@ export const mockMembers: Member[] = [
         avatarVersion: null,
         role: "admin",
         activated: true,
+        joinedAt: "2026-09-01T08:00:00.000Z",
+        lastSeenAt: "2026-10-16T07:55:00.000Z",
     },
-    {
-        id: "0192f0c4-7a3e-7c3a-9b1e-5d2a1c000003",
-        email: "ines.petit@atelier-demo.test",
-        firstName: "Inès",
-        lastName: "Petit",
-        jobTitle: null,
+    ...(
+        [
+            [
+                "Hugo",
+                "Bernard",
+                "Chef d'atelier",
+                "member",
+                "2026-09-03",
+                "2026-10-15",
+            ],
+            ["Inès", "Petit", null, "reader", "2026-09-10", "2026-10-02"],
+            [
+                "Julien",
+                "Roux",
+                "Technicien",
+                "member",
+                "2026-09-12",
+                "2026-10-14",
+            ],
+            [
+                "Karima",
+                "Benali",
+                "Assistante RH",
+                "member",
+                "2026-09-15",
+                "2026-10-11",
+            ],
+            [
+                "Louis",
+                "Garnier",
+                "Directeur",
+                "admin",
+                "2026-09-02",
+                "2026-10-09",
+            ],
+            ["Manon", "Faure", null, "reader", "2026-09-20", null],
+            [
+                "Nathan",
+                "Lefebvre",
+                "Magasinier",
+                "member",
+                "2026-09-22",
+                "2026-09-30",
+            ],
+            [
+                "Océane",
+                "Mercier",
+                "Qualiticienne",
+                "member",
+                "2026-09-25",
+                "2026-10-16",
+            ],
+            ["Pierre", "Dupuis", null, "reader", "2026-10-01", "2026-10-05"],
+            [
+                "Rose",
+                "Lambert",
+                "Infirmière",
+                "member",
+                "2026-10-03",
+                "2026-10-13",
+            ],
+            ["Samuel", "Girard", null, "member", null, null],
+        ] as const
+    ).map(([firstName, lastName, jobTitle, role, joined, seen], index) => ({
+        id: `0192f0c4-7a3e-7c3a-9b1e-5d2a1c0001${String(index).padStart(2, "0")}`,
+        email: `${firstName.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")}.${lastName.toLowerCase()}@atelier-demo.test`,
+        firstName,
+        lastName,
+        jobTitle,
         avatarVersion: null,
-        role: "reader",
-        activated: true,
-    },
+        role,
+        activated: joined !== null,
+        joinedAt: joined && `${joined}T09:00:00.000Z`,
+        lastSeenAt: seen && `${seen}T16:30:00.000Z`,
+    })),
 ];
 
 export const mockInvitations: Invitation[] = [

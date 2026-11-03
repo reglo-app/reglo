@@ -33,9 +33,27 @@ final class MemberControllerTest extends ProfileTestCase
         self::assertSame(['reader', 'member', 'admin'], array_column($members, 'role'));
         self::assertSame([true, true, false], array_column($members, 'activated'));
         self::assertSame(
-            ['id', 'email', 'firstName', 'lastName', 'jobTitle', 'avatarVersion', 'role', 'activated'],
+            ['id', 'email', 'firstName', 'lastName', 'jobTitle', 'avatarVersion', 'role', 'activated', 'joinedAt', 'lastSeenAt'],
             array_keys($members[0]),
         );
+    }
+
+    public function testShowsWhenMembersJoinedAndWereLastSeen(): void
+    {
+        $pending = (new User('new@acme.test'))->setOrganization($this->organization);
+        $this->entityManager->persist($pending);
+        $this->entityManager->flush();
+
+        // This request is the first activity of the signed-in user.
+        $this->getAs('/api/users');
+
+        $members = array_column($this->responseList(), null, 'email');
+        $me = $members[self::EMAIL];
+        self::assertIsString($me['joinedAt']);
+        self::assertIsString($me['lastSeenAt']);
+        self::assertEqualsWithDelta(time(), (new \DateTimeImmutable($me['lastSeenAt']))->getTimestamp(), 60);
+        self::assertNull($members['new@acme.test']['joinedAt']);
+        self::assertNull($members['new@acme.test']['lastSeenAt']);
     }
 
     public function testAReaderCanListTheMembers(): void
