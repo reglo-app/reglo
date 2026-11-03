@@ -157,6 +157,28 @@
     background-origin: border-box;
 }
 
+/* Settings header banner (decorative, no text on it): the brand gradient
+   lit by the blue of the logo. */
+@utility bg-profile-banner {
+    background-image:
+        radial-gradient(
+            ellipse at 85% -20%,
+            rgba(163, 206, 255, 0.55),
+            transparent 45%
+        ),
+        radial-gradient(
+            ellipse at 45% 150%,
+            rgba(163, 206, 255, 0.5),
+            transparent 50%
+        ),
+        linear-gradient(
+            115deg,
+            var(--color-teal-900),
+            var(--color-teal-700) 40%,
+            var(--color-brand-green)
+        );
+}
+
 @layer base {
     body {
         color: var(--color-ink);
