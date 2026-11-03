@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password";
 
 import { callProfileApi, confirmEmailChange } from "./api";
-import { AVATAR_MAX_BYTES, AVATAR_TYPES } from "./avatar";
+import { AVATAR_MAX_BYTES, AVATAR_MESSAGES, AVATAR_TYPES } from "./avatar";
 
 export type ProfileField = "firstName" | "lastName" | "jobTitle";
 export type PasswordField = "currentPassword" | "newPassword" | "confirmation";
@@ -51,9 +51,7 @@ const MESSAGES = {
     tooShort: `Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères.`,
     mismatch: "Les deux mots de passe ne sont pas identiques.",
     missingEmail: "Saisissez la nouvelle adresse e-mail.",
-    missingImage: "Choisissez une image.",
-    invalidImage: "Choisissez une image JPEG, PNG ou WebP.",
-    tooLarge: `L'image ne doit pas dépasser ${AVATAR_MAX_BYTES / 1024 / 1024} Mo.`,
+    ...AVATAR_MESSAGES,
 };
 
 function text(formData: FormData, name: string): string {
