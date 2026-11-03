@@ -37,7 +37,7 @@ final class CurrentUserView
     /**
      * Role key of the web app: "admin", "member" (default) or "reader".
      */
-    private static function roleKey(User $user): string
+    public static function roleKey(User $user): string
     {
         $roles = $user->getRoles();
 

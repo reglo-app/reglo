@@ -39,6 +39,8 @@ security:
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/activation, roles: PUBLIC_ACCESS }
         - { path: ^/api/email-change, roles: PUBLIC_ACCESS }
+        # Link of the invitation e-mail: the token is the proof
+        - { path: ^/api/invitations/(check|accept)$, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

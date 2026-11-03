@@ -11,7 +11,7 @@ trait DatabaseResetTrait
 {
     protected static function resetDatabase(EntityManagerInterface $entityManager): void
     {
-        $entityManager->getConnection()->executeStatement('TRUNCATE access_token, activation_token, email_change_request, app_user, organization RESTART IDENTITY CASCADE');
+        $entityManager->getConnection()->executeStatement('TRUNCATE access_token, activation_token, email_change_request, invitation, app_user, organization RESTART IDENTITY CASCADE');
         $entityManager->clear();
     }
 }

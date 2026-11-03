@@ -8,17 +8,27 @@ import {
     mockCurrentUser,
     mockDashboardSummary,
     mockDomainDetails,
+    mockInvitations,
+    mockMembers,
     mockNewsArticles,
 } from "./mocks";
 import type {
     CurrentUser,
     DashboardSummary,
     DomainDetail,
+    Invitation,
+    Member,
     NewsArticle,
 } from "./types";
 
 /** Parts of the app that can still run on mock data. */
-export const API_FEATURES = ["me", "dashboard", "domains", "news"] as const;
+export const API_FEATURES = [
+    "me",
+    "team",
+    "dashboard",
+    "domains",
+    "news",
+] as const;
 export type ApiFeature = (typeof API_FEATURES)[number];
 
 /** Features whose API endpoints do not exist yet. */
@@ -56,6 +66,10 @@ export type Api = {
     /** null when the article does not exist (or is not visible). */
     getNewsArticle(id: string): Promise<NewsArticle | null>;
     getDomainDetail(domain: DomainKey): Promise<DomainDetail>;
+    /** Members of the organization of the signed-in user. */
+    getMembers(): Promise<Member[]>;
+    /** Pending invitations: administrators only (403 otherwise). */
+    getInvitations(): Promise<Invitation[]>;
 };
 
 export type ApiOptions = {
@@ -122,6 +136,18 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
                 "me",
                 () => mockCurrentUser,
                 () => request<CurrentUser>("/api/auth/me"),
+            ),
+        getMembers: () =>
+            load(
+                "team",
+                () => mockMembers,
+                () => request<Member[]>("/api/users"),
+            ),
+        getInvitations: () =>
+            load(
+                "team",
+                () => mockInvitations,
+                () => request<Invitation[]>("/api/invitations"),
             ),
         getDashboardSummary: () =>
             load(

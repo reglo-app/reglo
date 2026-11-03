@@ -97,4 +97,20 @@ abstract class ProfileTestCase extends WebTestCase
 
         return $data;
     }
+
+    /**
+     * Items of a JSON list response, each checked to be an object.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function responseList(): array
+    {
+        $items = [];
+        foreach ($this->responseData() as $item) {
+            self::assertIsArray($item);
+            $items[] = $item;
+        }
+
+        return $items;
+    }
 }
