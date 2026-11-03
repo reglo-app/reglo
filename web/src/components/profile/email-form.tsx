@@ -57,32 +57,34 @@ export function EmailForm({
                 </Alert>
             )}
 
-            <FormField
-                id="email"
-                label="Nouvelle adresse e-mail"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder="vous@entreprise.fr"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                invalid={Boolean(state.invalidFields?.includes("email"))}
-                errorId="email-error"
-                required
-            />
-            <FormField
-                id="email-current-password"
-                name="currentPassword"
-                label="Mot de passe actuel"
-                hint="Pour confirmer que c'est bien vous."
-                type="password"
-                autoComplete="current-password"
-                invalid={Boolean(
-                    state.invalidFields?.includes("currentPassword"),
-                )}
-                errorId="email-error"
-                required
-            />
+            <div className="grid gap-5 sm:grid-cols-2">
+                <FormField
+                    id="email"
+                    label="Nouvelle adresse e-mail"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    placeholder="vous@entreprise.fr"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    invalid={Boolean(state.invalidFields?.includes("email"))}
+                    errorId="email-error"
+                    required
+                />
+                <FormField
+                    id="email-current-password"
+                    name="currentPassword"
+                    label="Mot de passe actuel"
+                    hint="Pour confirmer que c'est bien vous."
+                    type="password"
+                    autoComplete="current-password"
+                    invalid={Boolean(
+                        state.invalidFields?.includes("currentPassword"),
+                    )}
+                    errorId="email-error"
+                    required
+                />
+            </div>
 
             <div>
                 <Button type="submit" variant="outline" disabled={isPending}>

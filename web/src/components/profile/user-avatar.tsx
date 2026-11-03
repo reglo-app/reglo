@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const SIZES = {
     sm: "size-8 text-xs",
-    lg: "size-20 text-2xl",
+    xl: "size-24 text-3xl sm:size-28",
 };
 
 /**
@@ -17,15 +17,18 @@ export function UserAvatar({
     user,
     fullName,
     size = "sm",
+    className: extraClassName,
 }: {
     user: Pick<CurrentUser, "id" | "avatarVersion">;
     fullName: string;
     size?: keyof typeof SIZES;
+    className?: string;
 }) {
     const url = avatarUrl(user);
     const className = cn(
         "flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-teal font-semibold text-white",
         SIZES[size],
+        extraClassName,
     );
 
     return url ? (
