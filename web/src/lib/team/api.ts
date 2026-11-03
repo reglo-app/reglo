@@ -1,4 +1,5 @@
 import { postPublic, type ApiCallResult } from "@/lib/api/call";
+import { ROLE_KEYS, type RoleKey } from "@/lib/api/types";
 
 /** What the link of an invitation e-mail is for (US-03). */
 export type InvitationDetails = {
@@ -6,6 +7,8 @@ export type InvitationDetails = {
     firstName: string | null;
     lastName: string | null;
     organizationName: string | null;
+    /** Role of the account once created (US-16). */
+    role: RoleKey;
     inviterName: string | null;
 };
 
@@ -43,6 +46,10 @@ export async function checkInvitationToken(
             firstName: data.firstName ?? null,
             lastName: data.lastName ?? null,
             organizationName: data.organizationName ?? null,
+            role:
+                data.role && ROLE_KEYS.includes(data.role)
+                    ? data.role
+                    : "member",
             inviterName: data.inviterName ?? null,
         },
     };

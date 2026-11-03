@@ -69,7 +69,9 @@ docker compose exec api php bin/console doctrine:migrations:migrate
 docker compose exec api php bin/console app:create-organization "Acme SAS" jeanne.martin@example.com Jeanne Martin
 ```
 
-The administrator then invites their collaborators from the "Équipe" page (`/team`): each one receives a link valid 7 days, chooses a password and joins the organization as a member. An administrator can send at most 20 invitations per hour.
+The administrator then invites their collaborators from the "Équipe" page (`/team`): each one receives a link valid 7 days, chooses a password and joins the organization with the role chosen in the invitation. An administrator can send at most 20 invitations per hour.
+
+Roles in an organization (`App\Entity\OrganizationRole`, changed from the "Équipe" page): administrator (`ROLE_ADMIN`: team, roles and all data), member (`ROLE_MEMBER`: diagnostic, actions, documents) and reader (`ROLE_READER`: consults only). An organization always keeps at least one administrator. `security.yaml` refuses every `POST`/`PUT`/`PATCH`/`DELETE` on `/api` to readers, except on their own account (`/api/me`, `/api/auth`): a new resource needs no rule of its own for that; restrict it further with `#[IsGranted('ROLE_ADMIN')]` when only administrators may write.
 
 Accounts outside any organization (REGLO team, `--platform-admin` gives `ROLE_PLATFORM_ADMIN`) are created already activated, the password is asked (12 characters minimum):
 

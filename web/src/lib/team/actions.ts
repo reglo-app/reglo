@@ -3,12 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { ROLE_LABELS, type RoleKey } from "@/lib/api";
 import { callApi } from "@/lib/api/call";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password";
 
 import { submitInvitation } from "./api";
 
-export type InviteField = "email" | "firstName" | "lastName";
+export type InviteField = "email" | "firstName" | "lastName" | "role";
 export type AcceptField =
     "firstName" | "lastName" | "password" | "confirmation";
 
@@ -62,6 +63,7 @@ export async function inviteMember(
     const email = text(formData, "email");
     const firstName = text(formData, "firstName");
     const lastName = text(formData, "lastName");
+    const role = text(formData, "role") || "member";
 
     if (!email) {
         return {
@@ -73,7 +75,7 @@ export async function inviteMember(
     const result = await callApi<{ email?: string; emailSent?: boolean }>(
         "POST",
         "/api/invitations",
-        { email, firstName, lastName },
+        { email, firstName, lastName, role },
     );
 
     if (result.status === "success") {
@@ -92,7 +94,7 @@ export async function inviteMember(
     const fieldErrors: Partial<Record<InviteField, string>> = result.fields
         ? (Object.fromEntries(
               Object.entries(result.fields).filter(([name]) =>
-                  ["email", "firstName", "lastName"].includes(name),
+                  ["email", "firstName", "lastName", "role"].includes(name),
               ),
           ) as Partial<Record<InviteField, string>>)
         : result.code === "too_many_invitations"
@@ -142,6 +144,63 @@ export async function cancelInvitation(
     ) {
         refreshTeam();
         return { done: `Invitation de ${email} annulée.` };
+    }
+
+    return {
+        error:
+            result.status === "rejected"
+                ? result.message
+                : MESSAGES.unavailable,
+    };
+}
+
+/**
+ * US-16. The whole app is refreshed: the administrator may have changed
+ * their own role (menu, buttons).
+ */
+export async function changeMemberRole(
+    id: string,
+    role: RoleKey,
+    name: string,
+): Promise<InvitationActionState> {
+    const result = await callApi(
+        "PATCH",
+        `/api/users/${encodeURIComponent(id)}`,
+        { role },
+    );
+
+    if (result.status !== "success") {
+        return {
+            error:
+                result.status === "rejected"
+                    ? result.message
+                    : MESSAGES.unavailable,
+        };
+    }
+
+    revalidatePath("/", "layout");
+    return {
+        done: `${name} est maintenant ${ROLE_LABELS[role].toLowerCase()}.`,
+    };
+}
+
+/** Removes a member: their account is deleted by the API. */
+export async function removeMember(
+    id: string,
+    name: string,
+): Promise<InvitationActionState> {
+    const result = await callApi(
+        "DELETE",
+        `/api/users/${encodeURIComponent(id)}`,
+    );
+
+    // Already removed by another administrator: same outcome.
+    if (
+        result.status === "success" ||
+        (result.status === "rejected" && result.code === "not_found")
+    ) {
+        refreshTeam();
+        return { done: `${name} ne fait plus partie de l'équipe.` };
     }
 
     return {

@@ -12,7 +12,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/lib/api";
+import { api, ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Équipe" };
 
@@ -47,14 +47,31 @@ async function TeamContent() {
                         <CardTitle>
                             <h2>{`Membres (${members.length})`}</h2>
                         </CardTitle>
-                        {!isAdmin && (
+                        {isAdmin ? (
+                            <ul className="text-sm text-ink-muted">
+                                {(["admin", "member", "reader"] as const).map(
+                                    (role) => (
+                                        <li key={role}>
+                                            <span className="font-medium text-ink">
+                                                {ROLE_LABELS[role]}
+                                            </span>{" "}
+                                            : {ROLE_DESCRIPTIONS[role]}
+                                        </li>
+                                    ),
+                                )}
+                            </ul>
+                        ) : (
                             <CardDescription>
                                 Seul un administrateur peut inviter de nouveaux
-                                membres.
+                                membres et changer les rôles.
                             </CardDescription>
                         )}
                     </CardHeader>
-                    <MemberList members={members} currentUserId={user.id} />
+                    <MemberList
+                        members={members}
+                        currentUserId={user.id}
+                        canManage={isAdmin}
+                    />
                 </Card>
 
                 {isAdmin && (

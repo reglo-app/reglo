@@ -9,6 +9,12 @@ security:
             entity:
                 class: App\Entity\User
 
+    # Organization roles (OrganizationRole): an administrator has the rights
+    # of a member, a member those of a reader.
+    role_hierarchy:
+        ROLE_ADMIN: [ROLE_MEMBER]
+        ROLE_MEMBER: [ROLE_READER]
+
     firewalls:
         dev:
             # Ensure dev tools and static assets are always allowed
@@ -41,6 +47,11 @@ security:
         - { path: ^/api/email-change, roles: PUBLIC_ACCESS }
         # Link of the invitation e-mail: the token is the proof
         - { path: ^/api/invitations/(check|accept)$, roles: PUBLIC_ACCESS }
+        # Own account (profile, photo, password, logout): every role
+        - { path: ^/api/(me|auth)(/|$), roles: IS_AUTHENTICATED_FULLY }
+        # US-16: readers only consult. Every other write, on any current or
+        # future resource, needs at least the member role.
+        - { path: ^/api, methods: [POST, PUT, PATCH, DELETE], roles: ROLE_MEMBER }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

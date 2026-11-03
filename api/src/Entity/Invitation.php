@@ -35,6 +35,10 @@ class Invitation implements OrganizationOwnedInterface
     #[ORM\Column(length: User::MAX_NAME_LENGTH, nullable: true)]
     private ?string $lastName = null;
 
+    /** Given to the account created when the invitation is accepted. */
+    #[ORM\Column(length: 16, enumType: OrganizationRole::class, options: ['default' => 'member'])]
+    private OrganizationRole $role = OrganizationRole::Member;
+
     /** Null once the administrator who invited has left. */
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
@@ -87,6 +91,18 @@ class Invitation implements OrganizationOwnedInterface
     {
         $this->firstName = '' === trim((string) $firstName) ? null : trim((string) $firstName);
         $this->lastName = '' === trim((string) $lastName) ? null : trim((string) $lastName);
+
+        return $this;
+    }
+
+    public function getRole(): OrganizationRole
+    {
+        return $this->role;
+    }
+
+    public function setRole(OrganizationRole $role): static
+    {
+        $this->role = $role;
 
         return $this;
     }

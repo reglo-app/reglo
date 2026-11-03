@@ -198,7 +198,9 @@ describe("EmailForm", () => {
             }),
         );
 
-        const password = await screen.findByLabelText("Mot de passe actuel");
+        // The field exists before the answer: wait for the answer first.
+        await screen.findByRole("alert");
+        const password = screen.getByLabelText("Mot de passe actuel");
         expect(password).toHaveAttribute("aria-invalid", "true");
         expect(password).toHaveAccessibleDescription(
             "Pour confirmer que c'est bien vous. Le mot de passe actuel est incorrect.",

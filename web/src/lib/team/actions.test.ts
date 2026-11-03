@@ -5,7 +5,9 @@ import { getSessionToken } from "@/lib/auth/session";
 import {
     acceptInvitation,
     cancelInvitation,
+    changeMemberRole,
     inviteMember,
+    removeMember,
     resendInvitation,
 } from "./actions";
 import { checkInvitationToken } from "./api";
@@ -85,6 +87,8 @@ describe("inviteMember", () => {
                     email: "paul@acme.test",
                     firstName: "Paul",
                     lastName: "",
+                    // Member when the form sends none
+                    role: "member",
                 }),
             }),
         );
@@ -165,6 +169,59 @@ describe("inviteMember", () => {
         await expect(
             inviteMember({}, formData({ email: "paul@acme.test" })),
         ).rejects.toThrow("redirect:/session-expired");
+    });
+});
+
+describe("changeMemberRole and removeMember", () => {
+    it("changes the role", async () => {
+        const fetchMock = stubFetch(Response.json({ role: "reader" }));
+
+        expect(await changeMemberRole("4", "reader", "Paul Martin")).toEqual({
+            done: "Paul Martin est maintenant lecteur.",
+        });
+        expect(fetchMock).toHaveBeenCalledWith(
+            expect.stringMatching(/\/api\/users\/4$/),
+            expect.objectContaining({
+                method: "PATCH",
+                body: JSON.stringify({ role: "reader" }),
+            }),
+        );
+    });
+
+    it("shows why the role cannot change", async () => {
+        stubFetch(rejection(422, "last_admin", "Gardez un administrateur."));
+
+        expect(await changeMemberRole("1", "member", "Claire")).toEqual({
+            error: "Gardez un administrateur.",
+        });
+    });
+
+    it("removes a member", async () => {
+        const fetchMock = stubFetch(new Response(null, { status: 204 }));
+
+        expect(await removeMember("4", "Paul Martin")).toEqual({
+            done: "Paul Martin ne fait plus partie de l'équipe.",
+        });
+        expect(fetchMock).toHaveBeenCalledWith(
+            expect.stringMatching(/\/api\/users\/4$/),
+            expect.objectContaining({ method: "DELETE" }),
+        );
+    });
+
+    it("treats a member already removed as removed", async () => {
+        stubFetch(rejection(404, "not_found", "Ce membre n'existe plus."));
+
+        expect(await removeMember("4", "Paul Martin")).toEqual({
+            done: "Paul Martin ne fait plus partie de l'équipe.",
+        });
+    });
+
+    it("never shows a technical detail", async () => {
+        stubFetch(new TypeError("fetch failed"));
+
+        expect(await removeMember("4", "Paul Martin")).toEqual({
+            error: UNAVAILABLE,
+        });
     });
 });
 
