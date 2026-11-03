@@ -79,8 +79,8 @@ final class InvitationController
                 new Assert\Email(),
                 new Assert\Length(max: User::MAX_EMAIL_LENGTH),
             ])) > 0 ? 'Saisissez une adresse e-mail valide.' : null,
-            'firstName' => self::nameError($firstName, 'prénom'),
-            'lastName' => self::nameError($lastName, 'nom'),
+            'firstName' => self::nameError($firstName, 'prénom', missing: 'Saisissez le prénom de la personne à inviter.'),
+            'lastName' => self::nameError($lastName, 'nom', missing: 'Saisissez le nom de la personne à inviter.'),
             'role' => null === $role ? 'Choisissez le rôle : administrateur, membre ou lecteur.' : null,
         ]);
 
@@ -188,8 +188,8 @@ final class InvitationController
         $password = JsonBody::string($request, 'password');
 
         $errors = array_filter([
-            'firstName' => self::nameError($firstName, 'prénom', required: true),
-            'lastName' => self::nameError($lastName, 'nom', required: true),
+            'firstName' => self::nameError($firstName, 'prénom', missing: 'Saisissez votre prénom.'),
+            'lastName' => self::nameError($lastName, 'nom', missing: 'Saisissez votre nom.'),
             'password' => PasswordPolicy::isAcceptable($password) ? null : PasswordPolicy::errorMessage(),
         ]);
 
@@ -278,12 +278,15 @@ final class InvitationController
     }
 
     /**
-     * @param string $label "prénom" or "nom"
+     * Names are required: when inviting and when accepting.
+     *
+     * @param string $label   "prénom" or "nom"
+     * @param string $missing message when the name is empty
      */
-    private static function nameError(string $value, string $label, bool $required = false): ?string
+    private static function nameError(string $value, string $label, string $missing): ?string
     {
-        if ($required && '' === $value) {
-            return \sprintf('Saisissez votre %s.', $label);
+        if ('' === $value) {
+            return $missing;
         }
 
         return mb_strlen($value) > User::MAX_NAME_LENGTH

@@ -71,8 +71,9 @@ function InvitationRow({
     }
 
     return (
-        <li className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-4">
-            <div className="flex min-w-0 flex-1 flex-col">
+        // Three columns from sm: the validity stays in the middle.
+        <li className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-4">
+            <div className="flex min-w-0 flex-col">
                 <span className="font-medium wrap-break-word">
                     {invitation.email}
                 </span>
@@ -83,16 +84,19 @@ function InvitationRow({
                         : `Envoyée le ${formatDate(invitation.sentAt)}`}
                 </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-                {invitation.expired ? (
-                    <Badge variant="destructive">Expirée</Badge>
-                ) : (
-                    <Badge variant="info">
-                        Valable jusqu&apos;au {formatDate(invitation.expiresAt)}
-                    </Badge>
-                )}
+            {invitation.expired ? (
+                <Badge variant="destructive" className="sm:justify-self-center">
+                    Expirée
+                </Badge>
+            ) : (
+                <Badge variant="info" className="sm:justify-self-center">
+                    Valable jusqu&apos;au {formatDate(invitation.expiresAt)}
+                </Badge>
+            )}
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                 <Button
                     variant="outline"
+                    size="row"
                     disabled={isBusy}
                     aria-label={`Renvoyer l'invitation à ${invitation.email}`}
                     onClick={() =>
@@ -114,7 +118,8 @@ function InvitationRow({
                     Renvoyer
                 </Button>
                 <Button
-                    variant="ghost"
+                    variant="destructive-outline"
+                    size="row"
                     disabled={isBusy}
                     aria-label={`Annuler l'invitation de ${invitation.email}`}
                     onClick={() =>

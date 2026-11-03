@@ -71,26 +71,27 @@ describe("MemberList", () => {
         ).not.toBeInTheDocument();
     });
 
-    it("lets an administrator choose roles and remove the others", () => {
+    it("lets an administrator manage the others, not themself", () => {
         render(<MemberList members={MEMBERS} currentUserId="1" canManage />);
 
-        expect(screen.getByLabelText("Rôle de Claire Dupont")).toHaveValue(
-            "admin",
-        );
+        const [claire, other] = screen.getAllByRole("listitem");
+        // Own row: the role only, as text (US-04 for leaving).
+        expect(within(claire).queryByRole("combobox")).not.toBeInTheDocument();
+        expect(within(claire).queryByRole("button")).not.toBeInTheDocument();
+        expect(claire).toHaveTextContent("Administrateur");
+
         expect(screen.getByLabelText("Rôle de new@acme.test")).toHaveValue(
             "member",
         );
+        // The remove button comes before the role.
+        const remove = within(other).getByRole("button", {
+            name: "Retirer new@acme.test de l'équipe",
+        });
         expect(
-            screen.getByRole("button", {
-                name: "Retirer new@acme.test de l'équipe",
-            }),
-        ).toBeInTheDocument();
-        // Leaving oneself is not done here (US-04).
-        expect(
-            screen.queryByRole("button", {
-                name: "Retirer Claire Dupont de l'équipe",
-            }),
-        ).not.toBeInTheDocument();
+            remove.compareDocumentPosition(
+                within(other).getByRole("combobox"),
+            ) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
     });
 });
 

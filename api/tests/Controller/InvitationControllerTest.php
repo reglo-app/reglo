@@ -15,6 +15,8 @@ final class InvitationControllerTest extends ProfileTestCase
 {
     private const INVITED = 'paul.martin@acme.test';
     private const NEW_PASSWORD = 'another-long-password';
+    /** Required when inviting. */
+    private const NAMES = ['firstName' => 'Paul', 'lastName' => 'Martin'];
 
     private string $memberToken;
     private string $otherAdminToken;
@@ -37,13 +39,13 @@ final class InvitationControllerTest extends ProfileTestCase
 
     public function testAnAdministratorInvitesACollaborator(): void
     {
-        $this->jsonAs('POST', '/api/invitations', ['email' => ' Paul.Martin@ACME.test ', 'firstName' => 'Paul']);
+        $this->jsonAs('POST', '/api/invitations', ['email' => ' Paul.Martin@ACME.test '] + self::NAMES);
 
         self::assertResponseStatusCodeSame(201);
         $data = $this->responseData();
         self::assertSame(self::INVITED, $data['email']);
         self::assertSame('Paul', $data['firstName']);
-        self::assertNull($data['lastName']);
+        self::assertSame('Martin', $data['lastName']);
         self::assertSame('Claire Dupont', $data['invitedBy']);
         self::assertFalse($data['expired']);
         self::assertTrue($data['emailSent']);
@@ -72,7 +74,7 @@ final class InvitationControllerTest extends ProfileTestCase
         self::assertSame([
             'email' => self::INVITED,
             'firstName' => 'Paul',
-            'lastName' => null,
+            'lastName' => 'Martin',
             'organizationName' => 'Acme',
             'role' => 'member',
             'inviterName' => 'Claire Dupont',
@@ -157,7 +159,7 @@ final class InvitationControllerTest extends ProfileTestCase
 
     public function testAMemberCannotInviteNorSeeTheInvitations(): void
     {
-        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED], $this->memberToken);
+        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED] + self::NAMES, $this->memberToken);
         self::assertResponseStatusCodeSame(403);
         self::assertEmailCount(0);
 
@@ -182,7 +184,7 @@ final class InvitationControllerTest extends ProfileTestCase
         $platformAdmin = $this->createUser('team@reglo.test', null)->setRoles(['ROLE_PLATFORM_ADMIN']);
         $this->entityManager->flush();
 
-        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED], $this->issueToken($platformAdmin));
+        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED] + self::NAMES, $this->issueToken($platformAdmin));
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -192,7 +194,7 @@ final class InvitationControllerTest extends ProfileTestCase
         $this->client->request('GET', '/api/invitations');
         self::assertResponseStatusCodeSame(401);
 
-        $this->client->jsonRequest('POST', '/api/invitations', ['email' => self::INVITED]);
+        $this->client->jsonRequest('POST', '/api/invitations', ['email' => self::INVITED] + self::NAMES);
         self::assertResponseStatusCodeSame(401);
     }
 
@@ -200,7 +202,7 @@ final class InvitationControllerTest extends ProfileTestCase
     {
         // In another organization: the message must not tell it.
         foreach (['admin@globex.test', 'MARC@acme.test'] as $email) {
-            $this->jsonAs('POST', '/api/invitations', ['email' => $email]);
+            $this->jsonAs('POST', '/api/invitations', ['email' => $email] + self::NAMES);
 
             self::assertResponseStatusCodeSame(422);
             self::assertSame(['error' => InvitationController::EMAIL_UNAVAILABLE, 'code' => 'email_unavailable'], $this->responseData());
@@ -212,7 +214,7 @@ final class InvitationControllerTest extends ProfileTestCase
     {
         $this->invite();
 
-        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED]);
+        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED] + self::NAMES);
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame('already_invited', $this->responseData()['code']);
@@ -222,14 +224,14 @@ final class InvitationControllerTest extends ProfileTestCase
     {
         $this->invite();
 
-        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED], $this->otherAdminToken);
+        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED] + self::NAMES, $this->otherAdminToken);
 
         self::assertResponseStatusCodeSame(201);
     }
 
     public function testInvalidFieldsAreRefused(): void
     {
-        $this->jsonAs('POST', '/api/invitations', ['email' => 'not-an-email', 'lastName' => str_repeat('a', 101)]);
+        $this->jsonAs('POST', '/api/invitations', ['email' => 'not-an-email', 'firstName' => 'Paul', 'lastName' => str_repeat('a', 101)]);
 
         self::assertResponseStatusCodeSame(422);
         $data = $this->responseData();
@@ -238,9 +240,20 @@ final class InvitationControllerTest extends ProfileTestCase
         self::assertSame('Saisissez une adresse e-mail valide.', $data['error']);
     }
 
+    public function testTheNamesAreRequired(): void
+    {
+        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED, 'firstName' => ' ']);
+
+        self::assertResponseStatusCodeSame(422);
+        $data = $this->responseData();
+        self::assertSame(['firstName', 'lastName'], array_keys($data['fields']));
+        self::assertSame('Saisissez le prénom de la personne à inviter.', $data['error']);
+        self::assertEmailCount(0);
+    }
+
     public function testTheListShowsOnlyThePendingInvitationsOfTheOwnOrganization(): void
     {
-        $this->jsonAs('POST', '/api/invitations', ['email' => 'someone@globex.test'], $this->otherAdminToken);
+        $this->jsonAs('POST', '/api/invitations', ['email' => 'someone@globex.test'] + self::NAMES, $this->otherAdminToken);
         $this->invite();
 
         $this->getAs('/api/invitations');
@@ -251,7 +264,7 @@ final class InvitationControllerTest extends ProfileTestCase
 
     public function testAnInvitationOfAnotherOrganizationCannotBeCancelledNorResent(): void
     {
-        $this->jsonAs('POST', '/api/invitations', ['email' => 'someone@globex.test'], $this->otherAdminToken);
+        $this->jsonAs('POST', '/api/invitations', ['email' => 'someone@globex.test'] + self::NAMES, $this->otherAdminToken);
         $otherId = $this->responseData()['id'];
 
         $this->jsonAs('DELETE', '/api/invitations/'.$otherId);
@@ -301,11 +314,11 @@ final class InvitationControllerTest extends ProfileTestCase
     public function testTooManyInvitationsAreRefused(): void
     {
         for ($i = 1; $i <= 20; ++$i) {
-            $this->jsonAs('POST', '/api/invitations', ['email' => \sprintf('person%d@acme.test', $i)]);
+            $this->jsonAs('POST', '/api/invitations', ['email' => \sprintf('person%d@acme.test', $i)] + self::NAMES);
             self::assertResponseStatusCodeSame(201);
         }
 
-        $this->jsonAs('POST', '/api/invitations', ['email' => 'one-too-many@acme.test']);
+        $this->jsonAs('POST', '/api/invitations', ['email' => 'one-too-many@acme.test'] + self::NAMES);
 
         self::assertResponseStatusCodeSame(429);
         self::assertSame(['error' => InvitationController::TOO_MANY, 'code' => 'too_many_invitations'], $this->responseData());
@@ -313,7 +326,7 @@ final class InvitationControllerTest extends ProfileTestCase
 
     public function testTheInvitationGivesItsRole(): void
     {
-        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED, 'role' => 'reader']);
+        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED, 'role' => 'reader'] + self::NAMES);
         self::assertResponseStatusCodeSame(201);
         self::assertSame('reader', $this->responseData()['role']);
 
@@ -327,7 +340,7 @@ final class InvitationControllerTest extends ProfileTestCase
 
     public function testAnUnknownRoleIsRefused(): void
     {
-        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED, 'role' => 'owner']);
+        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED, 'role' => 'owner'] + self::NAMES);
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['role'], array_keys($this->responseData()['fields']));
@@ -340,7 +353,7 @@ final class InvitationControllerTest extends ProfileTestCase
      */
     private function invite(): string
     {
-        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED, 'firstName' => 'Paul']);
+        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED] + self::NAMES);
         self::assertResponseStatusCodeSame(201);
 
         return self::tokenOf($this->sentEmail());

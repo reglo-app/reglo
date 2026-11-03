@@ -8,7 +8,9 @@ test("opens a QHSE domain page from the sidebar", async ({ page }) => {
 
     await sidebar.getByRole("link", { name: "Sécurité" }).click();
 
-    await expect(page).toHaveURL(/\/domains\/safety$/);
+    // The first visit of a pillar page compiles it on the dev server: it
+    // can take longer than the default 5 s.
+    await expect(page).toHaveURL(/\/domains\/safety$/, { timeout: 15_000 });
     await expect(
         page.getByRole("heading", { level: 1, name: "Sécurité" }),
     ).toBeVisible();

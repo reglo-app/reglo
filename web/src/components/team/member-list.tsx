@@ -5,6 +5,7 @@ import {
 } from "@/components/team/member-controls";
 import { Badge } from "@/components/ui/badge";
 import { ROLE_LABELS, type Member } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export function memberName(
     member: Pick<Member, "firstName" | "lastName" | "email">,
@@ -63,29 +64,32 @@ export function MemberList({
                                 </span>
                             )}
                         </span>
-                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                        <div
+                            className={cn(
+                                "flex flex-wrap items-center gap-2 sm:justify-end",
+                                // Same width on every row: the job titles
+                                // stay aligned.
+                                canManage && "sm:w-72",
+                            )}
+                        >
                             {!member.activated && (
                                 <Badge variant="warning">
                                     Activation en attente
                                 </Badge>
                             )}
-                            {canManage ? (
+                            {/* Not for oneself: changing one's own role or
+                                leaving is not done here (US-04). */}
+                            {canManage && !isMe ? (
                                 <>
+                                    <RemoveMemberButton
+                                        memberId={member.id}
+                                        name={name}
+                                    />
                                     <MemberRoleSelect
                                         memberId={member.id}
                                         name={name}
                                         role={member.role}
                                     />
-                                    {/* Leaving oneself is the erasure of
-                                        one's own account (US-04). */}
-                                    {isMe ? (
-                                        <span className="hidden w-10 sm:block" />
-                                    ) : (
-                                        <RemoveMemberButton
-                                            memberId={member.id}
-                                            name={name}
-                                        />
-                                    )}
                                 </>
                             ) : (
                                 <Badge

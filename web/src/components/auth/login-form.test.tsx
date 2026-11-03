@@ -154,7 +154,9 @@ describe("LoginForm", () => {
             screen.getByRole("button", { name: "Se connecter" }),
         );
 
-        expect(await screen.findByRole("alert")).toHaveTextContent(
+        // Another alert is already there: wait for the error itself.
+        await screen.findByText("Identifiants incorrects");
+        expect(screen.getByRole("alert")).toHaveTextContent(
             "Identifiants incorrects",
         );
         expect(screen.queryByText(ACTIVATED_NOTICE)).not.toBeInTheDocument();

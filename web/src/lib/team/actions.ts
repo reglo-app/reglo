@@ -40,6 +40,8 @@ const MESSAGES = {
     unavailable:
         "L'opération est impossible pour le moment. Réessayez plus tard.",
     missingEmail: "Saisissez l'adresse e-mail de la personne à inviter.",
+    missingInvitedFirstName: "Saisissez le prénom de la personne à inviter.",
+    missingInvitedLastName: "Saisissez le nom de la personne à inviter.",
     missingFirstName: "Saisissez votre prénom.",
     missingLastName: "Saisissez votre nom.",
     tooShort: `Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères.`,
@@ -65,11 +67,12 @@ export async function inviteMember(
     const lastName = text(formData, "lastName");
     const role = text(formData, "role") || "member";
 
-    if (!email) {
-        return {
-            error: MESSAGES.missingEmail,
-            fieldErrors: { email: MESSAGES.missingEmail },
-        };
+    const missing: Partial<Record<InviteField, string>> = {};
+    if (!email) missing.email = MESSAGES.missingEmail;
+    if (!firstName) missing.firstName = MESSAGES.missingInvitedFirstName;
+    if (!lastName) missing.lastName = MESSAGES.missingInvitedLastName;
+    if (Object.keys(missing).length > 0) {
+        return { error: Object.values(missing)[0], fieldErrors: missing };
     }
 
     const result = await callApi<{ email?: string; emailSent?: boolean }>(

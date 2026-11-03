@@ -20,6 +20,9 @@ const buttonVariants = cva(
                     "border-border bg-white text-ink hover:border-border-strong hover:bg-green-50",
                 ghost: "text-ink hover:bg-green-50",
                 destructive: "bg-danger text-white hover:bg-danger-700",
+                // Secondary destructive action in a list (cancel, remove).
+                "destructive-outline":
+                    "border-danger bg-white text-danger hover:bg-danger-50",
                 link: "link-underline h-auto px-0 text-green-700",
                 // Topbar controls (menu toggle, search, notifications):
                 // compact, light border and small shadow; on hover a darker
@@ -33,6 +36,9 @@ const buttonVariants = cva(
                 default: "h-10 px-4",
                 lg: "h-11 px-5 text-lg",
                 icon: "size-10",
+                // Actions in the rows of a list, next to a NativeSelect of
+                // the same height.
+                row: "h-[38px] px-3.5",
                 // Topbar: 7px vertical / 12px horizontal padding, 36px high.
                 toolbar:
                     "px-3 py-[7px] leading-5 [&_svg:not([class*='size-'])]:size-4",

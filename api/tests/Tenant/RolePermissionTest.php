@@ -106,7 +106,7 @@ final class RolePermissionTest extends TenantIsolationTestCase
             'GET' === $method, 'DELETE' === $method => null,
             '/api/me' === $uri => ['firstName' => 'Léa', 'lastName' => 'Martin', 'jobTitle' => ''],
             str_starts_with($uri, '/api/users') => ['role' => 'reader'],
-            '/api/invitations' === $uri => ['email' => 'new@a.test'],
+            '/api/invitations' === $uri => ['email' => 'new@a.test', 'firstName' => 'Nina', 'lastName' => 'Roux'],
             default => ['label' => 'Changed'],
         };
     }
