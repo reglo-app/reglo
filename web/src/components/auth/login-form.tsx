@@ -9,7 +9,6 @@ import {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-    Check,
     CircleAlert,
     CircleCheck,
     Eye,
@@ -19,6 +18,7 @@ import {
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { login, type LoginField, type LoginState } from "@/lib/auth/actions";
 import {
@@ -203,23 +203,11 @@ export function LoginForm({
 
             <div className="flex items-center justify-between gap-4 text-sm">
                 <label className="flex cursor-pointer items-center gap-2">
-                    {/* Real checkbox restyled (keyboard, label and checked
-                        state stay native); the tick is a Lucide icon on top,
-                        smaller than the browser's one. */}
-                    <span className="relative flex size-4 shrink-0 items-center justify-center">
-                        <input
-                            ref={rememberRef}
-                            type="checkbox"
-                            defaultChecked={isRemembered}
-                            key={String(isRemembered)}
-                            className="peer size-4 cursor-pointer appearance-none rounded-sm border border-border-strong bg-white transition-colors duration-200 checked:border-green-700 checked:bg-green-700"
-                        />
-                        <Check
-                            aria-hidden="true"
-                            strokeWidth={3}
-                            className="pointer-events-none absolute size-3 text-white opacity-0 transition-opacity duration-200 peer-checked:opacity-100"
-                        />
-                    </span>
+                    <Checkbox
+                        ref={rememberRef}
+                        defaultChecked={isRemembered}
+                        key={String(isRemembered)}
+                    />
                     Se souvenir de moi
                 </label>
                 {/* TODO: password reset page (not in scope of US-02 yet). */}

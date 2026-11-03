@@ -170,6 +170,10 @@ final class MemberController
             'role' => $member->getOrganizationRole()->value,
             // False until the member has chosen a password
             'activated' => $member->isActivated(),
+            // Joined the team when the password was chosen; null before
+            'joinedAt' => $member->getActivatedAt()?->format(\DATE_ATOM),
+            // Last authenticated request, to the nearest 5 minutes
+            'lastSeenAt' => $member->getLastSeenAt()?->format(\DATE_ATOM),
         ];
     }
 

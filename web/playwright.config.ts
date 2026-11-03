@@ -10,6 +10,9 @@ const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
     testDir: "./e2e",
+    // The dev server compiles each page on its first visit: longer than
+    // the default 5 s on a cold start (CI, first run).
+    expect: { timeout: 15_000 },
     use: {
         baseURL,
         // Signed in by default: the proxy only checks that the session

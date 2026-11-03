@@ -2,42 +2,17 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import type { Invitation, Member } from "@/lib/api";
+import type { Invitation } from "@/lib/api";
 
 import { AcceptInvitationForm } from "./accept-invitation-form";
 import { InvitationList } from "./invitation-list";
 import { InviteDialog, type InviteDialogProps } from "./invite-dialog";
-import { MemberRoleSelect, RemoveMemberButton } from "./member-controls";
-import { MemberList } from "./member-list";
 
 vi.mock("sonner", () => ({
     toast: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
 }));
 
 const { toast } = await import("sonner");
-
-const MEMBERS: Member[] = [
-    {
-        id: "1",
-        email: "claire@acme.test",
-        firstName: "Claire",
-        lastName: "Dupont",
-        jobTitle: "Responsable QHSE",
-        avatarVersion: null,
-        role: "admin",
-        activated: true,
-    },
-    {
-        id: "2",
-        email: "new@acme.test",
-        firstName: null,
-        lastName: null,
-        jobTitle: null,
-        avatarVersion: null,
-        role: "member",
-        activated: false,
-    },
-];
 
 const INVITATION: Invitation = {
     id: "9",
@@ -50,155 +25,6 @@ const INVITATION: Invitation = {
     expiresAt: "2026-10-21T09:30:00.000Z",
     expired: false,
 };
-
-describe("MemberList", () => {
-    it("shows each member with their role, status and the current user", () => {
-        render(<MemberList members={MEMBERS} currentUserId="1" />);
-
-        const [claire, invited] = screen.getAllByRole("listitem");
-        expect(claire).toHaveTextContent("Claire Dupont (vous)");
-        expect(claire).toHaveTextContent("Responsable QHSE");
-        expect(claire).toHaveTextContent("Administrateur");
-        // Without name, the e-mail is the name.
-        expect(within(invited).getAllByText("new@acme.test")).toHaveLength(2);
-        expect(invited).toHaveTextContent("Membre");
-        expect(invited).toHaveTextContent("Activation en attente");
-        expect(invited).toHaveTextContent("Fonction non renseignée");
-        // Not an administrator: no control
-        expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
-        expect(
-            screen.queryByRole("button", { name: /^Retirer/ }),
-        ).not.toBeInTheDocument();
-    });
-
-    it("lets an administrator manage the others, not themself", () => {
-        render(<MemberList members={MEMBERS} currentUserId="1" canManage />);
-
-        const [claire, other] = screen.getAllByRole("listitem");
-        // Own row: the role only, as text (US-04 for leaving).
-        expect(within(claire).queryByRole("combobox")).not.toBeInTheDocument();
-        expect(within(claire).queryByRole("button")).not.toBeInTheDocument();
-        expect(claire).toHaveTextContent("Administrateur");
-
-        expect(screen.getByLabelText("Rôle de new@acme.test")).toHaveValue(
-            "member",
-        );
-        // The remove button comes before the role.
-        const remove = within(other).getByRole("button", {
-            name: "Retirer new@acme.test de l'équipe",
-        });
-        expect(
-            remove.compareDocumentPosition(
-                within(other).getByRole("combobox"),
-            ) & Node.DOCUMENT_POSITION_FOLLOWING,
-        ).toBeTruthy();
-    });
-});
-
-describe("MemberRoleSelect", () => {
-    it("saves the chosen role", async () => {
-        const change = vi
-            .fn()
-            .mockResolvedValue({ done: "Paul est maintenant lecteur." });
-        render(
-            <MemberRoleSelect
-                memberId="4"
-                name="Paul"
-                role="member"
-                change={change}
-            />,
-        );
-
-        await userEvent.selectOptions(
-            screen.getByLabelText("Rôle de Paul"),
-            "reader",
-        );
-
-        await vi.waitFor(() =>
-            expect(toast.success).toHaveBeenCalledWith(
-                "Paul est maintenant lecteur.",
-            ),
-        );
-        expect(change).toHaveBeenCalledWith("4", "reader", "Paul");
-        expect(screen.getByLabelText("Rôle de Paul")).toHaveValue("reader");
-    });
-
-    it("goes back to the previous role when refused", async () => {
-        const change = vi
-            .fn()
-            .mockResolvedValue({ error: "Gardez un administrateur." });
-        render(
-            <MemberRoleSelect
-                memberId="1"
-                name="Claire"
-                role="admin"
-                change={change}
-            />,
-        );
-
-        await userEvent.selectOptions(
-            screen.getByLabelText("Rôle de Claire"),
-            "member",
-        );
-
-        await vi.waitFor(() =>
-            expect(toast.error).toHaveBeenCalledWith(
-                "Gardez un administrateur.",
-            ),
-        );
-        expect(screen.getByLabelText("Rôle de Claire")).toHaveValue("admin");
-    });
-});
-
-describe("RemoveMemberButton", () => {
-    it("removes only after the confirmation", async () => {
-        const remove = vi.fn().mockResolvedValue({
-            done: "Paul ne fait plus partie de l'équipe.",
-        });
-        render(<RemoveMemberButton memberId="4" name="Paul" remove={remove} />);
-
-        await userEvent.click(
-            screen.getByRole("button", { name: "Retirer Paul de l'équipe" }),
-        );
-        const dialog = await screen.findByRole("dialog", {
-            name: "Retirer Paul de l'équipe ?",
-        });
-        expect(remove).not.toHaveBeenCalled();
-
-        await userEvent.click(
-            within(dialog).getByRole("button", {
-                name: "Retirer de l'équipe",
-            }),
-        );
-
-        await vi.waitFor(() =>
-            expect(toast.success).toHaveBeenCalledWith(
-                "Paul ne fait plus partie de l'équipe.",
-            ),
-        );
-        expect(remove).toHaveBeenCalledWith("4", "Paul");
-        await vi.waitFor(() =>
-            expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-        );
-    });
-
-    it("keeps the member when cancelled", async () => {
-        const remove = vi.fn();
-        render(<RemoveMemberButton memberId="4" name="Paul" remove={remove} />);
-
-        await userEvent.click(
-            screen.getByRole("button", { name: "Retirer Paul de l'équipe" }),
-        );
-        await userEvent.click(
-            await screen.findByRole("button", { name: "Annuler" }),
-        );
-
-        expect(remove).not.toHaveBeenCalled();
-        await vi.waitFor(() =>
-            expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-        );
-    });
-});
 
 describe("InvitationList", () => {
     it("says when there is no pending invitation", () => {

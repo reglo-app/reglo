@@ -16,6 +16,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public const MAX_NAME_LENGTH = 100;
     public const MAX_JOB_TITLE_LENGTH = 100;
     public const MAX_EMAIL_LENGTH = 180;
+    /** The last activity date is written at most once per this period, in seconds. */
+    public const SEEN_PRECISION = 300;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -68,6 +70,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $activatedAt = null;
+
+    /**
+     * Last authenticated request, to the nearest SEEN_PRECISION seconds
+     * ("Équipe" page). Null until the first one.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastSeenAt = null;
 
     public function __construct(string $email)
     {
@@ -256,6 +265,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getActivatedAt(): ?\DateTimeImmutable
     {
         return $this->activatedAt;
+    }
+
+    public function getLastSeenAt(): ?\DateTimeImmutable
+    {
+        return $this->lastSeenAt;
+    }
+
+    /**
+     * Records an activity. Returns false when the stored date is recent
+     * enough: nothing to save.
+     */
+    public function markSeen(\DateTimeImmutable $now): bool
+    {
+        if (null !== $this->lastSeenAt && $now->getTimestamp() - $this->lastSeenAt->getTimestamp() < self::SEEN_PRECISION) {
+            return false;
+        }
+
+        $this->lastSeenAt = $now;
+
+        return true;
     }
 
     public function isActivated(): bool

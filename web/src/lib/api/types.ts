@@ -172,6 +172,10 @@ export type Member = {
     role: RoleKey;
     /** False until the member has chosen a password. */
     activated: boolean;
+    /** ISO 8601 date the account was activated; null before. */
+    joinedAt: string | null;
+    /** ISO 8601 date of the last activity (to 5 minutes); null if never. */
+    lastSeenAt: string | null;
 };
 
 /**

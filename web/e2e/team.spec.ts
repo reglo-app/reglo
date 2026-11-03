@@ -17,7 +17,7 @@ test("an administrator sees the team and the pending invitations", async ({
         page.getByRole("heading", { level: 1, name: "Équipe" }),
     ).toBeVisible();
     await expect(
-        page.getByRole("heading", { level: 2, name: "Membres (3)" }),
+        page.getByRole("heading", { level: 2, name: "Membres (12)" }),
     ).toBeVisible();
     await expect(page.getByText("Camille Martin (vous)")).toBeVisible();
     await expect(
@@ -28,17 +28,42 @@ test("an administrator sees the team and the pending invitations", async ({
     ).toBeVisible();
     await expect(page.getByText("Expirée", { exact: true })).toBeVisible();
 
-    // US-16: the administrator manages the roles.
-    await expect(page.getByLabel("Rôle de Hugo Bernard")).toHaveValue("member");
-    await expect(page.getByLabel("Rôle de Inès Petit")).toHaveValue("reader");
+    // US-16: the administrator manages the others, not themself.
     await expect(
-        page.getByRole("button", { name: "Retirer Hugo Bernard de l'équipe" }),
+        page.getByRole("button", { name: "Actions pour Hugo Bernard" }),
     ).toBeVisible();
     await expect(
-        page.getByRole("button", {
-            name: "Retirer Camille Martin de l'équipe",
-        }),
+        page.getByRole("button", { name: "Actions pour Camille Martin" }),
     ).toHaveCount(0);
+});
+
+test("the members table searches, sorts and shows pages", async ({ page }) => {
+    await page.goto("/team");
+    const table = page.getByRole("table");
+
+    // 12 members: 10 on the first page, 2 on the second.
+    await expect(table.getByRole("row")).toHaveCount(11);
+    await page
+        .getByRole("navigation", { name: "Pages des membres" })
+        .getByRole("button", { name: "Page 2" })
+        .click();
+    await expect(table.getByRole("row")).toHaveCount(3);
+
+    await page
+        .getByRole("searchbox", { name: "Rechercher un membre" })
+        .fill("ines");
+    await expect(table.getByRole("row")).toHaveCount(2);
+    await expect(table.getByText("Inès Petit")).toBeVisible();
+
+    await page
+        .getByRole("searchbox", { name: "Rechercher un membre" })
+        .fill("");
+    await table.getByRole("button", { name: "Inscrit le" }).click();
+    await expect(
+        table.getByRole("columnheader", { name: "Inscrit le" }),
+    ).toHaveAttribute("aria-sort", "descending");
+    // Most recent first: Rose Lambert joined last.
+    await expect(table.getByRole("row").nth(1)).toContainText("Rose Lambert");
 });
 
 test("the invitation dialog opens and closes with the keyboard", async ({
