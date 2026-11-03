@@ -28,7 +28,7 @@ class Invitation implements OrganizationOwnedInterface
     #[ORM\Column(length: User::MAX_EMAIL_LENGTH)]
     private string $email;
 
-    /** Optional: the invited person can type or correct it when accepting. */
+    /** Required when inviting; the invited person can correct it when accepting. */
     #[ORM\Column(length: User::MAX_NAME_LENGTH, nullable: true)]
     private ?string $firstName = null;
 

@@ -15,13 +15,9 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { NativeSelect } from "@/components/ui/native-select";
 import { ROLE_KEYS, ROLE_LABELS, type RoleKey } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
 import { changeMemberRole, removeMember } from "@/lib/team/actions";
-
-/** Same look as Input (the charter has no select component yet). */
-export const SELECT_CLASSES =
-    "h-10 w-full min-w-0 rounded-md border border-border-strong bg-white px-3 text-base text-ink shadow-xs transition-[color,border-color,box-shadow] duration-200 focus-visible:border-green-600 focus-visible:ring-4 focus-visible:ring-brand-green/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60";
 
 export type MemberRoleSelectProps = {
     memberId: string;
@@ -64,20 +60,22 @@ export function MemberRoleSelect({
             <label htmlFor={id} className="sr-only">
                 Rôle de {name}
             </label>
-            <select
+            <NativeSelect
                 id={id}
                 value={value}
                 disabled={isPending}
                 aria-busy={isPending || undefined}
                 onChange={(event) => choose(event.target.value as RoleKey)}
-                className={cn(SELECT_CLASSES, "sm:w-44")}
+                // Same height as the row buttons (size "row")
+                className="h-[38px]"
+                wrapperClassName="w-full sm:w-44"
             >
                 {ROLE_KEYS.map((key) => (
                     <option key={key} value={key}>
                         {ROLE_LABELS[key]}
                     </option>
                 ))}
-            </select>
+            </NativeSelect>
             {isPending && (
                 <LoaderCircle
                     aria-hidden="true"
@@ -120,13 +118,12 @@ export function RemoveMemberButton({
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button
-                    variant="ghost"
+                    variant="destructive-outline"
+                    size="row"
                     aria-label={`Retirer ${name} de l'équipe`}
-                    // Icon only from sm: as wide as the spacer of one's own row
-                    className="sm:size-10 sm:px-0"
                 >
                     <UserMinus aria-hidden="true" />
-                    <span className="sm:sr-only">Retirer</span>
+                    Retirer
                 </Button>
             </DialogTrigger>
             <DialogContent>

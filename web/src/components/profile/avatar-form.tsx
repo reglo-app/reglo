@@ -92,9 +92,9 @@ export function AvatarForm({
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-8">
                 {/* Overlaps the banner above it. */}
-                <div className="relative -mt-12 w-fit shrink-0 sm:-mt-14">
+                <div className="relative -mt-12 w-fit shrink-0 sm:-mt-8">
                     <UserAvatar
                         user={user}
                         fullName={fullName}

@@ -5,9 +5,9 @@ import { CircleAlert, LoaderCircle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { FormField } from "@/components/profile/form-field";
-import { SELECT_CLASSES } from "@/components/team/member-controls";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
     Dialog,
     DialogContent,
@@ -47,7 +47,7 @@ export function InviteDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>
+                <Button className="transition duration-200">
                     <UserPlus aria-hidden="true" />
                     Inviter un collaborateur
                 </Button>
@@ -132,16 +132,16 @@ function InviteForm({
             <div className="grid gap-5 sm:grid-cols-2">
                 <FormField
                     label="Prénom"
-                    hint="Facultatif."
                     autoComplete="off"
                     maxLength={100}
+                    required
                     {...field("firstName")}
                 />
                 <FormField
                     label="Nom"
-                    hint="Facultatif."
                     autoComplete="off"
                     maxLength={100}
+                    required
                     {...field("lastName")}
                 />
             </div>
@@ -149,21 +149,20 @@ function InviteForm({
                 <label htmlFor="invite-role" className="text-base font-medium">
                     Rôle
                 </label>
-                <select
+                <NativeSelect
                     id="invite-role"
                     name="role"
                     value={role}
                     onChange={(event) => setRole(event.target.value as RoleKey)}
                     aria-describedby="invite-role-hint"
                     aria-invalid={Boolean(state.fieldErrors?.role) || undefined}
-                    className={SELECT_CLASSES}
                 >
                     {ROLE_KEYS.map((key) => (
                         <option key={key} value={key}>
                             {ROLE_LABELS[key]}
                         </option>
                     ))}
-                </select>
+                </NativeSelect>
                 {/* Read with the field: changes with the chosen role. */}
                 <p id="invite-role-hint" className="text-sm text-ink-muted">
                     {ROLE_DESCRIPTIONS[role]}

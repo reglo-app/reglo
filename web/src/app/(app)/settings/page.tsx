@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { KeyRound, Mail, UserRound } from "lucide-react";
+import { Building2, KeyRound, Mail, UserRound } from "lucide-react";
 
 import { AvatarForm } from "@/components/profile/avatar-form";
 import { EmailForm } from "@/components/profile/email-form";
@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, ROLE_LABELS } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Paramètres" };
 
@@ -41,118 +42,149 @@ function SettingsSection({
     );
 }
 
-const TAB_TRIGGER = "max-sm:px-3 max-sm:[&_svg]:hidden";
+const TAB_TRIGGER = "max-sm:px-2 max-sm:text-sm max-sm:[&_svg]:hidden";
+
+/** The content of the chosen tab fades in, slightly rising. */
+const TAB_PANEL =
+    "duration-300 animate-in fade-in-0 slide-in-from-bottom-1 motion-reduce:animate-none";
 
 /** "Mon profil": every user changes their own account here. */
 async function SettingsContent() {
     const user = await api.getCurrentUser();
     const fullName =
         [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
-    const subtitle = [user.jobTitle, user.organization?.name]
-        .filter(Boolean)
-        .join(" · ");
+    const organization = user.organization;
 
     return (
-        <Tabs defaultValue="profile">
+        <div className="flex flex-col gap-6">
             <div className="overflow-hidden rounded-lg border border-border bg-white">
                 <div
                     aria-hidden="true"
                     className="h-28 bg-profile-banner sm:h-40"
                 />
-                <div className="px-5 pb-5 sm:px-8">
+                <div className="px-5 pb-6 sm:px-8">
                     <AvatarForm user={user} fullName={fullName}>
-                        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:pb-1">
+                        <div className="flex min-w-0 flex-1 flex-col gap-5 sm:pt-6 lg:flex-row lg:items-start lg:justify-between">
                             <div className="flex min-w-0 flex-col gap-1">
                                 <h1 className="font-display text-xl font-extrabold tracking-wide wrap-break-word text-ink uppercase sm:text-2xl">
                                     {fullName}
                                 </h1>
-                                {subtitle && (
-                                    <p className="font-medium">{subtitle}</p>
+                                {user.jobTitle && (
+                                    <p className="font-medium">
+                                        {user.jobTitle}
+                                    </p>
                                 )}
                                 <p className="wrap-break-word text-ink-muted">
                                     {user.email}
                                 </p>
                             </div>
-                            <Badge variant="secondary" className="h-7 px-3">
-                                {ROLE_LABELS[user.role]}
-                            </Badge>
+                            <div className="flex items-center gap-3">
+                                <span
+                                    aria-hidden="true"
+                                    className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-brand-teal"
+                                >
+                                    <Building2 className="size-6" />
+                                </span>
+                                <div className="flex min-w-0 flex-col items-start gap-1">
+                                    {organization && (
+                                        <p className="text-lg leading-tight font-semibold wrap-break-word">
+                                            <span className="sr-only">
+                                                Organisation :{" "}
+                                            </span>
+                                            {organization.name}
+                                        </p>
+                                    )}
+                                    <Badge variant="secondary">
+                                        <span className="sr-only">Rôle : </span>
+                                        {ROLE_LABELS[user.role]}
+                                    </Badge>
+                                </div>
+                            </div>
                         </div>
                     </AvatarForm>
                 </div>
-
-                <TabsList
-                    variant="line"
-                    aria-label="Paramètres du compte"
-                    className="w-full border-t border-b-0 px-2 sm:px-6"
-                >
-                    <TabsTrigger value="profile" className={TAB_TRIGGER}>
-                        <UserRound aria-hidden="true" />
-                        Profil
-                    </TabsTrigger>
-                    <TabsTrigger value="email" className={TAB_TRIGGER}>
-                        <Mail aria-hidden="true" />
-                        Adresse e-mail
-                    </TabsTrigger>
-                    <TabsTrigger value="password" className={TAB_TRIGGER}>
-                        <KeyRound aria-hidden="true" />
-                        Mot de passe
-                    </TabsTrigger>
-                </TabsList>
             </div>
 
-            <TabsContent value="profile">
-                <Card className="gap-0 divide-y divide-border py-0">
-                    <SettingsSection
-                        title="Informations personnelles"
-                        description="Visibles par les membres de votre organisation."
-                    >
-                        <ProfileForm user={user} />
-                    </SettingsSection>
-                    <SettingsSection
-                        title="Organisation"
-                        description="Seul un administrateur peut modifier les rôles."
-                    >
-                        <dl className="grid gap-5 text-base sm:grid-cols-2">
-                            <div className="flex flex-col gap-1">
-                                <dt className="font-medium">Entreprise</dt>
-                                <dd className="text-ink-muted">
-                                    {user.organization?.name ?? "—"}
-                                </dd>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <dt className="font-medium">Votre rôle</dt>
-                                <dd className="text-ink-muted">
-                                    {ROLE_LABELS[user.role]}.{" "}
-                                    {ROLE_DESCRIPTIONS[user.role]}
-                                </dd>
-                            </div>
-                        </dl>
-                    </SettingsSection>
-                </Card>
-            </TabsContent>
+            <Card className="gap-0 py-0">
+                <Tabs defaultValue="profile" className="gap-0">
+                    <div className="px-5 pt-5 sm:px-8 sm:pt-6">
+                        <TabsList
+                            variant="segmented"
+                            aria-label="Paramètres du compte"
+                        >
+                            <TabsTrigger
+                                value="profile"
+                                className={TAB_TRIGGER}
+                            >
+                                <UserRound aria-hidden="true" />
+                                Profil
+                            </TabsTrigger>
+                            <TabsTrigger value="email" className={TAB_TRIGGER}>
+                                <Mail aria-hidden="true" />
+                                Adresse e-mail
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="password"
+                                className={TAB_TRIGGER}
+                            >
+                                <KeyRound aria-hidden="true" />
+                                Mot de passe
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
-            <TabsContent value="email">
-                <Card className="gap-0 py-0">
-                    <SettingsSection
-                        title="Adresse e-mail"
-                        description="Celle avec laquelle vous vous connectez et recevez nos e-mails. La nouvelle adresse est confirmée par un lien."
+                    <TabsContent
+                        value="profile"
+                        className={cn(TAB_PANEL, "divide-y divide-border")}
                     >
-                        <EmailForm currentEmail={user.email} />
-                    </SettingsSection>
-                </Card>
-            </TabsContent>
+                        <SettingsSection
+                            title="Informations personnelles"
+                            description="Visibles par les membres de votre organisation."
+                        >
+                            <ProfileForm user={user} />
+                        </SettingsSection>
+                        <SettingsSection
+                            title="Organisation"
+                            description="Seul un administrateur peut modifier les rôles."
+                        >
+                            <dl className="grid gap-5 text-base sm:grid-cols-2">
+                                <div className="flex flex-col gap-1">
+                                    <dt className="font-medium">Entreprise</dt>
+                                    <dd className="text-ink-muted">
+                                        {user.organization?.name ?? "—"}
+                                    </dd>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <dt className="font-medium">Votre rôle</dt>
+                                    <dd className="text-ink-muted">
+                                        {ROLE_LABELS[user.role]}.{" "}
+                                        {ROLE_DESCRIPTIONS[user.role]}
+                                    </dd>
+                                </div>
+                            </dl>
+                        </SettingsSection>
+                    </TabsContent>
 
-            <TabsContent value="password">
-                <Card className="gap-0 py-0">
-                    <SettingsSection
-                        title="Mot de passe"
-                        description="Vos autres sessions seront déconnectées."
-                    >
-                        <PasswordForm email={user.email} />
-                    </SettingsSection>
-                </Card>
-            </TabsContent>
-        </Tabs>
+                    <TabsContent value="email" className={TAB_PANEL}>
+                        <SettingsSection
+                            title="Adresse e-mail"
+                            description="Celle avec laquelle vous vous connectez et recevez nos e-mails. La nouvelle adresse est confirmée par un lien."
+                        >
+                            <EmailForm currentEmail={user.email} />
+                        </SettingsSection>
+                    </TabsContent>
+
+                    <TabsContent value="password" className={TAB_PANEL}>
+                        <SettingsSection
+                            title="Mot de passe"
+                            description="Vos autres sessions seront déconnectées."
+                        >
+                            <PasswordForm email={user.email} />
+                        </SettingsSection>
+                    </TabsContent>
+                </Tabs>
+            </Card>
+        </div>
     );
 }
 

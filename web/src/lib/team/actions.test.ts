@@ -54,6 +54,9 @@ function rejection(status: number, code: string, error: string, extra = {}) {
     return Response.json({ error, code, ...extra }, { status });
 }
 
+/** Required to invite. */
+const NAMES = { firstName: "Paul", lastName: "Martin" };
+
 const UNAVAILABLE =
     "L'opération est impossible pour le moment. Réessayez plus tard.";
 
@@ -72,7 +75,7 @@ describe("inviteMember", () => {
                 formData({
                     email: " paul@acme.test ",
                     firstName: " Paul ",
-                    lastName: "",
+                    lastName: "Martin",
                 }),
             ),
         ).toEqual({ sentTo: "paul@acme.test" });
@@ -86,7 +89,7 @@ describe("inviteMember", () => {
                 body: JSON.stringify({
                     email: "paul@acme.test",
                     firstName: "Paul",
-                    lastName: "",
+                    lastName: "Martin",
                     // Member when the form sends none
                     role: "member",
                 }),
@@ -103,8 +106,29 @@ describe("inviteMember", () => {
         );
 
         expect(
-            await inviteMember({}, formData({ email: "paul@acme.test" })),
+            await inviteMember(
+                {},
+                formData({ email: "paul@acme.test", ...NAMES }),
+            ),
         ).toEqual({ notSentTo: "paul@acme.test" });
+    });
+
+    it("asks for the names without calling the API", async () => {
+        const fetchMock = stubFetch(Response.json({}));
+
+        const state = await inviteMember(
+            {},
+            formData({ email: "paul@acme.test", firstName: " ", lastName: "" }),
+        );
+
+        expect(state.fieldErrors).toEqual({
+            firstName: "Saisissez le prénom de la personne à inviter.",
+            lastName: "Saisissez le nom de la personne à inviter.",
+        });
+        expect(state.error).toBe(
+            "Saisissez le prénom de la personne à inviter.",
+        );
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it("asks for the address without calling the API", async () => {
@@ -122,7 +146,10 @@ describe("inviteMember", () => {
             stubFetch(rejection(422, code, "Message."));
 
             expect(
-                await inviteMember({}, formData({ email: "paul@acme.test" })),
+                await inviteMember(
+                    {},
+                    formData({ email: "paul@acme.test", ...NAMES }),
+                ),
             ).toEqual({
                 error: "Message.",
                 fieldErrors: { email: "Message." },
@@ -138,7 +165,10 @@ describe("inviteMember", () => {
         );
 
         expect(
-            await inviteMember({}, formData({ email: "paul@acme.test" })),
+            await inviteMember(
+                {},
+                formData({ email: "paul@acme.test", ...NAMES }),
+            ),
         ).toEqual({
             error: "Trop long.",
             fieldErrors: { lastName: "Trop long." },
@@ -151,7 +181,10 @@ describe("inviteMember", () => {
         );
 
         expect(
-            await inviteMember({}, formData({ email: "paul@acme.test" })),
+            await inviteMember(
+                {},
+                formData({ email: "paul@acme.test", ...NAMES }),
+            ),
         ).toEqual({ error: "Réessayez plus tard.", fieldErrors: {} });
     });
 
@@ -159,7 +192,10 @@ describe("inviteMember", () => {
         stubFetch(new TypeError("fetch failed"));
 
         expect(
-            await inviteMember({}, formData({ email: "paul@acme.test" })),
+            await inviteMember(
+                {},
+                formData({ email: "paul@acme.test", ...NAMES }),
+            ),
         ).toEqual({ error: UNAVAILABLE });
     });
 
@@ -167,7 +203,7 @@ describe("inviteMember", () => {
         stubFetch(new Response(null, { status: 401 }));
 
         await expect(
-            inviteMember({}, formData({ email: "paul@acme.test" })),
+            inviteMember({}, formData({ email: "paul@acme.test", ...NAMES })),
         ).rejects.toThrow("redirect:/session-expired");
     });
 });
