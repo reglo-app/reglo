@@ -6,7 +6,7 @@ import type { Invitation, Member } from "@/lib/api";
 
 import { AcceptInvitationForm } from "./accept-invitation-form";
 import { InvitationList } from "./invitation-list";
-import { InviteDialog } from "./invite-dialog";
+import { InviteDialog, type InviteDialogProps } from "./invite-dialog";
 import { MemberList } from "./member-list";
 
 vi.mock("sonner", () => ({
@@ -134,7 +134,7 @@ describe("InvitationList", () => {
 });
 
 describe("InviteDialog", () => {
-    async function openDialog(action: ReturnType<typeof vi.fn>) {
+    async function openDialog(action: InviteDialogProps["action"]) {
         render(<InviteDialog organizationName="Acme" action={action} />);
         await userEvent.click(
             screen.getByRole("button", { name: "Inviter un collaborateur" }),
