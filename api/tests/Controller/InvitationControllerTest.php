@@ -74,6 +74,7 @@ final class InvitationControllerTest extends ProfileTestCase
             'firstName' => 'Paul',
             'lastName' => null,
             'organizationName' => 'Acme',
+            'role' => 'member',
             'inviterName' => 'Claire Dupont',
         ], $this->responseData());
 
@@ -308,6 +309,29 @@ final class InvitationControllerTest extends ProfileTestCase
 
         self::assertResponseStatusCodeSame(429);
         self::assertSame(['error' => InvitationController::TOO_MANY, 'code' => 'too_many_invitations'], $this->responseData());
+    }
+
+    public function testTheInvitationGivesItsRole(): void
+    {
+        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED, 'role' => 'reader']);
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame('reader', $this->responseData()['role']);
+
+        $this->accept(self::tokenOf($this->sentEmail()));
+
+        self::assertResponseStatusCodeSame(201);
+        $this->client->jsonRequest('POST', '/api/auth/login', ['email' => self::INVITED, 'password' => self::NEW_PASSWORD]);
+        $this->getAs('/api/auth/me', $this->responseData()['token']);
+        self::assertSame('reader', $this->responseData()['role']);
+    }
+
+    public function testAnUnknownRoleIsRefused(): void
+    {
+        $this->jsonAs('POST', '/api/invitations', ['email' => self::INVITED, 'role' => 'owner']);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['role'], array_keys($this->responseData()['fields']));
+        self::assertEmailCount(0);
     }
 
     /**

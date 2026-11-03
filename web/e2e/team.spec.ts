@@ -27,6 +27,18 @@ test("an administrator sees the team and the pending invitations", async ({
         }),
     ).toBeVisible();
     await expect(page.getByText("Expirée", { exact: true })).toBeVisible();
+
+    // US-16: the administrator manages the roles.
+    await expect(page.getByLabel("Rôle de Hugo Bernard")).toHaveValue("member");
+    await expect(page.getByLabel("Rôle de Inès Petit")).toHaveValue("reader");
+    await expect(
+        page.getByRole("button", { name: "Retirer Hugo Bernard de l'équipe" }),
+    ).toBeVisible();
+    await expect(
+        page.getByRole("button", {
+            name: "Retirer Camille Martin de l'équipe",
+        }),
+    ).toHaveCount(0);
 });
 
 test("the invitation dialog opens and closes with the keyboard", async ({
@@ -42,6 +54,7 @@ test("the invitation dialog opens and closes with the keyboard", async ({
     });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByLabel("Adresse e-mail")).toBeVisible();
+    await expect(dialog.getByLabel("Rôle")).toHaveValue("member");
 
     await page.keyboard.press("Escape");
 

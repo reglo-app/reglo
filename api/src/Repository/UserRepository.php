@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Organization;
+use App\Entity\OrganizationRole;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -40,6 +41,20 @@ class UserRepository extends ServiceEntityRepository implements UserLoaderInterf
             ->addOrderBy('u.email', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * Administrators of one organization (the rule "at least one
+     * administrator" of US-16).
+     */
+    public function countAdminsOf(Organization $organization): int
+    {
+        $admins = array_filter(
+            $this->findMembersOf($organization),
+            static fn (User $user): bool => OrganizationRole::Admin === $user->getOrganizationRole(),
+        );
+
+        return \count($admins);
     }
 
     /**

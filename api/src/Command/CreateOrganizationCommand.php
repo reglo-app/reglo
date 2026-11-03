@@ -3,6 +3,7 @@
 namespace App\Command;
 
 use App\Entity\Organization;
+use App\Entity\OrganizationRole;
 use App\Entity\User;
 use App\Mailer\ActivationMailer;
 use App\Repository\OrganizationRepository;
@@ -65,7 +66,7 @@ final class CreateOrganizationCommand extends Command
         $admin = (new User($email))
             ->setName($firstName, $lastName)
             ->setOrganization($organization)
-            ->setRoles(['ROLE_ADMIN']);
+            ->setOrganizationRole(OrganizationRole::Admin);
 
         $this->entityManager->persist($organization);
         $this->entityManager->persist($admin);

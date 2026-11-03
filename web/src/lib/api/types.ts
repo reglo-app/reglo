@@ -11,6 +11,24 @@ export const ROLE_LABELS: Record<RoleKey, string> = {
     reader: "Lecteur",
 };
 
+/** What each role can do (US-16), shown where a role is chosen. */
+export const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
+    admin: "Gère l'équipe, les rôles et toutes les données.",
+    member: "Remplit le diagnostic, gère les actions et les justificatifs.",
+    reader: "Consulte seulement, sans rien modifier.",
+};
+
+/** Roles in the order they are offered: the usual choice first. */
+export const ROLE_KEYS: RoleKey[] = ["member", "reader", "admin"];
+
+/**
+ * Whether the role can change the data of the organization. Only hides
+ * buttons: the API refuses the writes of a reader anyway (rule 2).
+ */
+export function canEdit(role: RoleKey): boolean {
+    return role !== "reader";
+}
+
 export type Organization = {
     id: string;
     name: string;
@@ -167,6 +185,8 @@ export type Invitation = {
     lastName: string | null;
     /** Name of the administrator who invited; null once they left. */
     invitedBy: string | null;
+    /** Given to the account once the invitation is accepted. */
+    role: RoleKey;
     /** ISO 8601 date of the last sending. */
     sentAt: string;
     expiresAt: string;

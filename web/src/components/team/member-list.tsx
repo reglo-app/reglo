@@ -1,4 +1,8 @@
 import { UserAvatar } from "@/components/profile/user-avatar";
+import {
+    MemberRoleSelect,
+    RemoveMemberButton,
+} from "@/components/team/member-controls";
 import { Badge } from "@/components/ui/badge";
 import { ROLE_LABELS, type Member } from "@/lib/api";
 
@@ -11,18 +15,25 @@ export function memberName(
     );
 }
 
-/** Members of the organization: name, e-mail, job title, role, status. */
+/**
+ * Members of the organization: name, e-mail, job title, role, status. An
+ * administrator also changes roles and removes members (US-16); the API
+ * checks it.
+ */
 export function MemberList({
     members,
     currentUserId,
+    canManage = false,
 }: {
     members: Member[];
     currentUserId: string;
+    canManage?: boolean;
 }) {
     return (
         <ul className="divide-y divide-border">
             {members.map((member) => {
                 const name = memberName(member);
+                const isMe = member.id === currentUserId;
                 return (
                     <li
                         key={member.id}
@@ -33,7 +44,7 @@ export function MemberList({
                             <div className="flex min-w-0 flex-col">
                                 <span className="font-medium wrap-break-word">
                                     {name}
-                                    {member.id === currentUserId && (
+                                    {isMe && (
                                         <span className="font-normal text-ink-muted">
                                             {" "}
                                             (vous)
@@ -52,21 +63,41 @@ export function MemberList({
                                 </span>
                             )}
                         </span>
-                        <div className="flex flex-wrap gap-2 sm:w-56 sm:justify-end">
+                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                             {!member.activated && (
                                 <Badge variant="warning">
                                     Activation en attente
                                 </Badge>
                             )}
-                            <Badge
-                                variant={
-                                    member.role === "admin"
-                                        ? "default"
-                                        : "secondary"
-                                }
-                            >
-                                {ROLE_LABELS[member.role]}
-                            </Badge>
+                            {canManage ? (
+                                <>
+                                    <MemberRoleSelect
+                                        memberId={member.id}
+                                        name={name}
+                                        role={member.role}
+                                    />
+                                    {/* Leaving oneself is the erasure of
+                                        one's own account (US-04). */}
+                                    {isMe ? (
+                                        <span className="hidden w-10 sm:block" />
+                                    ) : (
+                                        <RemoveMemberButton
+                                            memberId={member.id}
+                                            name={name}
+                                        />
+                                    )}
+                                </>
+                            ) : (
+                                <Badge
+                                    variant={
+                                        member.role === "admin"
+                                            ? "default"
+                                            : "secondary"
+                                    }
+                                >
+                                    {ROLE_LABELS[member.role]}
+                                </Badge>
+                            )}
                         </div>
                     </li>
                 );

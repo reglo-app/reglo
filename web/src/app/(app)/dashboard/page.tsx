@@ -12,7 +12,7 @@ import { ScoreOverview } from "@/components/dashboard/score-overview";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/lib/api";
+import { api, canEdit } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Tableau de bord" };
 
@@ -54,6 +54,21 @@ function DashboardSkeleton() {
     );
 }
 
+/** Hidden for readers (US-16): they only consult. */
+async function DiagnosticAction() {
+    const user = await api.getCurrentUser();
+    if (!canEdit(user.role)) return null;
+
+    return (
+        <Button asChild className="transition duration-200">
+            <Link href="/diagnostic">
+                <Plus aria-hidden="true" />
+                Faire un diagnostic
+            </Link>
+        </Button>
+    );
+}
+
 export default function DashboardPage() {
     return (
         <>
@@ -61,12 +76,9 @@ export default function DashboardPage() {
                 title="Tableau de bord"
                 description="Votre situation sur les quatre domaines QHSE."
                 action={
-                    <Button asChild className="transition duration-200">
-                        <Link href="/diagnostic">
-                            <Plus aria-hidden="true" />
-                            Faire un diagnostic
-                        </Link>
-                    </Button>
+                    <Suspense fallback={null}>
+                        <DiagnosticAction />
+                    </Suspense>
                 }
             />
             <Suspense fallback={<DashboardSkeleton />}>

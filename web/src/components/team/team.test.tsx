@@ -7,6 +7,7 @@ import type { Invitation, Member } from "@/lib/api";
 import { AcceptInvitationForm } from "./accept-invitation-form";
 import { InvitationList } from "./invitation-list";
 import { InviteDialog, type InviteDialogProps } from "./invite-dialog";
+import { MemberRoleSelect, RemoveMemberButton } from "./member-controls";
 import { MemberList } from "./member-list";
 
 vi.mock("sonner", () => ({
@@ -43,6 +44,7 @@ const INVITATION: Invitation = {
     email: "paul@acme.test",
     firstName: "Paul",
     lastName: null,
+    role: "member",
     invitedBy: "Claire Dupont",
     sentAt: "2026-10-14T09:30:00.000Z",
     expiresAt: "2026-10-21T09:30:00.000Z",
@@ -62,6 +64,138 @@ describe("MemberList", () => {
         expect(invited).toHaveTextContent("Membre");
         expect(invited).toHaveTextContent("Activation en attente");
         expect(invited).toHaveTextContent("Fonction non renseignée");
+        // Not an administrator: no control
+        expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole("button", { name: /^Retirer/ }),
+        ).not.toBeInTheDocument();
+    });
+
+    it("lets an administrator choose roles and remove the others", () => {
+        render(<MemberList members={MEMBERS} currentUserId="1" canManage />);
+
+        expect(screen.getByLabelText("Rôle de Claire Dupont")).toHaveValue(
+            "admin",
+        );
+        expect(screen.getByLabelText("Rôle de new@acme.test")).toHaveValue(
+            "member",
+        );
+        expect(
+            screen.getByRole("button", {
+                name: "Retirer new@acme.test de l'équipe",
+            }),
+        ).toBeInTheDocument();
+        // Leaving oneself is not done here (US-04).
+        expect(
+            screen.queryByRole("button", {
+                name: "Retirer Claire Dupont de l'équipe",
+            }),
+        ).not.toBeInTheDocument();
+    });
+});
+
+describe("MemberRoleSelect", () => {
+    it("saves the chosen role", async () => {
+        const change = vi
+            .fn()
+            .mockResolvedValue({ done: "Paul est maintenant lecteur." });
+        render(
+            <MemberRoleSelect
+                memberId="4"
+                name="Paul"
+                role="member"
+                change={change}
+            />,
+        );
+
+        await userEvent.selectOptions(
+            screen.getByLabelText("Rôle de Paul"),
+            "reader",
+        );
+
+        await vi.waitFor(() =>
+            expect(toast.success).toHaveBeenCalledWith(
+                "Paul est maintenant lecteur.",
+            ),
+        );
+        expect(change).toHaveBeenCalledWith("4", "reader", "Paul");
+        expect(screen.getByLabelText("Rôle de Paul")).toHaveValue("reader");
+    });
+
+    it("goes back to the previous role when refused", async () => {
+        const change = vi
+            .fn()
+            .mockResolvedValue({ error: "Gardez un administrateur." });
+        render(
+            <MemberRoleSelect
+                memberId="1"
+                name="Claire"
+                role="admin"
+                change={change}
+            />,
+        );
+
+        await userEvent.selectOptions(
+            screen.getByLabelText("Rôle de Claire"),
+            "member",
+        );
+
+        await vi.waitFor(() =>
+            expect(toast.error).toHaveBeenCalledWith(
+                "Gardez un administrateur.",
+            ),
+        );
+        expect(screen.getByLabelText("Rôle de Claire")).toHaveValue("admin");
+    });
+});
+
+describe("RemoveMemberButton", () => {
+    it("removes only after the confirmation", async () => {
+        const remove = vi.fn().mockResolvedValue({
+            done: "Paul ne fait plus partie de l'équipe.",
+        });
+        render(<RemoveMemberButton memberId="4" name="Paul" remove={remove} />);
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Retirer Paul de l'équipe" }),
+        );
+        const dialog = await screen.findByRole("dialog", {
+            name: "Retirer Paul de l'équipe ?",
+        });
+        expect(remove).not.toHaveBeenCalled();
+
+        await userEvent.click(
+            within(dialog).getByRole("button", {
+                name: "Retirer de l'équipe",
+            }),
+        );
+
+        await vi.waitFor(() =>
+            expect(toast.success).toHaveBeenCalledWith(
+                "Paul ne fait plus partie de l'équipe.",
+            ),
+        );
+        expect(remove).toHaveBeenCalledWith("4", "Paul");
+        await vi.waitFor(() =>
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+        );
+    });
+
+    it("keeps the member when cancelled", async () => {
+        const remove = vi.fn();
+        render(<RemoveMemberButton memberId="4" name="Paul" remove={remove} />);
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Retirer Paul de l'équipe" }),
+        );
+        await userEvent.click(
+            await screen.findByRole("button", { name: "Annuler" }),
+        );
+
+        expect(remove).not.toHaveBeenCalled();
+        await vi.waitFor(() =>
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+        );
     });
 });
 
@@ -148,7 +282,16 @@ describe("InviteDialog", () => {
         const action = vi.fn().mockResolvedValue({ sentTo: "paul@acme.test" });
         const dialog = await openDialog(action);
 
-        expect(dialog).toHaveTextContent("rejoindre Acme avec le rôle Membre");
+        expect(dialog).toHaveTextContent("rejoindre Acme");
+        const role = within(dialog).getByLabelText("Rôle");
+        expect(role).toHaveValue("member");
+        expect(role).toHaveAccessibleDescription(
+            "Remplit le diagnostic, gère les actions et les justificatifs.",
+        );
+        await userEvent.selectOptions(role, "reader");
+        expect(role).toHaveAccessibleDescription(
+            "Consulte seulement, sans rien modifier.",
+        );
         await userEvent.type(
             within(dialog).getByLabelText("Adresse e-mail"),
             "paul@acme.test",
@@ -167,7 +310,12 @@ describe("InviteDialog", () => {
         );
         expect(toast.success).toHaveBeenCalledTimes(1);
         expect(Object.fromEntries(action.mock.calls[0][1] as FormData)).toEqual(
-            { email: "paul@acme.test", firstName: "Paul", lastName: "" },
+            {
+                email: "paul@acme.test",
+                firstName: "Paul",
+                lastName: "",
+                role: "reader",
+            },
         );
         await vi.waitFor(() =>
             expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),

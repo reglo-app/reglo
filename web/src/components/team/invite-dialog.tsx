@@ -5,6 +5,7 @@ import { CircleAlert, LoaderCircle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { FormField } from "@/components/profile/form-field";
+import { SELECT_CLASSES } from "@/components/team/member-controls";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,12 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    ROLE_DESCRIPTIONS,
+    ROLE_KEYS,
+    ROLE_LABELS,
+    type RoleKey,
+} from "@/lib/api/types";
 import {
     inviteMember,
     type InviteField,
@@ -50,8 +57,7 @@ export function InviteDialog({
                     <DialogTitle>Inviter un collaborateur</DialogTitle>
                     <DialogDescription>
                         La personne reçoit un e-mail pour rejoindre{" "}
-                        {organizationName} avec le rôle Membre. Le lien est
-                        valable 7 jours.
+                        {organizationName}. Le lien est valable 7 jours.
                     </DialogDescription>
                 </DialogHeader>
                 {/* Mounted at each opening: the form starts empty. */}
@@ -78,6 +84,7 @@ function InviteForm({
         firstName: "",
         lastName: "",
     });
+    const [role, setRole] = useState<RoleKey>("member");
 
     useEffect(() => {
         if (state.sentTo) {
@@ -91,7 +98,7 @@ function InviteForm({
         }
     }, [state, onDone]);
 
-    function field(name: InviteField) {
+    function field(name: Exclude<InviteField, "role">) {
         return {
             id: `invite-${name}`,
             name,
@@ -137,6 +144,30 @@ function InviteForm({
                     maxLength={100}
                     {...field("lastName")}
                 />
+            </div>
+            <div className="flex flex-col gap-1.5">
+                <label htmlFor="invite-role" className="text-base font-medium">
+                    Rôle
+                </label>
+                <select
+                    id="invite-role"
+                    name="role"
+                    value={role}
+                    onChange={(event) => setRole(event.target.value as RoleKey)}
+                    aria-describedby="invite-role-hint"
+                    aria-invalid={Boolean(state.fieldErrors?.role) || undefined}
+                    className={SELECT_CLASSES}
+                >
+                    {ROLE_KEYS.map((key) => (
+                        <option key={key} value={key}>
+                            {ROLE_LABELS[key]}
+                        </option>
+                    ))}
+                </select>
+                {/* Read with the field: changes with the chosen role. */}
+                <p id="invite-role-hint" className="text-sm text-ink-muted">
+                    {ROLE_DESCRIPTIONS[role]}
+                </p>
             </div>
 
             <div className="flex justify-end">

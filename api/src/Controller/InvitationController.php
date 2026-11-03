@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Invitation;
+use App\Entity\OrganizationRole;
 use App\Entity\User;
 use App\Mailer\InvitationMailer;
 use App\Repository\InvitationRepository;
@@ -69,6 +70,8 @@ final class InvitationController
         $email = User::normalizeEmail(JsonBody::string($request, 'email'));
         $firstName = trim(JsonBody::string($request, 'firstName'));
         $lastName = trim(JsonBody::string($request, 'lastName'));
+        // Member when not given (US-16)
+        $role = OrganizationRole::tryFrom(JsonBody::string($request, 'role') ?: OrganizationRole::Member->value);
 
         $errors = array_filter([
             'email' => \count($validator->validate($email, [
@@ -78,9 +81,10 @@ final class InvitationController
             ])) > 0 ? 'Saisissez une adresse e-mail valide.' : null,
             'firstName' => self::nameError($firstName, 'prénom'),
             'lastName' => self::nameError($lastName, 'nom'),
+            'role' => null === $role ? 'Choisissez le rôle : administrateur, membre ou lecteur.' : null,
         ]);
 
-        if ([] !== $errors) {
+        if ([] !== $errors || null === $role) {
             return new JsonResponse([
                 'error' => reset($errors),
                 'code' => 'invalid_invitation',
@@ -99,7 +103,7 @@ final class InvitationController
             return self::error(self::TOO_MANY, 'too_many_invitations', Response::HTTP_TOO_MANY_REQUESTS);
         }
 
-        $invitation = (new Invitation($organization, $email, $admin))->setName($firstName, $lastName);
+        $invitation = (new Invitation($organization, $email, $admin))->setName($firstName, $lastName)->setRole($role);
 
         return new JsonResponse(
             self::view($invitation, $this->sendLink($invitation)),
@@ -163,6 +167,7 @@ final class InvitationController
             'firstName' => $invitation->getFirstName(),
             'lastName' => $invitation->getLastName(),
             'organizationName' => $invitation->getOrganization()?->getName(),
+            'role' => $invitation->getRole()->value,
             'inviterName' => null === $inviter ? null : self::fullName($inviter),
         ]);
     }
@@ -250,6 +255,7 @@ final class InvitationController
             'email' => $invitation->getEmail(),
             'firstName' => $invitation->getFirstName(),
             'lastName' => $invitation->getLastName(),
+            'role' => $invitation->getRole()->value,
             'invitedBy' => null === $inviter ? null : self::fullName($inviter),
             'sentAt' => $invitation->getSentAt()->format(\DATE_ATOM),
             'expiresAt' => $invitation->getExpiresAt()->format(\DATE_ATOM),

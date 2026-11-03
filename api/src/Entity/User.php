@@ -116,12 +116,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
+     * Stored roles, plus the Symfony role of the organization role (a user
+     * of an organization stored without one is a member).
+     *
      * @return list<string>
      */
     public function getRoles(): array
     {
         $roles = $this->roles;
         $roles[] = 'ROLE_USER';
+
+        if (null !== $this->organization) {
+            $roles[] = $this->getOrganizationRole()->securityRole();
+        }
 
         return array_values(array_unique($roles));
     }
@@ -132,6 +139,31 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
+
+        return $this;
+    }
+
+    /**
+     * Member when none is stored. The highest one wins if several are.
+     */
+    public function getOrganizationRole(): OrganizationRole
+    {
+        return match (true) {
+            \in_array(OrganizationRole::Admin->securityRole(), $this->roles, true) => OrganizationRole::Admin,
+            \in_array(OrganizationRole::Member->securityRole(), $this->roles, true) => OrganizationRole::Member,
+            \in_array(OrganizationRole::Reader->securityRole(), $this->roles, true) => OrganizationRole::Reader,
+            default => OrganizationRole::Member,
+        };
+    }
+
+    /**
+     * Replaces the organization role; other roles (platform administrator)
+     * are kept.
+     */
+    public function setOrganizationRole(OrganizationRole $role): static
+    {
+        $others = array_diff($this->roles, OrganizationRole::securityRoles());
+        $this->roles = [...array_values($others), $role->securityRole()];
 
         return $this;
     }

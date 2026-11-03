@@ -7,6 +7,7 @@ import { AuthHeading, AuthLayout } from "@/components/auth/auth-layout";
 import { AcceptInvitationForm } from "@/components/team/accept-invitation-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/api/types";
 import { checkInvitationToken } from "@/lib/team/api";
 
 export const metadata: Metadata = {
@@ -101,7 +102,11 @@ async function InvitationContent({
                 <span className="font-medium wrap-break-word text-ink">
                     {invitation.email}
                 </span>
-                .
+                , avec le rôle{" "}
+                <span className="font-medium text-ink">
+                    {ROLE_LABELS[invitation.role]}
+                </span>{" "}
+                : {ROLE_DESCRIPTIONS[invitation.role].toLowerCase()}
             </AuthHeading>
             <AcceptInvitationForm
                 token={token as string}

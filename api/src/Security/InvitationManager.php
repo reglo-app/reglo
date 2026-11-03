@@ -53,7 +53,8 @@ final class InvitationManager
 
     /**
      * Creates the account of the invited person in the organization of the
-     * invitation, as an activated member, and deletes the invitation. The
+     * invitation, activated, with the role of the invitation, and deletes
+     * the invitation. The
      * caller checks that the e-mail is still free.
      */
     public function accept(Invitation $invitation, string $firstName, string $lastName, string $plainPassword): User
@@ -61,7 +62,7 @@ final class InvitationManager
         $user = (new User($invitation->getEmail()))
             ->setName($firstName, $lastName)
             ->setOrganization($invitation->getOrganization())
-            ->setRoles(['ROLE_MEMBER']);
+            ->setOrganizationRole($invitation->getRole());
         $user->activate($this->passwordHasher->hashPassword($user, $plainPassword));
 
         $this->entityManager->persist($user);

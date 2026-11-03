@@ -25,26 +25,12 @@ final class CurrentUserView
             'jobTitle' => $user->getJobTitle(),
             // Changes with each new photo; null without photo
             'avatarVersion' => $user->getAvatarUpdatedAt()?->format('U'),
-            'role' => self::roleKey($user),
+            'role' => $user->getOrganizationRole()->value,
             // Null for accounts outside any client (REGLO team)
             'organization' => null === $organization ? null : [
                 'id' => (string) $organization->getId(),
                 'name' => $organization->getName(),
             ],
         ];
-    }
-
-    /**
-     * Role key of the web app: "admin", "member" (default) or "reader".
-     */
-    public static function roleKey(User $user): string
-    {
-        $roles = $user->getRoles();
-
-        return match (true) {
-            \in_array('ROLE_ADMIN', $roles, true) => 'admin',
-            \in_array('ROLE_READER', $roles, true) => 'reader',
-            default => 'member',
-        };
     }
 }
