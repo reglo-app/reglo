@@ -1,101 +1,161 @@
 "use client";
 
-import { useActionState, useRef } from "react";
-import { Camera, CircleAlert, LoaderCircle, Trash2 } from "lucide-react";
+import { startTransition, useActionState, useRef } from "react";
+import {
+    Camera,
+    CircleAlert,
+    ImageUp,
+    LoaderCircle,
+    Trash2,
+} from "lucide-react";
 
 import { UserAvatar } from "@/components/profile/user-avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { CurrentUser } from "@/lib/api";
 import {
     removeAvatar,
     uploadAvatar,
     type AvatarState,
 } from "@/lib/profile/actions";
-import { AVATAR_TYPES } from "@/lib/profile/avatar";
+import { AVATAR_TYPES, prepareAvatar } from "@/lib/profile/avatar";
 
 export type AvatarFormProps = {
     user: Pick<CurrentUser, "id" | "avatarVersion">;
     fullName: string;
+    /** Shown next to the photo (name, job title...). */
+    children?: React.ReactNode;
     /** Injected in tests; the server actions by default. */
     upload?: typeof uploadAvatar;
     remove?: typeof removeAvatar;
 };
 
+const CAMERA_BUTTON =
+    "absolute right-0 bottom-0 flex size-9 items-center justify-center rounded-full border-2 border-white bg-brand-teal text-white shadow-overlay transition-colors hover:bg-teal-700 disabled:opacity-70 [&_svg]:size-4";
+
 /**
- * Profile photo: choosing a file sends it at once. The API crops it to a
- * square and removes its metadata.
+ * Profile photo of the settings header. Choosing a file sends it at once:
+ * the browser reduces it first, the API crops it to a square and removes
+ * its metadata.
  */
 export function AvatarForm({
     user,
     fullName,
+    children,
     upload = uploadAvatar,
     remove = removeAvatar,
 }: AvatarFormProps) {
     const [uploadState, uploadAction, isUploading] = useActionState<
         AvatarState,
-        FormData
-    >(upload, {});
+        File
+    >(async (previous, file) => {
+        const prepared = await prepareAvatar(file);
+        if ("error" in prepared) {
+            return { error: prepared.error };
+        }
+        const formData = new FormData();
+        formData.set("file", prepared.file);
+        return upload(previous, formData);
+    }, {});
     const [removeState, removeAction, isRemoving] = useActionState<
         AvatarState,
-        FormData
+        void
     >(() => remove(), {});
-    const formRef = useRef<HTMLFormElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const isBusy = isUploading || isRemoving;
     const error = uploadState.error ?? removeState.error;
+    const hasPhoto = Boolean(user.avatarVersion);
+
+    function chooseFile() {
+        inputRef.current?.click();
+    }
+
+    function sendFile(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        // Lets the user choose the same file again after an error.
+        event.target.value = "";
+        if (file) {
+            startTransition(() => uploadAction(file));
+        }
+    }
+
+    const cameraIcon = isBusy ? (
+        <LoaderCircle aria-hidden="true" className="animate-spin" />
+    ) : (
+        <Camera aria-hidden="true" />
+    );
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-4">
-                <UserAvatar user={user} fullName={fullName} size="lg" />
-
-                <form ref={formRef} action={uploadAction}>
-                    {/* The visible button opens the file picker. */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">
+                {/* Overlaps the banner above it. */}
+                <div className="relative -mt-12 w-fit shrink-0 sm:-mt-14">
+                    <UserAvatar
+                        user={user}
+                        fullName={fullName}
+                        size="xl"
+                        className="ring-4 ring-white"
+                    />
                     <input
                         ref={inputRef}
                         type="file"
-                        name="file"
                         accept={AVATAR_TYPES.join(",")}
                         className="sr-only"
                         tabIndex={-1}
                         aria-hidden="true"
-                        onChange={() => formRef.current?.requestSubmit()}
+                        onChange={sendFile}
                     />
-                    <Button
-                        type="button"
-                        variant="outline"
-                        disabled={isBusy}
-                        onClick={() => inputRef.current?.click()}
-                    >
-                        {isUploading ? (
-                            <LoaderCircle
-                                aria-hidden="true"
-                                className="animate-spin"
-                            />
-                        ) : (
-                            <Camera aria-hidden="true" />
-                        )}
-                        {isUploading
-                            ? "Envoi…"
-                            : user.avatarVersion
-                              ? "Changer la photo"
-                              : "Ajouter une photo"}
-                    </Button>
-                </form>
-
-                {user.avatarVersion && (
-                    <form action={removeAction}>
-                        <Button type="submit" variant="ghost" disabled={isBusy}>
-                            <Trash2 aria-hidden="true" />
-                            {isRemoving ? "Suppression…" : "Supprimer"}
-                        </Button>
-                    </form>
-                )}
+                    {hasPhoto ? (
+                        <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger
+                                className={CAMERA_BUTTON}
+                                disabled={isBusy}
+                                aria-label="Modifier la photo de profil"
+                            >
+                                {cameraIcon}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-52">
+                                <DropdownMenuItem onSelect={chooseFile}>
+                                    <ImageUp aria-hidden="true" />
+                                    Changer la photo
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        startTransition(() => removeAction())
+                                    }
+                                >
+                                    <Trash2 aria-hidden="true" />
+                                    Supprimer la photo
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : (
+                        <button
+                            type="button"
+                            className={CAMERA_BUTTON}
+                            disabled={isBusy}
+                            aria-label="Ajouter une photo de profil"
+                            onClick={chooseFile}
+                        >
+                            {cameraIcon}
+                        </button>
+                    )}
+                </div>
+                {children}
             </div>
 
-            <p className="text-sm text-ink-muted">
-                JPEG, PNG ou WebP, 5 Mo maximum. La photo est recadrée en carré.
+            {/* Announced: the photo changes without moving the focus. */}
+            <p className="sr-only" role="status">
+                {isUploading
+                    ? "Envoi de la photo…"
+                    : isRemoving
+                      ? "Suppression de la photo…"
+                      : ""}
             </p>
 
             {error && (

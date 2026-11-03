@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { AvatarForm } from "./avatar-form";
+import { AvatarForm, type AvatarFormProps } from "./avatar-form";
 import { EmailConfirmationForm } from "./email-confirmation-form";
 import { EmailForm } from "./email-form";
 import { PasswordForm } from "./password-form";
@@ -58,83 +58,97 @@ describe("ProfileForm", () => {
 describe("AvatarForm", () => {
     const user = { id: "7", avatarVersion: null };
 
-    it("sends the chosen image at once", async () => {
-        const upload = vi.fn().mockResolvedValue({});
+    function renderForm(props: Partial<AvatarFormProps> = {}) {
         const { container } = render(
             <AvatarForm
                 user={user}
                 fullName="Camille Martin"
-                upload={upload}
-                remove={vi.fn()}
-            />,
+                upload={vi.fn().mockResolvedValue({})}
+                remove={vi.fn().mockResolvedValue({})}
+                {...props}
+            >
+                <h1>Camille Martin</h1>
+            </AvatarForm>,
         );
-        const input =
-            container.querySelector<HTMLInputElement>('input[type="file"]');
+        return container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    }
+
+    it("sends the chosen image at once", async () => {
+        const upload = vi.fn().mockResolvedValue({});
+        const input = renderForm({ upload });
         const file = new File(["png"], "photo.png", { type: "image/png" });
 
-        await userEvent.upload(input!, file);
+        await userEvent.upload(input, file);
 
         await vi.waitFor(() => expect(upload).toHaveBeenCalled());
+        // jsdom cannot decode images: the small file is sent as is.
         expect((upload.mock.calls[0][1] as FormData).get("file")).toEqual(file);
     });
 
-    it("shows the initials and no delete button without photo", () => {
-        render(
-            <AvatarForm
-                user={user}
-                fullName="Camille Martin"
-                upload={vi.fn()}
-                remove={vi.fn()}
-            />,
-        );
+    it("shows the initials and the add button without photo", () => {
+        renderForm();
 
         expect(screen.getByText("CM")).toBeInTheDocument();
         expect(
-            screen.getByRole("button", { name: "Ajouter une photo" }),
+            screen.getByRole("heading", { name: "Camille Martin" }),
         ).toBeInTheDocument();
         expect(
-            screen.queryByRole("button", { name: "Supprimer" }),
+            screen.getByRole("button", { name: "Ajouter une photo de profil" }),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByRole("button", {
+                name: "Modifier la photo de profil",
+            }),
         ).not.toBeInTheDocument();
     });
 
-    it("removes the photo", async () => {
+    it("removes the photo from the photo menu", async () => {
         const remove = vi.fn().mockResolvedValue({});
-        render(
-            <AvatarForm
-                user={{ id: "7", avatarVersion: "1793" }}
-                fullName="Camille Martin"
-                upload={vi.fn()}
-                remove={remove}
-            />,
-        );
+        renderForm({ user: { id: "7", avatarVersion: "1793" }, remove });
 
         await userEvent.click(
-            screen.getByRole("button", { name: "Supprimer" }),
+            screen.getByRole("button", { name: "Modifier la photo de profil" }),
+        );
+        expect(
+            await screen.findByRole("menuitem", { name: "Changer la photo" }),
+        ).toBeInTheDocument();
+        await userEvent.click(
+            screen.getByRole("menuitem", { name: "Supprimer la photo" }),
         );
 
-        expect(remove).toHaveBeenCalled();
+        await vi.waitFor(() => expect(remove).toHaveBeenCalled());
     });
 
-    it("shows an upload error", async () => {
-        const upload = vi
-            .fn()
-            .mockResolvedValue({ error: "L'image ne doit pas dépasser 5 Mo." });
-        const { container } = render(
-            <AvatarForm
-                user={user}
-                fullName="Camille Martin"
-                upload={upload}
-                remove={vi.fn()}
-            />,
-        );
+    it("refuses a photo too large to be reduced, without sending it", async () => {
+        const upload = vi.fn();
+        const input = renderForm({ upload });
 
         await userEvent.upload(
-            container.querySelector<HTMLInputElement>('input[type="file"]')!,
-            new File(["x"], "photo.png", { type: "image/png" }),
+            input,
+            new File([new Uint8Array(6 * 1024 * 1024)], "photo.png", {
+                type: "image/png",
+            }),
         );
 
         expect(await screen.findByRole("alert")).toHaveTextContent(
             "L'image ne doit pas dépasser 5 Mo.",
+        );
+        expect(upload).not.toHaveBeenCalled();
+    });
+
+    it("shows an upload error", async () => {
+        const upload = vi.fn().mockResolvedValue({
+            error: "Choisissez une image JPEG, PNG ou WebP.",
+        });
+        const input = renderForm({ upload });
+
+        await userEvent.upload(
+            input,
+            new File(["x"], "photo.png", { type: "image/png" }),
+        );
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "Choisissez une image JPEG, PNG ou WebP.",
         );
     });
 });

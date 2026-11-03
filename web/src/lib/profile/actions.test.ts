@@ -11,7 +11,7 @@ import {
     uploadAvatar,
 } from "./actions";
 import { checkEmailChangeToken } from "./api";
-import { avatarUrl, initials } from "./avatar";
+import { avatarUrl, initials, prepareAvatar } from "./avatar";
 
 // The session module needs a Next.js request (next/headers).
 vi.mock("@/lib/auth/session", () => ({ getSessionToken: vi.fn() }));
@@ -338,5 +338,100 @@ describe("avatar helpers", () => {
     it("keeps two initials", () => {
         expect(initials("Camille Anne Martin")).toBe("CA");
         expect(initials("ana@demo.test")).toBe("A");
+    });
+});
+
+describe("prepareAvatar", () => {
+    function photo(type: string, bytes = 10) {
+        return new File([new Uint8Array(bytes)], "photo", { type });
+    }
+
+    // jsdom decodes no image: the browser APIs are replaced here.
+    function stubBrowserImage(width: number, height: number) {
+        const close = vi.fn();
+        vi.stubGlobal(
+            "createImageBitmap",
+            vi.fn().mockResolvedValue({ width, height, close }),
+        );
+        const drawImage = vi.fn();
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+            drawImage,
+        } as unknown as CanvasRenderingContext2D);
+        const toBlob = vi
+            .spyOn(HTMLCanvasElement.prototype, "toBlob")
+            .mockImplementation((callback) =>
+                callback(new Blob(["reduced"], { type: "image/webp" })),
+            );
+        return { close, drawImage, toBlob };
+    }
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("reduces a phone photo before it is sent", async () => {
+        const { close, drawImage, toBlob } = stubBrowserImage(4000, 3000);
+
+        const result = await prepareAvatar(
+            photo("image/jpeg", 9 * 1024 * 1024),
+        );
+
+        expect(result).toEqual({ file: expect.any(File) });
+        const file = (result as { file: File }).file;
+        expect(file.type).toBe("image/webp");
+        expect(file.size).toBe("reduced".length);
+        expect(drawImage).toHaveBeenCalledWith(
+            expect.anything(),
+            0,
+            0,
+            1024,
+            768,
+        );
+        expect(toBlob).toHaveBeenCalledWith(
+            expect.any(Function),
+            "image/webp",
+            0.9,
+        );
+        expect(close).toHaveBeenCalled();
+    });
+
+    it("never enlarges a small photo", async () => {
+        const { drawImage } = stubBrowserImage(300, 200);
+
+        await prepareAvatar(photo("image/png"));
+
+        expect(drawImage).toHaveBeenCalledWith(
+            expect.anything(),
+            0,
+            0,
+            300,
+            200,
+        );
+    });
+
+    it.each([
+        [photo("image/gif"), "Choisissez une image JPEG, PNG ou WebP."],
+        [
+            photo("image/jpeg", 20 * 1024 * 1024 + 1),
+            "L'image ne doit pas dépasser 20 Mo.",
+        ],
+    ])("refuses a wrong file before reading it", async (file, error) => {
+        const { drawImage } = stubBrowserImage(10, 10);
+
+        expect(await prepareAvatar(file)).toEqual({ error });
+        expect(drawImage).not.toHaveBeenCalled();
+    });
+
+    it("sends a small photo as is when the browser cannot read it", async () => {
+        vi.stubGlobal(
+            "createImageBitmap",
+            vi.fn().mockRejectedValue(new Error("unreadable")),
+        );
+        const small = photo("image/png");
+
+        expect(await prepareAvatar(small)).toEqual({ file: small });
+        expect(
+            await prepareAvatar(photo("image/png", 5 * 1024 * 1024 + 1)),
+        ).toEqual({ error: "L'image ne doit pas dépasser 5 Mo." });
     });
 });
