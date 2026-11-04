@@ -8,8 +8,23 @@ framework:
     #esi: true
     #fragments: true
 
+    http_client:
+        scoped_clients:
+            # Data service (score of the diagnostic, US-06), injected as
+            # $dataServiceClient. One retry if it does not answer in time.
+            data_service.client:
+                base_uri: '%env(DATA_SERVICE_URL)%'
+                headers:
+                    X-Service-Token: '%env(DATA_SERVICE_TOKEN)%'
+                timeout: 5
+                retry_failed:
+                    max_retries: 1
+
 when@test:
     framework:
         test: true
         session:
             storage_factory_id: session.storage.factory.mock_file
+        # No real HTTP call in the tests: see tests/DataServiceMock.php
+        http_client:
+            mock_response_factory: App\Tests\DataServiceMock

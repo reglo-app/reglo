@@ -32,7 +32,14 @@ export async function saveAnswer(
     };
 }
 
-/** Validates the draft: refused while a mandatory question is unanswered. */
+/** Same words as the API when the score cannot be computed (503). */
+const SCORE_UNAVAILABLE =
+    "Le calcul du score est temporairement indisponible. Vos réponses sont conservées : réessayez dans un instant.";
+
+/**
+ * Validates the draft and computes its score: refused while a mandatory
+ * question is unanswered. When it fails, the draft stays as it was.
+ */
 export async function submitDiagnostic(): Promise<
     { submittedAt: string } | { error: string }
 > {
@@ -47,8 +54,6 @@ export async function submitDiagnostic(): Promise<
     }
     return {
         error:
-            result.status === "rejected"
-                ? result.message
-                : "La validation est impossible pour le moment. Réessayez plus tard.",
+            result.status === "rejected" ? result.message : SCORE_UNAVAILABLE,
     };
 }

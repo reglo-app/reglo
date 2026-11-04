@@ -40,3 +40,34 @@ test("starts the diagnostic from the dashboard and answers with the keyboard", a
         page.getByRole("button", { name: "Valider le diagnostic" }),
     ).toBeDisabled();
 });
+
+test("shows the score of the latest diagnostic, also as a table", async ({
+    page,
+}) => {
+    await page.goto("/diagnostic/resultat");
+
+    await expect(
+        page.getByRole("heading", { name: "Résultat du diagnostic" }),
+    ).toBeVisible();
+    await expect(
+        page.getByRole("img", { name: "Score global : 62 sur 100" }),
+    ).toBeVisible();
+    await expect(page.getByText("Maîtrisé")).toBeVisible();
+    await expect(
+        page.getByRole("heading", { name: "Actions prioritaires" }),
+    ).toBeVisible();
+
+    const table = page.getByRole("table");
+    await expect(table).toBeHidden();
+    await page.getByText("Voir tous les scores sous forme de tableau").click();
+    await expect(table).toBeVisible();
+    await expect(
+        table.getByRole("row", { name: /Score global 62/ }),
+    ).toBeVisible();
+
+    // The dashboard shows the same score.
+    await page.goto("/dashboard");
+    await expect(
+        page.getByRole("img", { name: "Score global : 62 sur 100" }),
+    ).toBeVisible();
+});

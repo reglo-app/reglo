@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
     ArrowLeft,
     ArrowRight,
@@ -86,6 +87,7 @@ export function DiagnosticWizard({
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const headingRef = useRef<HTMLHeadingElement>(null);
+    const router = useRouter();
 
     const progress = pillarProgress(steps, answers);
     const missing = missingSteps(steps, answers);
@@ -147,6 +149,8 @@ export function DiagnosticWizard({
         } else {
             setSubmittedAt(result.submittedAt);
             setMode("done");
+            // The score is ready: show it (US-06).
+            router.push("/diagnostic/resultat");
         }
     }
 
@@ -188,12 +192,12 @@ export function DiagnosticWizard({
                     <p className="max-w-xl text-ink-muted">
                         {submittedAt &&
                             `Vos réponses ont été enregistrées le ${formatDate(submittedAt)}. `}
-                        Votre score QHSE sera calculé à partir de ce diagnostic.
+                        Votre score QHSE est calculé.
                     </p>
                     <div className="flex flex-wrap gap-3">
                         <Button asChild>
-                            <Link href="/dashboard">
-                                Retour au tableau de bord
+                            <Link href="/diagnostic/resultat">
+                                Voir mon score
                             </Link>
                         </Button>
                         <Button variant="outline" onClick={restart}>

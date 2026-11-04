@@ -40,6 +40,15 @@ jobs:
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
 
+      - name: Build and push data service image
+        uses: docker/build-push-action@v6
+        with:
+          context: data-service/service
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.OWNER }}/reglo-data:${{ github.sha }}
+          cache-from: type=gha,scope=data
+          cache-to: type=gha,mode=max,scope=data
+
       - name: Build and push web image
         uses: docker/build-push-action@v6
         with:

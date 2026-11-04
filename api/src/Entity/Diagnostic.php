@@ -7,6 +7,7 @@ use App\Tenant\OrganizationOwnedInterface;
 use App\Tenant\OrganizationOwnedTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -48,6 +49,15 @@ class Diagnostic implements OrganizationOwnedInterface
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $submittedAt = null;
+
+    /**
+     * Score computed by the data service at the submission (US-06): global,
+     * maturity, pillars, themes, coverage, gaps, algoVersion.
+     *
+     * @var array<string, mixed>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $score = null;
 
     /** @var Collection<string, DiagnosticAnswer> by question id */
     #[ORM\OneToMany(targetEntity: DiagnosticAnswer::class, mappedBy: 'diagnostic', cascade: ['persist'], orphanRemoval: true, indexBy: 'questionId')]
@@ -140,8 +150,22 @@ class Diagnostic implements OrganizationOwnedInterface
         return array_values(array_filter($mandatoryIds, fn (string $id): bool => !$this->answers->containsKey($id)));
     }
 
-    public function submit(): void
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getScore(): ?array
     {
+        return $this->score;
+    }
+
+    /**
+     * Validated with its score: from then on, it no longer changes.
+     *
+     * @param array<string, mixed> $score
+     */
+    public function submit(array $score): void
+    {
+        $this->score = $score;
         $this->status = DiagnosticStatus::Submitted;
         $this->submittedAt = new \DateTimeImmutable();
         $this->updatedAt = $this->submittedAt;

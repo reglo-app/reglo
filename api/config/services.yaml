@@ -40,3 +40,6 @@ when@test:
     parameters:
         # Kept apart from the files of the dev environment
         app.uploads_dir: '%kernel.project_dir%/var/uploads-test'
+    services:
+        # Answers the HTTP requests of the tests (framework.yaml)
+        App\Tests\DataServiceMock: ~

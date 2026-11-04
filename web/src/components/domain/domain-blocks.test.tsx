@@ -17,7 +17,7 @@ describe("DomainScoreCard", () => {
         expect(
             screen.getByRole("img", { name: "Score Sécurité : 49 sur 100" }),
         ).toBeInTheDocument();
-        expect(screen.getByText("À renforcer")).toBeInTheDocument();
+        expect(screen.getByText("En structuration")).toBeInTheDocument();
     });
 
     it("lists the themes weakest first and flags the weakest", () => {

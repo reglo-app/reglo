@@ -1,12 +1,19 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { mockQuestionnaire } from "@/lib/api/mocks";
 import type { CurrentDiagnostic, Diagnostic, Question } from "@/lib/api/types";
 
 import { DiagnosticWizard } from "./diagnostic-wizard";
 import { QuestionField } from "./question-field";
+
+const routerPush = vi.hoisted(() => vi.fn());
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: routerPush }) }));
+
+afterEach(() => {
+    vi.clearAllMocks();
+});
 
 const NO_DIAGNOSTIC: CurrentDiagnostic = { draft: null, lastSubmittedAt: null };
 
@@ -257,7 +264,7 @@ describe("DiagnosticWizard", () => {
         expect(submit).not.toHaveBeenCalled();
     });
 
-    it("submits a complete diagnostic", async () => {
+    it("submits a complete diagnostic, then shows its score", async () => {
         const { submit } = renderWizard(draft(allAnsweredBut()));
 
         expect(screen.getByText("Question 8 sur 8")).toBeInTheDocument();
@@ -275,5 +282,28 @@ describe("DiagnosticWizard", () => {
         expect(
             screen.getByText(/enregistrées le 3 nov\. 2026/),
         ).toBeInTheDocument();
+        expect(routerPush).toHaveBeenCalledWith("/diagnostic/resultat");
+    });
+
+    it("keeps the draft when the score cannot be computed", async () => {
+        const submit = vi.fn().mockResolvedValue({
+            error: "Le calcul du score est temporairement indisponible.",
+        });
+        renderWizard(draft(allAnsweredBut()), { submit });
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Récapitulatif" }),
+        );
+        await userEvent.click(
+            screen.getByRole("button", { name: "Valider le diagnostic" }),
+        );
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "temporairement indisponible",
+        );
+        expect(
+            screen.getByRole("button", { name: "Valider le diagnostic" }),
+        ).toBeEnabled();
+        expect(routerPush).not.toHaveBeenCalled();
     });
 });

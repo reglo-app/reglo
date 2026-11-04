@@ -21,6 +21,18 @@ services:
       - "8025:8025" # web interface
       - "1025:1025" # SMTP
 
+  # Score of the diagnostic (data-service/service). Only the API calls it:
+  # no published port.
+  data:
+    build: ./data-service/service
+    environment:
+      SERVICE_TOKEN: ${DATA_SERVICE_TOKEN:-dev-data-token}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   api:
     build: ./api
     ports:
@@ -30,6 +42,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-reglo}:${POSTGRES_PASSWORD:-reglo}@db:5432/${POSTGRES_DB:-reglo}?serverVersion=16&charset=utf8
       # E-mails are caught by Mailpit (http://localhost:8025)
       MAILER_DSN: smtp://mailpit:1025
+      DATA_SERVICE_URL: http://data:8000
+      DATA_SERVICE_TOKEN: ${DATA_SERVICE_TOKEN:-dev-data-token}
     volumes:
       - ./api:/app
       - api_vendor:/app/vendor

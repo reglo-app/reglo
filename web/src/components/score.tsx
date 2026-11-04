@@ -2,11 +2,15 @@ import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-/** Words for a score, so the level is never given by a number alone. */
+/**
+ * Words for a score, so the level is never given by a number alone. Same
+ * thresholds and words as the maturity of the data service (scoring.py).
+ */
 export function scoreLevel(score: number): string {
-    if (score >= 75) return "Maîtrisé";
-    if (score >= 50) return "En progrès";
-    return "À renforcer";
+    if (score >= 75) return "Exemplaire";
+    if (score >= 50) return "Maîtrisé";
+    if (score >= 25) return "En structuration";
+    return "Initial";
 }
 
 /** Change since the previous diagnostic: arrow + number, words for screen readers. */

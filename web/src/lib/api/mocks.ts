@@ -7,6 +7,7 @@ import type { DomainKey } from "@/lib/domains";
 import type {
     ActionSummary,
     CurrentDiagnostic,
+    DiagnosticResult,
     CurrentUser,
     DashboardSummary,
     DomainDetail,
@@ -585,4 +586,43 @@ export const mockQuestionnaire: Questionnaire = {
 export const mockCurrentDiagnostic: CurrentDiagnostic = {
     draft: null,
     lastSubmittedAt: null,
+};
+
+/** Score of a submitted diagnostic, on the questions of mockQuestionnaire. */
+export const mockDiagnosticResult: DiagnosticResult = {
+    diagnosticId: "1",
+    submittedAt: "2026-10-12T09:00:00.000Z",
+    questionnaireVersion: "mock-1",
+    score: {
+        global: 61.9,
+        maturity: "Maîtrisé",
+        pillars: { quality: 72, hygiene: 58.3, safety: 49.5, environment: 77 },
+        themes: { pilotage: 72, sante: 58.3, risques: 49.5, dechets: 77 },
+        coverage: 1,
+        gaps: [
+            {
+                question_id: "safety.risques.01",
+                label: "Votre document unique d'évaluation des risques (DUERP) est-il à jour ?",
+                pillar: "safety",
+                theme: "risques",
+                score: 30,
+                potential_points: 8.75,
+                capped_for_proof: false,
+            },
+            {
+                question_id: "hygiene.sante.01",
+                label: "Tous les salariés sont-ils suivis par un service de prévention et de santé au travail ?",
+                pillar: "hygiene",
+                theme: "sante",
+                score: 50,
+                potential_points: 6.25,
+            },
+        ],
+        algoVersion: "1.0.0",
+    },
+    previous: {
+        submittedAt: "2026-07-01T09:00:00.000Z",
+        global: 57,
+        pillars: { quality: 65, hygiene: 60, safety: 45, environment: 70 },
+    },
 };

@@ -264,6 +264,47 @@ export type Diagnostic = {
     answers: Record<string, DiagnosticAnswer>;
 };
 
+/** A question to improve first: the points it would add to the global score. */
+export type ScoreGap = {
+    question_id: string;
+    label: string;
+    pillar: DomainKey;
+    theme: string;
+    score: number;
+    potential_points: number;
+    /** Capped because the proof (document) is missing. */
+    capped_for_proof?: boolean;
+};
+
+/** Score computed by the data service (0 to 100, one decimal; null: all not applicable). */
+export type DiagnosticScore = {
+    global: number | null;
+    /** e.g. "Maîtrisé". */
+    maturity: string | null;
+    pillars: Partial<Record<DomainKey, number | null>>;
+    /** By theme id. */
+    themes: Record<string, number | null>;
+    /** Share of the scored questions actually answered (0 to 1). */
+    coverage: number | null;
+    /** At most 3, biggest gain first. */
+    gaps: ScoreGap[];
+    algoVersion: string | null;
+};
+
+/** `GET /api/diagnostics/latest/result` (null when never scored), US-06. */
+export type DiagnosticResult = {
+    diagnosticId: string;
+    submittedAt: string;
+    questionnaireVersion: string;
+    score: DiagnosticScore;
+    /** The diagnostic before, for the trend. */
+    previous: {
+        submittedAt: string;
+        global: number | null;
+        pillars: Partial<Record<DomainKey, number | null>>;
+    } | null;
+};
+
 /** `GET /api/diagnostics/current`: the shared draft of the organization. */
 export type CurrentDiagnostic = {
     draft: Diagnostic | null;

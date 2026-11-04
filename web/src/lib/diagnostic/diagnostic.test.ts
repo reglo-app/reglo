@@ -132,4 +132,22 @@ describe("diagnostic actions", () => {
             error: "Répondez aux 2 questions.",
         });
     });
+
+    it("says the answers are kept when the score cannot be computed", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi
+                .fn()
+                .mockResolvedValue(
+                    Response.json(
+                        { error: "Indisponible.", code: "score_unavailable" },
+                        { status: 503 },
+                    ),
+                ),
+        );
+
+        expect(await submitDiagnostic()).toEqual({
+            error: "Le calcul du score est temporairement indisponible. Vos réponses sont conservées : réessayez dans un instant.",
+        });
+    });
 });
