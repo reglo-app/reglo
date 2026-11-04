@@ -2,16 +2,129 @@
 
 namespace App\Tests\Controller;
 
+use App\Controller\DiagnosticController;
 use App\Diagnostic\Questionnaire;
 use App\Entity\Organization;
 use App\Entity\OrganizationRole;
+use App\Tests\DataServiceMock;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 /**
  * US-05. The logged-in user of ProfileTestCase is a member of Acme.
  */
 final class DiagnosticControllerTest extends ProfileTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        DataServiceMock::reset();
+    }
+
+    public function testSubmittingSendsTheAnswersAndTheQuestionnaireThenStoresTheScore(): void
+    {
+        $this->answerEverything();
+
+        $this->jsonAs('POST', '/api/diagnostics/current/submit');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, DataServiceMock::$requests);
+        $request = DataServiceMock::$requests[0];
+        self::assertSame('POST', $request['method']);
+        self::assertStringEndsWith('/scores', $request['url']);
+        $questionnaire = static::getContainer()->get(Questionnaire::class);
+        self::assertSame($questionnaire->version(), $request['body']['questionnaire_version']);
+        self::assertSame($questionnaire->toArray(), $request['body']['questionnaire']);
+        self::assertContains(['question_id' => 'quality.pilotage.01', 'value' => 'yes', 'not_applicable' => false], $request['body']['answers']);
+
+        $this->getAs('/api/diagnostics/latest/result');
+        $result = $this->responseData();
+        self::assertSame(62.5, $result['score']['global']);
+        self::assertEquals(['quality' => 70, 'hygiene' => 55, 'safety' => 50, 'environment' => 75], $result['score']['pillars']);
+        self::assertSame('safety.risques.01', $result['score']['gaps'][0]['question_id']);
+        self::assertNull($result['previous']);
+    }
+
+    /**
+     * @return iterable<string, array{\Closure(): ResponseInterface}>
+     */
+    public static function dataServiceFailures(): iterable
+    {
+        yield 'down' => [static fn (): ResponseInterface => new MockResponse('', ['error' => 'Connection refused'])];
+        yield 'server error' => [static fn (): ResponseInterface => new MockResponse('{}', ['http_code' => 500])];
+        yield 'refused' => [static fn (): ResponseInterface => new MockResponse('{"detail": "invalide"}', ['http_code' => 422])];
+        yield 'unexpected answer' => [static fn (): ResponseInterface => new MockResponse('{"status": "ok"}', ['http_code' => 200])];
+    }
+
+    /**
+     * @param \Closure(): ResponseInterface $failure
+     */
+    #[DataProvider('dataServiceFailures')]
+    public function testWhenTheScoreCannotBeComputedTheDraftIsKept(\Closure $failure): void
+    {
+        $this->answerEverything();
+        DataServiceMock::$handler = static fn (): ResponseInterface => $failure();
+
+        $this->jsonAs('POST', '/api/diagnostics/current/submit');
+
+        self::assertResponseStatusCodeSame(503);
+        self::assertSame(['error' => DiagnosticController::SCORE_UNAVAILABLE, 'code' => 'score_unavailable'], $this->responseData());
+        $this->getAs('/api/diagnostics/current');
+        $draft = $this->responseData()['draft'];
+        self::assertSame('draft', $draft['status']);
+        self::assertCount(\count(static::getContainer()->get(Questionnaire::class)->mandatoryIds()), $draft['answers']);
+
+        // Trying again once the data service is back works.
+        DataServiceMock::$handler = null;
+        $this->jsonAs('POST', '/api/diagnostics/current/submit');
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testTheResultShowsThePreviousScoreForTheTrend(): void
+    {
+        $this->answerEverything();
+        DataServiceMock::$handler = static fn (): ResponseInterface => DataServiceMock::score(40.0, ['quality' => 40.0]);
+        $this->jsonAs('POST', '/api/diagnostics/current/submit');
+        $this->answerEverything();
+        DataServiceMock::$handler = null;
+        $this->jsonAs('POST', '/api/diagnostics/current/submit');
+
+        $this->getAs('/api/diagnostics/latest/result');
+
+        $result = $this->responseData();
+        self::assertSame(62.5, $result['score']['global']);
+        self::assertEquals(40, $result['previous']['global']);
+        self::assertEquals(['quality' => 40], $result['previous']['pillars']);
+    }
+
+    public function testWithoutScoreThereIsNoResult(): void
+    {
+        $this->getAs('/api/diagnostics/latest/result');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('null', $this->client->getResponse()->getContent());
+    }
+
+    public function testAnotherOrganizationNeverSeesTheResultButAReaderDoes(): void
+    {
+        // Users first: the requests below reboot the kernel.
+        $globex = new Organization('Globex');
+        $this->entityManager->persist($globex);
+        $spyToken = $this->issueToken($this->createUser('spy@globex.test', $globex));
+        $reader = $this->createUser('lea@acme.test', $this->organization)->setOrganizationRole(OrganizationRole::Reader);
+        $this->entityManager->flush();
+        $readerToken = $this->issueToken($reader);
+        $this->answerEverything();
+        $this->jsonAs('POST', '/api/diagnostics/current/submit');
+
+        $this->getAs('/api/diagnostics/latest/result', $spyToken);
+        self::assertSame('null', $this->client->getResponse()->getContent());
+
+        $this->getAs('/api/diagnostics/latest/result', $readerToken);
+        self::assertSame(62.5, $this->responseData()['score']['global']);
+    }
+
     public function testTheQuestionnaireHasTheFourQhsePillars(): void
     {
         $this->getAs('/api/questionnaire');

@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, canEdit } from "@/lib/api";
+import { withDiagnosticScore } from "@/lib/diagnostic/result";
 
 export const metadata: Metadata = { title: "Tableau de bord" };
 
@@ -21,7 +22,12 @@ export const metadata: Metadata = { title: "Tableau de bord" };
  * next actions, regulatory news). Kept short on purpose.
  */
 async function DashboardContent() {
-    const summary = await api.getDashboardSummary();
+    const [mockedSummary, result] = await Promise.all([
+        api.getDashboardSummary(),
+        api.getLatestResult(),
+    ]);
+    // The score block shows the real score of the latest diagnostic (US-06).
+    const summary = withDiagnosticScore(mockedSummary, result);
     const today = summary.generatedAt;
 
     return (

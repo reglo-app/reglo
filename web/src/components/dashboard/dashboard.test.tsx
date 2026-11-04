@@ -47,16 +47,17 @@ describe("ScoreOverview", () => {
         const hero = screen
             .getByRole("heading", { name: "Score QHSE" })
             .closest("[data-slot=card]");
-        expect(hero).toHaveTextContent("En progrès");
+        expect(hero).toHaveTextContent("Maîtrisé");
         expect(hero).toHaveTextContent(
             "+5 points depuis le diagnostic précédent",
         );
     });
 
-    it("maps scores to levels", () => {
-        expect(scoreLevel(30)).toBe("À renforcer");
-        expect(scoreLevel(50)).toBe("En progrès");
-        expect(scoreLevel(75)).toBe("Maîtrisé");
+    it("maps scores to the levels of the data service", () => {
+        expect(scoreLevel(24)).toBe("Initial");
+        expect(scoreLevel(25)).toBe("En structuration");
+        expect(scoreLevel(50)).toBe("Maîtrisé");
+        expect(scoreLevel(75)).toBe("Exemplaire");
     });
 
     it("asks for a first diagnostic when there is no score", () => {

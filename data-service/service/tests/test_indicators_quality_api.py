@@ -122,6 +122,32 @@ def test_api_questionnaire_inconnu(client):
     assert client.post("/scores", json={"questionnaire_version": "v99", "answers": []}).status_code == 404
 
 
+QUESTIONNAIRE_ENVOYE = {
+    "version": "envoye-1",
+    "pillars": [{"id": "safety", "label": "Sécurité", "weight": 1, "themes": [
+        {"id": "risques", "label": "Risques", "weight": 1, "questions": [
+            {"id": "safety.risques.01", "label": "DUERP à jour ?", "type": "yes_no", "weight": 1}]}]}],
+}
+
+
+def test_api_score_avec_questionnaire_envoye(client):
+    """US-06 : l'API Symfony envoie son questionnaire avec les réponses."""
+    r = client.post("/scores", json={"questionnaire_version": "envoye-1", "questionnaire": QUESTIONNAIRE_ENVOYE,
+                                     "answers": [{"question_id": "safety.risques.01", "value": "partial"}]})
+    assert r.status_code == 200
+    assert r.json()["global"] == 50.0 and r.json()["pillars"] == {"safety": 50.0}
+    assert r.json()["questionnaire_version"] == "envoye-1"
+
+
+def test_api_questionnaire_envoye_invalide_refuse(client):
+    invalide = {**QUESTIONNAIRE_ENVOYE, "pillars": [{**QUESTIONNAIRE_ENVOYE["pillars"][0], "weight": -1}]}
+    r = client.post("/scores", json={"questionnaire_version": "envoye-1", "questionnaire": invalide, "answers": []})
+    assert r.status_code == 422
+    r = client.post("/scores", json={"questionnaire_version": "autre", "questionnaire": QUESTIONNAIRE_ENVOYE,
+                                     "answers": []})
+    assert r.status_code == 422
+
+
 def test_api_veille(client):
     r = client.get("/veille/texts", params={"theme": "social", "since": "2026-10-01"})
     assert r.status_code == 200 and r.json()["total"] == 1

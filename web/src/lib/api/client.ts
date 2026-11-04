@@ -7,6 +7,7 @@ import { API_INTERNAL_URL } from "./internal-url";
 import {
     mockCurrentDiagnostic,
     mockCurrentUser,
+    mockDiagnosticResult,
     mockDashboardSummary,
     mockDomainDetails,
     mockInvitations,
@@ -18,6 +19,7 @@ import type {
     CurrentDiagnostic,
     CurrentUser,
     DashboardSummary,
+    DiagnosticResult,
     DomainDetail,
     Invitation,
     Member,
@@ -78,6 +80,8 @@ export type Api = {
     getQuestionnaire(): Promise<Questionnaire>;
     /** The shared draft of the organization (US-05). */
     getCurrentDiagnostic(): Promise<CurrentDiagnostic>;
+    /** Score of the latest submitted diagnostic; null if never (US-06). */
+    getLatestResult(): Promise<DiagnosticResult | null>;
 };
 
 export type ApiOptions = {
@@ -168,6 +172,15 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
                 "diagnostic",
                 () => mockCurrentDiagnostic,
                 () => request<CurrentDiagnostic>("/api/diagnostics/current"),
+            ),
+        getLatestResult: () =>
+            load(
+                "diagnostic",
+                () => mockDiagnosticResult,
+                () =>
+                    request<DiagnosticResult | null>(
+                        "/api/diagnostics/latest/result",
+                    ),
             ),
         getDashboardSummary: () =>
             load(

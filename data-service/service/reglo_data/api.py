@@ -66,6 +66,20 @@ class AnswerIn(BaseModel):
 class ScoreRequest(BaseModel):
     questionnaire_version: str
     answers: list[AnswerIn]
+    # Questionnaire envoyé par l'API Symfony avec les réponses (US-06) : une seule source
+    # (api/config/questionnaire/), donc pas de copie qui diverge. Contrôlé comme les publiés.
+    questionnaire: dict | None = None
+
+
+def request_questionnaire(req: ScoreRequest) -> dict:
+    if req.questionnaire is None:
+        return load_questionnaire(req.questionnaire_version)
+    errors = scoring.validate_questionnaire(req.questionnaire)
+    if errors:
+        raise HTTPException(status_code=422, detail={"message": "Questionnaire invalide.", "errors": errors})
+    if req.questionnaire.get("version") != req.questionnaire_version:
+        raise HTTPException(status_code=422, detail="La version du questionnaire ne correspond pas.")
+    return req.questionnaire
 
 
 @app.get("/health")
@@ -75,7 +89,7 @@ def health():
 
 @app.post("/scores", dependencies=[Depends(require_token)])
 def compute_scores(req: ScoreRequest):
-    questionnaire = load_questionnaire(req.questionnaire_version)
+    questionnaire = request_questionnaire(req)
     try:
         result = scoring.compute(questionnaire, [scoring.Answer(**a.model_dump()) for a in req.answers])
     except scoring.ScoringError as e:

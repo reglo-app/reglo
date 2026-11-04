@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Diagnostic\Questionnaire;
+use App\Diagnostic\ScoreCalculator;
+use App\Diagnostic\ScoreUnavailableException;
 use App\Entity\Diagnostic;
 use App\Entity\User;
 use App\Repository\DiagnosticRepository;
@@ -23,6 +25,8 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
  */
 final class DiagnosticController
 {
+    public const SCORE_UNAVAILABLE = 'Le calcul du score est temporairement indisponible. Vos réponses sont conservées : réessayez dans un instant.';
+
     public function __construct(
         private readonly Questionnaire $questionnaire,
         private readonly DiagnosticRepository $repository,
@@ -105,10 +109,11 @@ final class DiagnosticController
 
     /**
      * Refused while a mandatory question is unanswered: the answer lists
-     * them, so the web app can lead the user there.
+     * them, so the web app can lead the user there. The score is computed
+     * by the data service first: if it fails, the draft is kept as is.
      */
     #[Route('/api/diagnostics/current/submit', name: 'diagnostic_submit', methods: ['POST'])]
-    public function submit(): JsonResponse
+    public function submit(ScoreCalculator $scoreCalculator): JsonResponse
     {
         $draft = $this->repository->findDraft();
         if (null === $draft) {
@@ -124,10 +129,45 @@ final class DiagnosticController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $draft->submit();
+        try {
+            $score = $scoreCalculator->compute($draft);
+        } catch (ScoreUnavailableException) {
+            return self::error(self::SCORE_UNAVAILABLE, 'score_unavailable', Response::HTTP_SERVICE_UNAVAILABLE);
+        }
+
+        $draft->submit($score);
         $this->entityManager->flush();
 
         return new JsonResponse($this->view($draft));
+    }
+
+    /**
+     * Score of the latest submitted diagnostic of the organization, with
+     * the previous one (null if none) to show the trend; null if never
+     * scored.
+     */
+    #[Route('/api/diagnostics/latest/result', name: 'diagnostic_latest_result', methods: ['GET'])]
+    public function latestResult(): JsonResponse
+    {
+        $scored = $this->repository->findScored(2);
+        if ([] === $scored) {
+            return new JsonResponse('null', json: true);
+        }
+
+        $latest = $scored[0];
+        $previous = $scored[1] ?? null;
+
+        return new JsonResponse([
+            'diagnosticId' => (string) $latest->getId(),
+            'submittedAt' => $latest->getSubmittedAt()?->format(\DATE_ATOM),
+            'questionnaireVersion' => $latest->getQuestionnaireVersion(),
+            'score' => $latest->getScore(),
+            'previous' => null === $previous ? null : [
+                'submittedAt' => $previous->getSubmittedAt()?->format(\DATE_ATOM),
+                'global' => $previous->getScore()['global'] ?? null,
+                'pillars' => $previous->getScore()['pillars'] ?? [],
+            ],
+        ]);
     }
 
     /**

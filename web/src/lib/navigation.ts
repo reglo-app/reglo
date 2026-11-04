@@ -32,7 +32,7 @@ export const HOME_ITEM: NavItem = {
     label: "Tableau de bord",
     icon: LayoutDashboard,
     children: [
-        { href: "/diagnostic", label: "Diagnostic" },
+        { href: "/diagnostic", label: "Diagnostic", detailLabel: "Résultat" },
         { href: "/actions", label: "Plan d'actions" },
         {
             href: "/news",

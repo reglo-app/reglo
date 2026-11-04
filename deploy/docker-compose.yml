@@ -27,6 +27,9 @@ services:
       MAILER_DSN: ${MAILER_DSN}
       MAILER_FROM: ${MAILER_FROM}
       APP_WEB_URL: ${APP_WEB_URL}
+      # Score of the diagnostic (US-06): the data service of this environment
+      DATA_SERVICE_URL: http://data:8000
+      DATA_SERVICE_TOKEN: ${DATA_SERVICE_TOKEN:?Set DATA_SERVICE_TOKEN in .env}
     volumes:
       # Uploaded files (profile photos...): kept across deployments
       - uploads:/app/var/uploads
@@ -42,6 +45,22 @@ services:
     networks:
       - internal
       - proxy
+
+  # Service data (score of the diagnostic). Internal network only: never
+  # reachable from the proxy nor from outside.
+  data:
+    image: ghcr.io/${GHCR_OWNER}/reglo-data:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      SERVICE_TOKEN: ${DATA_SERVICE_TOKEN:?Set DATA_SERVICE_TOKEN in .env}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - internal
 
   web:
     image: ghcr.io/${GHCR_OWNER}/reglo-web:${IMAGE_TAG}
