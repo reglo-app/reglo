@@ -5,6 +5,9 @@
 import type { DomainKey } from "@/lib/domains";
 
 import type {
+    Action,
+    ActionDetail,
+    ActionPerson,
     ActionSummary,
     CurrentDiagnostic,
     DiagnosticResult,
@@ -626,3 +629,82 @@ export const mockDiagnosticResult: DiagnosticResult = {
         pillars: { quality: 65, hygiene: 60, safety: 45, environment: 70 },
     },
 };
+
+const [camille, hugo, , julien] = mockMembers;
+
+function person(member: Member): ActionPerson {
+    const { id, firstName, lastName, email } = member;
+    return { id, firstName, lastName, email };
+}
+
+/** Action plan of "Atelier Démo" (US-09), soonest due first. */
+export const mockActions: Action[] = [
+    {
+        id: "1",
+        title: "Mettre à jour le DUERP",
+        description:
+            "Revoir l'évaluation des risques de l'atelier avec le CSE et ajouter le risque chimique.",
+        domain: "safety",
+        type: "corrective",
+        status: "in_progress",
+        dueDate: "2026-10-10",
+        assignee: person(camille),
+        createdBy: person(camille),
+        createdAt: "2026-09-20T08:00:00.000Z",
+        updatedAt: "2026-10-01T09:30:00.000Z",
+    },
+    {
+        id: "2",
+        title: "Vérifier les extincteurs de l'atelier",
+        description: "",
+        domain: "safety",
+        type: "preventive",
+        status: "todo",
+        dueDate: "2026-10-22",
+        assignee: person(hugo),
+        createdBy: person(camille),
+        createdAt: "2026-10-02T08:00:00.000Z",
+        updatedAt: "2026-10-02T08:00:00.000Z",
+    },
+    {
+        id: "3",
+        title: "Planifier l'audit interne ISO 9001",
+        description: "Choisir les processus audités et prévenir les équipes.",
+        domain: "quality",
+        type: "improvement",
+        status: "in_review",
+        dueDate: "2026-11-15",
+        assignee: person(julien),
+        createdBy: person(camille),
+        createdAt: "2026-09-25T08:00:00.000Z",
+        updatedAt: "2026-10-14T15:00:00.000Z",
+    },
+    {
+        id: "4",
+        title: "Mettre en place le tri des biodéchets",
+        description: "",
+        domain: "environment",
+        type: "improvement",
+        status: "done",
+        dueDate: "2026-12-01",
+        assignee: null,
+        createdBy: person(camille),
+        createdAt: "2026-09-10T08:00:00.000Z",
+        updatedAt: "2026-10-05T11:00:00.000Z",
+    },
+];
+
+/** The same actions with their history. */
+export const mockActionDetails: ActionDetail[] = mockActions.map((action) => {
+    const steps = ["todo", "in_progress", "in_review", "done"] as const;
+    const reached = steps.slice(0, steps.indexOf(action.status) + 1);
+    return {
+        ...action,
+        history: reached.map((to, index) => ({
+            from: index === 0 ? null : reached[index - 1],
+            to,
+            by: index === 0 ? action.createdBy : action.assignee,
+            at: index === 0 ? action.createdAt : action.updatedAt,
+        })),
+    };
+});

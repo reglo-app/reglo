@@ -1,0 +1,13 @@
+Bonjour{% if first_name %} {{ first_name }}{% endif %},
+
+{% if assigned_by %}{{ assigned_by }} vous a confié une action{% else %}Une action vous a été confiée{% endif %} dans le plan d'actions QHSE de votre entreprise :
+
+{{ title }}
+Domaine : {{ pillar }}
+Échéance : {{ due_date }}
+
+Voir l'action :
+
+{{ action_url }}
+
+L'équipe Réglo

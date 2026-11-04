@@ -5,6 +5,8 @@ import type { DomainKey } from "@/lib/domains";
 
 import { API_INTERNAL_URL } from "./internal-url";
 import {
+    mockActionDetails,
+    mockActions,
     mockCurrentDiagnostic,
     mockCurrentUser,
     mockDiagnosticResult,
@@ -16,6 +18,8 @@ import {
     mockQuestionnaire,
 } from "./mocks";
 import type {
+    Action,
+    ActionDetail,
     CurrentDiagnostic,
     CurrentUser,
     DashboardSummary,
@@ -32,6 +36,7 @@ export const API_FEATURES = [
     "me",
     "team",
     "diagnostic",
+    "actions",
     "dashboard",
     "domains",
     "news",
@@ -82,6 +87,10 @@ export type Api = {
     getCurrentDiagnostic(): Promise<CurrentDiagnostic>;
     /** Score of the latest submitted diagnostic; null if never (US-06). */
     getLatestResult(): Promise<DiagnosticResult | null>;
+    /** Action plan of the organization, soonest due first (US-09). */
+    getActions(): Promise<Action[]>;
+    /** null when the action does not exist (or is not visible). */
+    getAction(id: string): Promise<ActionDetail | null>;
 };
 
 export type ApiOptions = {
@@ -182,6 +191,23 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
                         "/api/diagnostics/latest/result",
                     ),
             ),
+        getActions: () =>
+            load(
+                "actions",
+                () => mockActions,
+                () => request<Action[]>("/api/actions"),
+            ),
+        getAction: (id) =>
+            load(
+                "actions",
+                () => mockActionDetails.find((a) => a.id === id) ?? null,
+                () =>
+                    orNotFound(
+                        request<ActionDetail>(
+                            `/api/actions/${encodeURIComponent(id)}`,
+                        ),
+                    ),
+            ),
         getDashboardSummary: () =>
             load(
                 "dashboard",
@@ -198,20 +224,24 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
             load(
                 "news",
                 () => mockNewsArticles.find((a) => a.id === id) ?? null,
-                async () => {
-                    try {
-                        return await request<NewsArticle>(
+                () =>
+                    orNotFound(
+                        request<NewsArticle>(
                             `/api/news/${encodeURIComponent(id)}`,
-                        );
-                    } catch (error) {
-                        if (error instanceof ApiError && error.status === 404) {
-                            return null;
-                        }
-                        throw error;
-                    }
-                },
+                        ),
+                    ),
             ),
     };
+}
+
+/** null instead of a 404: the page shows "not found". */
+async function orNotFound<T>(response: Promise<T>): Promise<T | null> {
+    try {
+        return await response;
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 404) return null;
+        throw error;
+    }
 }
 
 export const api = createApi();

@@ -61,6 +61,18 @@ describe("ResultView", () => {
         expect(items[0]).toHaveTextContent("+ 8,8 points possibles");
     });
 
+    it("turns a priority action into an action of the plan", () => {
+        renderResult();
+
+        const link = screen.getByRole("link", {
+            name: /Créer une action : Votre document unique/,
+        });
+        const url = new URL(link.getAttribute("href")!, "http://reglo.test");
+        expect(url.pathname).toBe("/actions/nouvelle");
+        expect(url.searchParams.get("domaine")).toBe("safety");
+        expect(url.searchParams.get("titre")).toMatch(/^Votre document unique/);
+    });
+
     it("gives every score in a table", async () => {
         renderResult();
 
@@ -117,6 +129,9 @@ describe("ResultView", () => {
         renderResult(mockDiagnosticResult, false);
         expect(
             screen.queryByRole("link", { name: "Refaire un diagnostic" }),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole("link", { name: /Créer une action/ }),
         ).not.toBeInTheDocument();
     });
 });

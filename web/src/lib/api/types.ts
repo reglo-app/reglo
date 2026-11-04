@@ -72,7 +72,58 @@ export type DashboardAlert = {
     dueDate: string;
 };
 
-export type ActionStatus = "todo" | "in_progress" | "done";
+/** Steps of an action, in order (US-09). */
+export const ACTION_STATUSES = [
+    "todo",
+    "in_progress",
+    "in_review",
+    "done",
+] as const;
+export type ActionStatus = (typeof ACTION_STATUSES)[number];
+
+export const ACTION_TYPES = [
+    "corrective",
+    "preventive",
+    "improvement",
+] as const;
+export type ActionType = (typeof ACTION_TYPES)[number];
+
+/** Someone linked to an action; null in its place once they left. */
+export type ActionPerson = {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+};
+
+/** `GET /api/actions`: one action of the action plan (US-09). */
+export type Action = {
+    id: string;
+    title: string;
+    description: string;
+    domain: DomainKey;
+    type: ActionType;
+    status: ActionStatus;
+    /** Calendar date, "YYYY-MM-DD". */
+    dueDate: string;
+    /** Null once the assignee left the organization. */
+    assignee: ActionPerson | null;
+    createdBy: ActionPerson | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+/** A status change; the first one (from null) is the creation. */
+export type ActionStatusChange = {
+    from: ActionStatus | null;
+    to: ActionStatus;
+    by: ActionPerson | null;
+    /** ISO 8601 date. */
+    at: string;
+};
+
+/** `GET /api/actions/{id}`: the action with its history, oldest first. */
+export type ActionDetail = Action & { history: ActionStatusChange[] };
 
 /** Action of the action plan (US-09). */
 export type ActionSummary = {

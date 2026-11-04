@@ -66,6 +66,15 @@ describe("mock api", () => {
         expect((await api.getCurrentUser()).firstName).not.toBe("Modifié");
     });
 
+    it("returns the action plan, and one action with its history", async () => {
+        const actions = await api.getActions();
+        expect(actions.length).toBeGreaterThan(0);
+
+        const action = await api.getAction(actions[0].id);
+        expect(action?.history[0].from).toBeNull();
+        expect(await api.getAction("unknown")).toBeNull();
+    });
+
     it("returns a news article by id, or null", async () => {
         const article = await api.getNewsArticle("news-1");
         expect(article?.paragraphs.length).toBeGreaterThan(0);
@@ -155,6 +164,19 @@ describe("http api", () => {
             vi.fn().mockResolvedValue(new Response(null, { status: 404 })),
         );
         expect(await httpApi().getNewsArticle("news-9")).toBeNull();
+    });
+
+    it("returns null for an action of another organization", async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue(new Response(null, { status: 404 }));
+        vi.stubGlobal("fetch", fetchMock);
+
+        expect(await httpApi().getAction("42")).toBeNull();
+        expect(fetchMock).toHaveBeenCalledWith(
+            expect.stringMatching(/\/api\/actions\/42$/),
+            expect.anything(),
+        );
     });
 
     it("throws an ApiError with the status on other failures", async () => {

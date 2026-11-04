@@ -101,6 +101,21 @@ describe("getBreadcrumb", () => {
         ]);
     });
 
+    it("names the pages of the action plan", () => {
+        expect(getBreadcrumb("/actions/42").map((c) => c.label)).toEqual([
+            "Tableau de bord",
+            "Plan d'actions",
+            "Action",
+        ]);
+        expect(getBreadcrumb("/actions/nouvelle").at(-1)?.label).toBe(
+            "Nouvelle action",
+        );
+        // The change page stays under its action.
+        expect(getBreadcrumb("/actions/42/modifier").at(-1)?.href).toBe(
+            "/actions/42",
+        );
+    });
+
     it("falls back to the home crumb for an unknown path", () => {
         expect(getBreadcrumb("/unknown")).toHaveLength(1);
     });
