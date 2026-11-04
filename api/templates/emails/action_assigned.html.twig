@@ -1,0 +1,22 @@
+{% extends 'emails/layout.html.twig' %}
+
+{% block title %}Une action vous est confiée{% endblock %}
+
+{% block content %}
+    <p style="margin: 0 0 16px; font-size: 16px;">Bonjour{% if first_name %} {{ first_name }}{% endif %},</p>
+    <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5;">
+        {% if assigned_by %}{{ assigned_by }} vous a confié une action{% else %}Une action vous a été confiée{% endif %} dans le plan d'actions QHSE de votre entreprise :
+    </p>
+    <p style="margin: 0 0 8px; font-size: 18px; font-weight: bold; line-height: 1.4;">{{ title }}</p>
+    <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5;">
+        Domaine : {{ pillar }}<br>
+        Échéance : {{ due_date }}
+    </p>
+    <p style="margin: 24px 0; text-align: center;">
+        <a href="{{ action_url }}" style="display: inline-block; padding: 12px 24px; background: #0f6b63; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px;">Voir l'action</a>
+    </p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #4b5856;">
+        Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :<br>
+        <a href="{{ action_url }}" style="color: #0f6b63; word-break: break-all;">{{ action_url }}</a>
+    </p>
+{% endblock %}

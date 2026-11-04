@@ -3,6 +3,7 @@ import {
     ChevronDown,
     ClipboardCheck,
     Lightbulb,
+    Plus,
     RotateCcw,
 } from "lucide-react";
 
@@ -16,6 +17,7 @@ import {
     DOMAIN_ICON_CLASSES,
     DOMAIN_TINT_CLASSES,
     DOMAINS,
+    type DomainKey,
 } from "@/lib/domains";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -33,6 +35,12 @@ function ScoreValue({ score }: { score: number | null | undefined }) {
             <span className="font-normal text-ink-muted"> / 100</span>
         </span>
     );
+}
+
+/** New action prefilled with the domain and the question to improve. */
+function newActionHref(domain: DomainKey, question: string): string {
+    const params = new URLSearchParams({ domaine: domain, titre: question });
+    return `/actions/nouvelle?${params}`;
 }
 
 /** Decorative: the number next to it says the same thing. */
@@ -229,6 +237,25 @@ export function ResultView({
                                             )}{" "}
                                             points possibles
                                         </span>
+                                        {canEdit && (
+                                            <Button
+                                                asChild
+                                                variant="outline"
+                                                size="row"
+                                            >
+                                                {/* The name starts with the visible words (WCAG 2.5.3). */}
+                                                <Link
+                                                    href={newActionHref(
+                                                        gap.pillar,
+                                                        gap.label,
+                                                    )}
+                                                    aria-label={`Créer une action : ${gap.label}`}
+                                                >
+                                                    <Plus aria-hidden="true" />
+                                                    Créer une action
+                                                </Link>
+                                            </Button>
+                                        )}
                                     </li>
                                 );
                             })}

@@ -15,6 +15,8 @@ export type NavChild = {
     label: string;
     /** Breadcrumb label of its detail pages (e.g. `/news/{id}`). */
     detailLabel?: string;
+    /** Breadcrumb labels of fixed sub-pages (e.g. `/actions/nouvelle`). */
+    pageLabels?: Record<string, string>;
 };
 
 export type NavItem = {
@@ -33,7 +35,12 @@ export const HOME_ITEM: NavItem = {
     icon: LayoutDashboard,
     children: [
         { href: "/diagnostic", label: "Diagnostic", detailLabel: "Résultat" },
-        { href: "/actions", label: "Plan d'actions" },
+        {
+            href: "/actions",
+            label: "Plan d'actions",
+            detailLabel: "Action",
+            pageLabels: { nouvelle: "Nouvelle action" },
+        },
         {
             href: "/news",
             label: "Veille réglementaire",
@@ -135,7 +142,10 @@ export function getBreadcrumb(pathname: string): Crumb[] {
     if (pathname !== entry.href) {
         const detail = pathname.slice(entry.href.length + 1).split("/")[0];
         crumbs.push({
-            label: entry.detailLabel ?? decodeURIComponent(detail),
+            label:
+                entry.pageLabels?.[detail] ??
+                entry.detailLabel ??
+                decodeURIComponent(detail),
             href: `${entry.href}/${detail}`,
         });
     }
