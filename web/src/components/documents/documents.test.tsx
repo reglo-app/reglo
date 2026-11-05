@@ -383,6 +383,8 @@ describe("DeleteDocumentButton", () => {
             "Suppression refusée.",
         );
 
+        // Disabled while the first attempt ends.
+        await waitFor(() => expect(confirm).toBeEnabled());
         await userEvent.click(confirm);
         expect(remove).toHaveBeenLastCalledWith("3");
         await waitFor(() =>

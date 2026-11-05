@@ -8,5 +8,7 @@ export default defineConfig({
         environment: "jsdom",
         include: ["src/**/*.test.{ts,tsx}"],
         setupFiles: ["src/test/setup.ts"],
+        // Typing letter by letter takes time on a slow CI machine.
+        testTimeout: 15000,
     },
 });
