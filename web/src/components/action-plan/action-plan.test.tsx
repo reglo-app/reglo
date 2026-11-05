@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -58,10 +58,7 @@ describe("ActionForm", () => {
     it("sends what was typed", async () => {
         const save = renderForm();
 
-        await userEvent.type(
-            screen.getByLabelText("Titre"),
-            "Former l'équipe aux gestes et postures",
-        );
+        await userEvent.type(screen.getByLabelText("Titre"), "Former l'équipe");
         await userEvent.selectOptions(
             screen.getByLabelText("Domaine"),
             "safety",
@@ -82,7 +79,7 @@ describe("ActionForm", () => {
             screen.getByRole("button", { name: "Créer l'action" }),
         );
 
-        expect(save).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
         const [actionId, , data] = save.mock.calls[0] as [
             string | null,
             unknown,
@@ -90,7 +87,7 @@ describe("ActionForm", () => {
         ];
         expect(actionId).toBeNull();
         expect(Object.fromEntries(data)).toEqual({
-            title: "Former l'équipe aux gestes et postures",
+            title: "Former l'équipe",
             description: "",
             domain: "safety",
             type: "preventive",
@@ -117,7 +114,8 @@ describe("ActionForm", () => {
             "corrigez les champs signalés",
         );
         const assignee = screen.getByLabelText("Responsable");
-        expect(assignee).toHaveFocus();
+        // The focus moves just after the message appears.
+        await waitFor(() => expect(assignee).toHaveFocus());
         expect(assignee).toHaveAttribute("aria-invalid", "true");
         expect(assignee).toHaveAccessibleDescription(
             /Choisissez le responsable de l'action\./,
@@ -183,6 +181,7 @@ describe("ActionForm", () => {
             }),
         );
 
+        await waitFor(() => expect(save).toHaveBeenCalled());
         expect(save.mock.calls[0][0]).toBe(late.id);
     });
 });
@@ -289,9 +288,12 @@ describe("StatusControl", () => {
         );
         expect(change).toHaveBeenLastCalledWith("3", "in_review");
 
-        await userEvent.click(
-            screen.getByRole("button", { name: "Revenir à « À faire »" }),
-        );
+        const back = screen.getByRole("button", {
+            name: "Revenir à « À faire »",
+        });
+        // Disabled while the first change is sent.
+        await waitFor(() => expect(back).toBeEnabled());
+        await userEvent.click(back);
         expect(change).toHaveBeenLastCalledWith("3", "todo");
     });
 

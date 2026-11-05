@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -155,8 +155,11 @@ describe("ResendActivationForm", () => {
             screen.getByRole("button", { name: "Recevoir un nouveau lien" }),
         );
 
-        expect(
-            await screen.findByLabelText("Adresse e-mail"),
-        ).toHaveAccessibleDescription("Saisissez votre adresse e-mail.");
+        // The field is there from the start: wait for the answer.
+        await waitFor(() =>
+            expect(
+                screen.getByLabelText("Adresse e-mail"),
+            ).toHaveAccessibleDescription("Saisissez votre adresse e-mail."),
+        );
     });
 });
