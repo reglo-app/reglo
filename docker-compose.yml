@@ -44,9 +44,12 @@ services:
       MAILER_DSN: smtp://mailpit:1025
       DATA_SERVICE_URL: http://data:8000
       DATA_SERVICE_TOKEN: ${DATA_SERVICE_TOKEN:-dev-data-token}
+      DOCUMENTS_DIR: /app/var/documents
     volumes:
       - ./api:/app
       - api_vendor:/app/vendor
+      # Evidence documents (US-11)
+      - documents:/app/var/documents
     depends_on:
       db:
         condition: service_healthy
@@ -82,6 +85,7 @@ services:
 
 volumes:
   db_data:
+  documents:
   api_vendor:
   web_node_modules:
   web_next:

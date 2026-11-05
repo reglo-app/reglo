@@ -54,6 +54,10 @@ export function proxy(request: NextRequest) {
 
 export const config = {
     // Skip the API (served by Symfony behind Caddy), Next.js assets and
-    // files from public/ (anything with an extension).
-    matcher: ["/((?!api|bundles|_next/static|_next/image|.*\\.[\\w]+$).*)"],
+    // files from public/ (anything with an extension). Also document-files:
+    // through the proxy, the body of an upload would be held in memory and
+    // cut at 10 MB; these routes check the session themselves.
+    matcher: [
+        "/((?!api|bundles|document-files|_next/static|_next/image|.*\\.[\\w]+$).*)",
+    ],
 };

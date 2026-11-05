@@ -65,17 +65,28 @@ function DomainTile(score: DomainScore) {
 }
 
 /** Block 1, "Où en suis-je ?": global score ring on the left, pillars in a 2 × 2 grid. */
-export function ScoreOverview({ summary }: { summary: DashboardSummary }) {
+export function ScoreOverview({
+    summary,
+    hasDraft = false,
+}: {
+    summary: DashboardSummary;
+    /** A diagnostic is in progress: the block invites to go on with it. */
+    hasDraft?: boolean;
+}) {
     if (summary.globalScore === null) {
         return (
             <Card tone="brand">
                 <CardContent className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                     <ClipboardCheck aria-hidden="true" className="size-8" />
                     <h2 className="flex-1 text-lg font-semibold">
-                        Faites votre premier diagnostic
+                        {hasDraft
+                            ? "Terminez votre premier diagnostic"
+                            : "Faites votre premier diagnostic"}
                     </h2>
                     <Button asChild variant="highlight">
-                        <Link href="/diagnostic">Commencer</Link>
+                        <Link href="/diagnostic">
+                            {hasDraft ? "Poursuivre" : "Commencer"}
+                        </Link>
                     </Button>
                 </CardContent>
             </Card>

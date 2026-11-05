@@ -11,6 +11,7 @@ import {
     mockCurrentUser,
     mockDiagnosticResult,
     mockDashboardSummary,
+    mockDocuments,
     mockDomainDetails,
     mockInvitations,
     mockMembers,
@@ -25,6 +26,7 @@ import type {
     DashboardSummary,
     DiagnosticResult,
     DomainDetail,
+    EvidenceDocument,
     Invitation,
     Member,
     NewsArticle,
@@ -37,6 +39,7 @@ export const API_FEATURES = [
     "team",
     "diagnostic",
     "actions",
+    "documents",
     "dashboard",
     "domains",
     "news",
@@ -91,6 +94,8 @@ export type Api = {
     getActions(): Promise<Action[]>;
     /** null when the action does not exist (or is not visible). */
     getAction(id: string): Promise<ActionDetail | null>;
+    /** Evidence documents of the organization, latest first (US-11). */
+    getDocuments(): Promise<EvidenceDocument[]>;
 };
 
 export type ApiOptions = {
@@ -207,6 +212,12 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
                             `/api/actions/${encodeURIComponent(id)}`,
                         ),
                     ),
+            ),
+        getDocuments: () =>
+            load(
+                "documents",
+                () => mockDocuments,
+                () => request<EvidenceDocument[]>("/api/documents"),
             ),
         getDashboardSummary: () =>
             load(

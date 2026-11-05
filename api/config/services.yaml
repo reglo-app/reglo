@@ -21,6 +21,8 @@ parameters:
     # Uploaded files (profile photos...): outside the public folder, only
     # served through the authenticated API. A Docker volume on the servers.
     app.uploads_dir: '%kernel.project_dir%/var/uploads'
+    # Evidence documents (US-11): same rules, in their own folder (DOCUMENTS_DIR).
+    app.documents_dir: '%env(resolve:DOCUMENTS_DIR)%'
 
 services:
     # default configuration for services in *this* file
@@ -40,6 +42,7 @@ when@test:
     parameters:
         # Kept apart from the files of the dev environment
         app.uploads_dir: '%kernel.project_dir%/var/uploads-test'
+        app.documents_dir: '%kernel.project_dir%/var/documents-test'
     services:
         # Answers the HTTP requests of the tests (framework.yaml)
         App\Tests\DataServiceMock: ~

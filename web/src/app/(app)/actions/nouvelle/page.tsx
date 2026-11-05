@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 
 import { ActionForm } from "@/components/action-plan/action-form";
 import { ActionFormSkeleton } from "@/components/action-plan/skeletons";
@@ -33,6 +34,8 @@ async function NewActionContent({
         searchParams,
     ]);
     if (!canEdit(user.role)) redirect("/actions");
+    // Today's date: rendered for each request.
+    await connection();
 
     const domain = single(params.domaine);
     return (
