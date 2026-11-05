@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import { Suspense } from "react";
 
 import {
@@ -22,9 +22,10 @@ export const metadata: Metadata = { title: "Tableau de bord" };
  * next actions, regulatory news). Kept short on purpose.
  */
 async function DashboardContent() {
-    const [mockedSummary, result] = await Promise.all([
+    const [mockedSummary, result, current] = await Promise.all([
         api.getDashboardSummary(),
         api.getLatestResult(),
+        api.getCurrentDiagnostic(),
     ]);
     // The score block shows the real score of the latest diagnostic (US-06).
     const summary = withDiagnosticScore(mockedSummary, result);
@@ -32,7 +33,10 @@ async function DashboardContent() {
 
     return (
         <div className="flex flex-col gap-4">
-            <ScoreOverview summary={summary} />
+            <ScoreOverview
+                summary={summary}
+                hasDraft={current.draft !== null}
+            />
             <div className="grid gap-4 lg:grid-cols-2">
                 <AlertsCard alerts={summary.alerts} today={today} />
                 <UpcomingActionsCard
@@ -62,14 +66,26 @@ function DashboardSkeleton() {
 
 /** Hidden for readers (US-16): they only consult. */
 async function DiagnosticAction() {
-    const user = await api.getCurrentUser();
+    const [user, current] = await Promise.all([
+        api.getCurrentUser(),
+        api.getCurrentDiagnostic(),
+    ]);
     if (!canEdit(user.role)) return null;
 
     return (
         <Button asChild className="transition duration-200">
             <Link href="/diagnostic">
-                <Plus aria-hidden="true" />
-                Faire un diagnostic
+                {current.draft ? (
+                    <>
+                        Poursuivre le diagnostic
+                        <ArrowRight aria-hidden="true" />
+                    </>
+                ) : (
+                    <>
+                        <Plus aria-hidden="true" />
+                        Faire un diagnostic
+                    </>
+                )}
             </Link>
         </Button>
     );

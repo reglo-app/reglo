@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Pencil } from "lucide-react";
 
 import { DeleteActionButton } from "@/components/action-plan/action-controls";
@@ -31,6 +32,8 @@ async function ActionContent({ params }: { params: Params }) {
     if (!action) {
         notFound();
     }
+    // Today's date: rendered for each request.
+    await connection();
 
     return (
         <>

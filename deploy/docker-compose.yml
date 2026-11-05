@@ -30,9 +30,12 @@ services:
       # Score of the diagnostic (US-06): the data service of this environment
       DATA_SERVICE_URL: http://data:8000
       DATA_SERVICE_TOKEN: ${DATA_SERVICE_TOKEN:?Set DATA_SERVICE_TOKEN in .env}
+      DOCUMENTS_DIR: /app/var/documents
     volumes:
       # Uploaded files (profile photos...): kept across deployments
       - uploads:/app/var/uploads
+      # Evidence documents (US-11): to include in the backups (TECH-04)
+      - documents:/app/var/documents
     depends_on:
       db:
         condition: service_healthy
@@ -89,3 +92,4 @@ networks:
 volumes:
   db_data:
   uploads:
+  documents:

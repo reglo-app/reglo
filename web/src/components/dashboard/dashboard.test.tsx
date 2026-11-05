@@ -73,6 +73,34 @@ describe("ScoreOverview", () => {
     });
 });
 
+describe("ScoreOverview with a diagnostic in progress", () => {
+    const noScore = { ...summary, globalScore: null, domains: [] };
+
+    it("invites to go on with it", () => {
+        render(<ScoreOverview summary={noScore} hasDraft />);
+
+        expect(
+            screen.getByRole("heading", {
+                name: "Terminez votre premier diagnostic",
+            }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole("link", { name: "Poursuivre" }),
+        ).toHaveAttribute("href", "/diagnostic");
+        expect(
+            screen.queryByRole("link", { name: "Commencer" }),
+        ).not.toBeInTheDocument();
+    });
+
+    it("keeps showing the score of the previous diagnostic", () => {
+        render(<ScoreOverview summary={summary} hasDraft />);
+
+        expect(
+            screen.getByRole("img", { name: "Score global : 64 sur 100" }),
+        ).toBeInTheDocument();
+    });
+});
+
 describe("AlertsCard", () => {
     it("lists alerts with a due label and a domain", () => {
         render(<AlertsCard alerts={summary.alerts} today={today} />);

@@ -14,6 +14,7 @@ import type {
     CurrentUser,
     DashboardSummary,
     DomainDetail,
+    EvidenceDocument,
     ExpiringDocument,
     Invitation,
     Member,
@@ -708,3 +709,44 @@ export const mockActionDetails: ActionDetail[] = mockActions.map((action) => {
         })),
     };
 });
+
+/** Evidence documents of "Atelier Démo" (US-11), latest first. */
+export const mockDocuments: EvidenceDocument[] = [
+    {
+        id: "1",
+        name: "DUERP-2026.pdf",
+        mimeType: "application/pdf",
+        size: 2_457_600,
+        domain: "safety",
+        uploadedBy: person(camille),
+        createdAt: "2026-10-12T09:30:00.000Z",
+    },
+    {
+        id: "2",
+        name: "Registre des contrôles.xlsx",
+        mimeType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        size: 48_300,
+        domain: null,
+        uploadedBy: person(hugo),
+        createdAt: "2026-10-05T14:10:00.000Z",
+    },
+    {
+        id: "3",
+        name: "Certificat-tri-dechets.jpg",
+        mimeType: "image/jpeg",
+        size: 830,
+        domain: "environment",
+        uploadedBy: null,
+        createdAt: "2026-09-20T08:00:00.000Z",
+    },
+    {
+        id: "4",
+        name: "Vérifications-extincteurs.csv",
+        mimeType: "text/csv",
+        size: 640,
+        domain: "safety",
+        uploadedBy: person(hugo),
+        createdAt: "2026-09-15T10:00:00.000Z",
+    },
+];

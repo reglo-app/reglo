@@ -136,6 +136,22 @@ export type ActionSummary = {
     status: ActionStatus;
 };
 
+/** `GET /api/documents`: evidence kept by the organization (US-11). */
+export type EvidenceDocument = {
+    id: string;
+    /** Name of the file when it was uploaded. */
+    name: string;
+    /** The type found in the content of the file. */
+    mimeType: string;
+    /** In bytes. */
+    size: number;
+    domain: DomainKey | null;
+    /** Null once the author left the organization. */
+    uploadedBy: ActionPerson | null;
+    /** ISO 8601 date. */
+    createdAt: string;
+};
+
 /** Regulatory news item (US-15). */
 export type NewsSummary = {
     id: string;
