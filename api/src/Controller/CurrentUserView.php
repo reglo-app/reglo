@@ -26,6 +26,8 @@ final class CurrentUserView
             // Changes with each new photo; null without photo
             'avatarVersion' => $user->getAvatarUpdatedAt()?->format('U'),
             'role' => $user->getOrganizationRole()->value,
+            // REGLO team: the web app opens the back office for them
+            'platformAdmin' => $user->isPlatformAdmin(),
             // Null for accounts outside any client (REGLO team)
             'organization' => null === $organization ? null : [
                 'id' => (string) $organization->getId(),

@@ -11,6 +11,9 @@ import type {
     ActionPerson,
     ActionsOverview,
     ActionSummary,
+    AdminOrganization,
+    AdminOrganizationDetail,
+    AdminUser,
     CurrentDiagnostic,
     DiagnosticResult,
     CurrentUser,
@@ -33,11 +36,94 @@ export const mockCurrentUser: CurrentUser = {
     jobTitle: "Responsable QHSE",
     avatarVersion: null,
     role: "admin",
+    platformAdmin: false,
     organization: {
         id: "0192f0c4-7a3e-7c3a-9b1e-5d2a1c0000a1",
         name: "Atelier Démo",
     },
 };
+
+/** Back office: two clients and the accounts of the first one. */
+export const mockAdminOrganizations: AdminOrganization[] = [
+    {
+        id: "1",
+        name: "Atelier Démo",
+        createdAt: "2026-09-01T08:00:00.000Z",
+        userCount: 2,
+        pendingCount: 1,
+    },
+    {
+        id: "2",
+        name: "Boulangerie Fictive",
+        createdAt: "2026-10-05T08:00:00.000Z",
+        userCount: 1,
+        pendingCount: 0,
+    },
+];
+
+export const mockAdminUsers: AdminUser[] = [
+    {
+        id: "11",
+        email: "camille.martin@atelier-demo.test",
+        firstName: "Camille",
+        lastName: "Martin",
+        role: "admin",
+        activated: true,
+        joinedAt: "2026-09-01T08:00:00.000Z",
+        lastSeenAt: "2026-10-16T07:55:00.000Z",
+        organization: { id: "1", name: "Atelier Démo" },
+    },
+    {
+        id: "12",
+        email: "hugo.bernard@atelier-demo.test",
+        firstName: "Hugo",
+        lastName: "Bernard",
+        role: "member",
+        activated: false,
+        joinedAt: null,
+        lastSeenAt: null,
+        organization: { id: "1", name: "Atelier Démo" },
+    },
+    {
+        id: "13",
+        email: "ines.petit@boulangerie-fictive.test",
+        firstName: "Inès",
+        lastName: "Petit",
+        role: "admin",
+        activated: true,
+        joinedAt: "2026-10-05T09:00:00.000Z",
+        lastSeenAt: null,
+        organization: { id: "2", name: "Boulangerie Fictive" },
+    },
+];
+
+export const mockAdminTeam: AdminUser[] = [
+    {
+        id: "21",
+        email: "equipe@reglo.test",
+        firstName: "Sacha",
+        lastName: "Equipe",
+        role: "member",
+        activated: true,
+        joinedAt: "2026-08-20T08:00:00.000Z",
+        lastSeenAt: "2026-10-16T08:00:00.000Z",
+        organization: null,
+    },
+];
+
+export function mockAdminOrganization(
+    id: string,
+): AdminOrganizationDetail | null {
+    const organization = mockAdminOrganizations.find((o) => o.id === id);
+    return organization
+        ? {
+              id: organization.id,
+              name: organization.name,
+              createdAt: organization.createdAt,
+              users: mockAdminUsers.filter((u) => u.organization?.id === id),
+          }
+        : null;
+}
 
 /** Members of "Atelier Démo": enough of them for two pages of the table. */
 export const mockMembers: Member[] = [

@@ -1,6 +1,6 @@
 import { UserMenu } from "@/components/shell/user-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ROLE_LABELS, api } from "@/lib/api";
+import { PLATFORM_ROLE_LABEL, ROLE_LABELS, api } from "@/lib/api";
 
 /** Loads the signed-in user and renders the topbar user menu. */
 export async function CurrentUserMenu() {
@@ -12,7 +12,12 @@ export async function CurrentUserMenu() {
     return (
         <UserMenu
             fullName={fullName}
-            roleLabel={ROLE_LABELS[user.role]}
+            roleLabel={
+                user.platformAdmin
+                    ? PLATFORM_ROLE_LABEL
+                    : ROLE_LABELS[user.role]
+            }
+            platformAdmin={user.platformAdmin}
             organizationName={user.organization?.name ?? null}
             avatar={user}
         />

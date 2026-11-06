@@ -79,6 +79,19 @@ Accounts outside any organization (REGLO team, `--platform-admin` gives `ROLE_PL
 docker compose exec api php bin/console app:user:create team@reglo.site --platform-admin
 ```
 
+### Back office
+
+The REGLO team manages accesses at `/admin`: organizations (create with their first administrator, rename, delete), accounts of the clients (add, change the role, send a new activation link, remove) and the team itself (invite, remove). Every new account receives an activation link: nobody chooses a password for someone else.
+
+- Only `ROLE_PLATFORM_ADMIN` gets in: the routes are `/api/admin/*`, and anybody else sees the "not found" page. The role of a client never gives it. The first account of each environment is created with the command above, the next ones from the "Équipe Réglo" page.
+- The back office manages accesses and does not read the data of the clients: `OrganizationFilter` still hides their diagnostics, actions and documents from the team.
+- Deleting an organization is final: accounts, data and files are removed. Its exact name is asked, and checked by the API.
+- Each action is kept in the `admin_audit_entry` table (who, what, on whom, when). There is no screen for it yet, read it in the API container:
+
+```
+docker compose exec api php bin/console dbal:run-sql "SELECT created_at, actor_email, action, target FROM admin_audit_entry ORDER BY id DESC LIMIT 50"
+```
+
 Log in, then send the token in the `Authorization` header:
 
 ```

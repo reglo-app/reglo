@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowRight, Plus } from "lucide-react";
 import { Suspense } from "react";
 
@@ -24,6 +25,10 @@ export const metadata: Metadata = { title: "Tableau de bord" };
  * action plan, alerts, next actions, regulatory news). Kept short on purpose.
  */
 async function DashboardContent() {
+    // The REGLO team has no client data: home is the back office.
+    const user = await api.getCurrentUser();
+    if (user.platformAdmin) redirect("/admin");
+
     const [mockedSummary, result, current, overview] = await Promise.all([
         api.getDashboardSummary(),
         api.getLatestResult(),

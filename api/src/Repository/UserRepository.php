@@ -58,6 +58,48 @@ class UserRepository extends ServiceEntityRepository implements UserLoaderInterf
     }
 
     /**
+     * Every account except the REGLO team, by name, with its organization.
+     * For the back office only.
+     *
+     * @return list<User>
+     */
+    public function findClientAccounts(): array
+    {
+        return array_values(array_filter(
+            $this->findAllByName(),
+            static fn (User $user): bool => !$user->isPlatformAdmin(),
+        ));
+    }
+
+    /**
+     * The REGLO team, by name. For the back office only.
+     *
+     * @return list<User>
+     */
+    public function findPlatformAdmins(): array
+    {
+        return array_values(array_filter(
+            $this->findAllByName(),
+            static fn (User $user): bool => $user->isPlatformAdmin(),
+        ));
+    }
+
+    /**
+     * @return list<User>
+     */
+    private function findAllByName(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->leftJoin('u.organization', 'o')
+            ->addSelect('o')
+            ->orderBy('u.lastName', 'ASC')
+            ->addOrderBy('u.firstName', 'ASC')
+            ->addOrderBy('u.email', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Used by the security user provider: the e-mail is normalized so that
      * login does not depend on the case typed by the user.
      */

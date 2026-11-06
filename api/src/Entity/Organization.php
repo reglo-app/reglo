@@ -52,6 +52,13 @@ class Organization
         return $this->name;
     }
 
+    public function rename(string $name): static
+    {
+        $this->name = self::normalizeName($name);
+
+        return $this;
+    }
+
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;

@@ -136,6 +136,37 @@ describe("http api", () => {
         );
     });
 
+    it("calls the back office routes, and tells when the API refuses", async () => {
+        const fetchMock = vi
+            .fn()
+            .mockImplementation(async () => Response.json([]));
+        vi.stubGlobal("fetch", fetchMock);
+
+        await httpApi().getAdminOrganizations();
+        await httpApi().getAdminUsers();
+        await httpApi().getAdminTeam();
+
+        expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+            "http://api:8000/api/admin/organizations",
+            "http://api:8000/api/admin/users",
+            "http://api:8000/api/admin/team",
+        ]);
+
+        fetchMock.mockResolvedValue(new Response(null, { status: 403 }));
+        await expect(httpApi().getAdminTeam()).rejects.toMatchObject({
+            status: 403,
+        });
+    });
+
+    it("gives null for an organization that does not exist", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue(new Response(null, { status: 404 })),
+        );
+
+        expect(await httpApi().getAdminOrganization("9")).toBeNull();
+    });
+
     it("leaves the session when the API refuses the token", async () => {
         vi.stubGlobal(
             "fetch",

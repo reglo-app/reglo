@@ -11,6 +11,10 @@ import { API_INTERNAL_URL } from "./internal-url";
 import {
     filterMockActions,
     mockActionDetails,
+    mockAdminOrganization,
+    mockAdminOrganizations,
+    mockAdminTeam,
+    mockAdminUsers,
     mockActionsOverview,
     mockCurrentDiagnostic,
     mockCurrentUser,
@@ -27,6 +31,9 @@ import type {
     Action,
     ActionDetail,
     ActionsOverview,
+    AdminOrganization,
+    AdminOrganizationDetail,
+    AdminUser,
     CurrentDiagnostic,
     CurrentUser,
     DashboardSummary,
@@ -46,6 +53,7 @@ export const API_FEATURES = [
     "diagnostic",
     "actions",
     "documents",
+    "admin",
     "dashboard",
     "domains",
     "news",
@@ -104,6 +112,14 @@ export type Api = {
     getAction(id: string): Promise<ActionDetail | null>;
     /** Evidence documents of the organization, latest first (US-11). */
     getDocuments(): Promise<EvidenceDocument[]>;
+    /** Back office, REGLO team only (403 otherwise): every client. */
+    getAdminOrganizations(): Promise<AdminOrganization[]>;
+    /** null when the organization does not exist. */
+    getAdminOrganization(id: string): Promise<AdminOrganizationDetail | null>;
+    /** Every account except the REGLO team. */
+    getAdminUsers(): Promise<AdminUser[]>;
+    /** The REGLO team. */
+    getAdminTeam(): Promise<AdminUser[]>;
 };
 
 export type ApiOptions = {
@@ -235,6 +251,35 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
                 "documents",
                 () => mockDocuments,
                 () => request<EvidenceDocument[]>("/api/documents"),
+            ),
+        getAdminOrganizations: () =>
+            load(
+                "admin",
+                () => mockAdminOrganizations,
+                () => request<AdminOrganization[]>("/api/admin/organizations"),
+            ),
+        getAdminOrganization: (id) =>
+            load(
+                "admin",
+                () => mockAdminOrganization(id),
+                () =>
+                    orNotFound(
+                        request<AdminOrganizationDetail>(
+                            `/api/admin/organizations/${encodeURIComponent(id)}`,
+                        ),
+                    ),
+            ),
+        getAdminUsers: () =>
+            load(
+                "admin",
+                () => mockAdminUsers,
+                () => request<AdminUser[]>("/api/admin/users"),
+            ),
+        getAdminTeam: () =>
+            load(
+                "admin",
+                () => mockAdminTeam,
+                () => request<AdminUser[]>("/api/admin/team"),
             ),
         getDashboardSummary: () =>
             load(
