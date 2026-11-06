@@ -82,7 +82,7 @@ export function memberName(
 }
 
 /** Lowercase and without accents: "Inès" is found with "ines". */
-function normalize(text: string): string {
+export function normalize(text: string): string {
     return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
@@ -568,18 +568,20 @@ function RowMenu({
     );
 }
 
-function Pagination({
+export function Pagination({
     page,
     pageCount,
     onPage,
+    label = "Pages des membres",
 }: {
     page: number;
     pageCount: number;
     onPage: (page: number) => void;
+    label?: string;
 }) {
     return (
         <nav
-            aria-label="Pages des membres"
+            aria-label={label}
             className="flex items-center justify-center gap-1 border-t border-border px-5 py-3"
         >
             <Button

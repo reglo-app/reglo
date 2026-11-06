@@ -11,6 +11,9 @@ export const ROLE_LABELS: Record<RoleKey, string> = {
     reader: "Lecteur",
 };
 
+/** Shown instead of a role for the REGLO team, who belong to no client. */
+export const PLATFORM_ROLE_LABEL = "Équipe Réglo";
+
 /** What each role can do (US-16), shown where a role is chosen. */
 export const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
     admin: "Gère l'équipe, les rôles et toutes les données.",
@@ -48,6 +51,8 @@ export type CurrentUser = {
     /** Changes with each new profile photo; null without photo. */
     avatarVersion: string | null;
     role: RoleKey;
+    /** REGLO team: the back office opens for them. The API checks it. */
+    platformAdmin: boolean;
     organization: Organization | null;
 };
 
@@ -241,6 +246,43 @@ export type DashboardSummary = {
     actionsOnTimeRate: number | null;
     /** Latest news relevant to the organization (at most 3). */
     latestNews: NewsSummary[];
+};
+
+/** `GET /api/admin/organizations`: a client, for the REGLO team. */
+export type AdminOrganization = {
+    id: string;
+    name: string;
+    /** ISO 8601 date. */
+    createdAt: string;
+    userCount: number;
+    /** Accounts waiting for their owner to choose a password. */
+    pendingCount: number;
+};
+
+/** An account in the back office: what is needed to manage an access. */
+export type AdminUser = {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    role: RoleKey;
+    /** False until the person has chosen a password. */
+    activated: boolean;
+    /** ISO 8601 date the account was activated; null before. */
+    joinedAt: string | null;
+    /** ISO 8601 date of the last activity (to 5 minutes); null if never. */
+    lastSeenAt: string | null;
+    /** null for an account outside any client. */
+    organization: Organization | null;
+};
+
+/** `GET /api/admin/organizations/{id}`. */
+export type AdminOrganizationDetail = {
+    id: string;
+    name: string;
+    /** ISO 8601 date. */
+    createdAt: string;
+    users: AdminUser[];
 };
 
 /** `GET /api/users`: a member of the organization of the signed-in user. */

@@ -2,12 +2,10 @@
 
 namespace App\Controller;
 
+use App\Account\OrganizationMembers;
 use App\Entity\OrganizationRole;
 use App\Entity\User;
 use App\Repository\UserRepository;
-use App\Storage\AvatarStorage;
-use Doctrine\DBAL\LockMode;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,7 +26,7 @@ final class MemberController
 
     public function __construct(
         private readonly UserRepository $repository,
-        private readonly EntityManagerInterface $entityManager,
+        private readonly OrganizationMembers $members,
     ) {
     }
 
@@ -63,18 +61,11 @@ final class MemberController
             return self::error('Choisissez le rôle : administrateur, membre ou lecteur.', 'invalid_role');
         }
 
-        $refused = $this->entityManager->wrapInTransaction(function () use ($member, $role): ?JsonResponse {
-            $this->lockOrganizationOf($member);
-            if (OrganizationRole::Admin !== $role && $this->isLastAdmin($member)) {
-                return self::error(self::LAST_ADMIN, 'last_admin');
-            }
+        if (!$this->members->changeRole($member, $role)) {
+            return self::error(self::LAST_ADMIN, 'last_admin');
+        }
 
-            $member->setOrganizationRole($role);
-
-            return null;
-        });
-
-        return $refused ?? new JsonResponse(self::view($member));
+        return new JsonResponse(self::view($member));
     }
 
     /**
@@ -84,7 +75,7 @@ final class MemberController
      */
     #[Route('/{id}', name: 'remove', requirements: ['id' => '\d+'], methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function remove(int $id, #[CurrentUser] User $admin, AvatarStorage $avatarStorage): Response
+    public function remove(int $id, #[CurrentUser] User $admin): Response
     {
         $member = $this->findColleague($id, $admin);
         if (null === $member) {
@@ -94,23 +85,8 @@ final class MemberController
             return self::error('Vous ne pouvez pas vous retirer vous-même de l\'équipe.', 'cannot_remove_self');
         }
 
-        $avatarFile = $member->getAvatarFile();
-        $refused = $this->entityManager->wrapInTransaction(function () use ($member): ?JsonResponse {
-            $this->lockOrganizationOf($member);
-            if ($this->isLastAdmin($member)) {
-                return self::error(self::LAST_ADMIN, 'last_admin');
-            }
-
-            $this->entityManager->remove($member);
-
-            return null;
-        });
-
-        if (null !== $refused) {
-            return $refused;
-        }
-        if (null !== $avatarFile) {
-            $avatarStorage->delete($avatarFile);
+        if (!$this->members->remove($member)) {
+            return self::error(self::LAST_ADMIN, 'last_admin');
         }
 
         return new Response(status: Response::HTTP_NO_CONTENT);
@@ -130,27 +106,6 @@ final class MemberController
         }
 
         return $member;
-    }
-
-    /**
-     * Two administrators changing each other's role at the same time must
-     * not leave the organization without any: the second one waits.
-     */
-    private function lockOrganizationOf(User $member): void
-    {
-        $organization = $member->getOrganization();
-        if (null !== $organization) {
-            $this->entityManager->lock($organization, LockMode::PESSIMISTIC_WRITE);
-        }
-    }
-
-    private function isLastAdmin(User $member): bool
-    {
-        $organization = $member->getOrganization();
-
-        return OrganizationRole::Admin === $member->getOrganizationRole()
-            && null !== $organization
-            && $this->repository->countAdminsOf($organization) <= 1;
     }
 
     /**

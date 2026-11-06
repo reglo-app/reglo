@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api, ROLE_LABELS } from "@/lib/api";
+import { api, PLATFORM_ROLE_LABEL, ROLE_LABELS } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Paramètres" };
@@ -54,6 +54,9 @@ async function SettingsContent() {
     const fullName =
         [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
     const organization = user.organization;
+    const roleLabel = user.platformAdmin
+        ? PLATFORM_ROLE_LABEL
+        : ROLE_LABELS[user.role];
 
     return (
         <div className="flex flex-col gap-6">
@@ -96,7 +99,7 @@ async function SettingsContent() {
                                     )}
                                     <Badge variant="secondary">
                                         <span className="sr-only">Rôle : </span>
-                                        {ROLE_LABELS[user.role]}
+                                        {roleLabel}
                                     </Badge>
                                 </div>
                             </div>
@@ -143,26 +146,32 @@ async function SettingsContent() {
                         >
                             <ProfileForm user={user} />
                         </SettingsSection>
-                        <SettingsSection
-                            title="Organisation"
-                            description="Seul un administrateur peut modifier les rôles."
-                        >
-                            <dl className="grid gap-5 text-base sm:grid-cols-2">
-                                <div className="flex flex-col gap-1">
-                                    <dt className="font-medium">Entreprise</dt>
-                                    <dd className="text-ink-muted">
-                                        {user.organization?.name ?? "—"}
-                                    </dd>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <dt className="font-medium">Votre rôle</dt>
-                                    <dd className="text-ink-muted">
-                                        {ROLE_LABELS[user.role]}.{" "}
-                                        {ROLE_DESCRIPTIONS[user.role]}
-                                    </dd>
-                                </div>
-                            </dl>
-                        </SettingsSection>
+                        {!user.platformAdmin && (
+                            <SettingsSection
+                                title="Organisation"
+                                description="Seul un administrateur peut modifier les rôles."
+                            >
+                                <dl className="grid gap-5 text-base sm:grid-cols-2">
+                                    <div className="flex flex-col gap-1">
+                                        <dt className="font-medium">
+                                            Entreprise
+                                        </dt>
+                                        <dd className="text-ink-muted">
+                                            {user.organization?.name ?? "—"}
+                                        </dd>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <dt className="font-medium">
+                                            Votre rôle
+                                        </dt>
+                                        <dd className="text-ink-muted">
+                                            {ROLE_LABELS[user.role]}.{" "}
+                                            {ROLE_DESCRIPTIONS[user.role]}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </SettingsSection>
+                        )}
                     </TabsContent>
 
                     <TabsContent value="email" className={TAB_PANEL}>

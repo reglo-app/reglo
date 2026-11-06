@@ -3,12 +3,9 @@
 namespace App\Command;
 
 use App\Entity\Organization;
-use App\Entity\OrganizationRole;
 use App\Entity\User;
 use App\Mailer\ActivationMailer;
-use App\Repository\OrganizationRepository;
-use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Platform\AccountProvisioner;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -16,8 +13,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Onboards a client (US-01): creates the organization and its first
@@ -28,11 +23,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 final class CreateOrganizationCommand extends Command
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly OrganizationRepository $organizationRepository,
-        private readonly UserRepository $userRepository,
+        private readonly AccountProvisioner $provisioner,
         private readonly ActivationMailer $activationMailer,
-        private readonly ValidatorInterface $validator,
     ) {
         parent::__construct();
     }
@@ -62,15 +54,7 @@ final class CreateOrganizationCommand extends Command
             return Command::FAILURE;
         }
 
-        $organization = new Organization($name);
-        $admin = (new User($email))
-            ->setName($firstName, $lastName)
-            ->setOrganization($organization)
-            ->setOrganizationRole(OrganizationRole::Admin);
-
-        $this->entityManager->persist($organization);
-        $this->entityManager->persist($admin);
-        $this->entityManager->flush();
+        $admin = $this->provisioner->createOrganization($name, $email, $firstName, $lastName);
 
         try {
             $this->activationMailer->send($admin);
@@ -93,26 +77,16 @@ final class CreateOrganizationCommand extends Command
      */
     private function validate(string $name, string $email, string $firstName, string $lastName): array
     {
-        $errors = [];
+        $nameError = $this->provisioner->nameError($name);
+        $codes = [...(null === $nameError ? [] : [$nameError]), ...array_values($this->provisioner->personErrors($email, $firstName, $lastName))];
 
-        if ('' === $name || mb_strlen($name) > Organization::MAX_NAME_LENGTH) {
-            $errors[] = \sprintf('The organization name must contain 1 to %d characters.', Organization::MAX_NAME_LENGTH);
-        } elseif ($this->organizationRepository->existsWithName($name)) {
-            $errors[] = 'An organization with this name already exists.';
-        }
-
-        if (\count($this->validator->validate($email, [new Assert\NotBlank(), new Assert\Email()])) > 0) {
-            $errors[] = 'The e-mail is not valid.';
-        } elseif (null !== $this->userRepository->findOneByEmail($email)) {
-            $errors[] = 'A user with this e-mail already exists.';
-        }
-
-        foreach (['first name' => $firstName, 'last name' => $lastName] as $label => $value) {
-            if ('' === $value || mb_strlen($value) > User::MAX_NAME_LENGTH) {
-                $errors[] = \sprintf('The %s must contain 1 to %d characters.', $label, User::MAX_NAME_LENGTH);
-            }
-        }
-
-        return $errors;
+        return array_map(static fn (string $code): string => match ($code) {
+            AccountProvisioner::NAME_INVALID => \sprintf('The organization name must contain 1 to %d characters.', Organization::MAX_NAME_LENGTH),
+            AccountProvisioner::NAME_TAKEN => 'An organization with this name already exists.',
+            AccountProvisioner::EMAIL_INVALID => 'The e-mail is not valid.',
+            AccountProvisioner::EMAIL_TAKEN => 'A user with this e-mail already exists.',
+            AccountProvisioner::FIRST_NAME_INVALID => \sprintf('The first name must contain 1 to %d characters.', User::MAX_NAME_LENGTH),
+            default => \sprintf('The last name must contain 1 to %d characters.', User::MAX_NAME_LENGTH),
+        }, $codes);
     }
 }

@@ -78,7 +78,7 @@ final class CreateUserCommand extends Command
         $user->activate($this->passwordHasher->hashPassword($user, $password));
 
         if ($input->getOption('platform-admin')) {
-            $user->setRoles(['ROLE_PLATFORM_ADMIN']);
+            $user->setRoles([User::ROLE_PLATFORM_ADMIN]);
         }
 
         $this->entityManager->persist($user);

@@ -141,6 +141,7 @@ final class AuthControllerTest extends WebTestCase
             'jobTitle' => null,
             'avatarVersion' => null,
             'role' => 'member',
+            'platformAdmin' => false,
             'organization' => null,
         ], $this->responseData());
     }

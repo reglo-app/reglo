@@ -47,6 +47,8 @@ security:
         - { path: ^/api/email-change, roles: PUBLIC_ACCESS }
         # Link of the invitation e-mail: the token is the proof
         - { path: ^/api/invitations/(check|accept)$, roles: PUBLIC_ACCESS }
+        # Back office: the REGLO team only (the role of a client never gives it)
+        - { path: ^/api/admin(/|$), roles: ROLE_PLATFORM_ADMIN }
         # Own account (profile, photo, password, logout): every role
         - { path: ^/api/(me|auth)(/|$), roles: IS_AUTHENTICATED_FULLY }
         # US-16: readers only consult. Every other write, on any current or

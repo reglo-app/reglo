@@ -13,6 +13,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\UniqueConstraint(name: 'uniq_app_user_email', columns: ['email'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    /** REGLO team: uses the back office, belongs to no client. */
+    public const ROLE_PLATFORM_ADMIN = 'ROLE_PLATFORM_ADMIN';
     public const MAX_NAME_LENGTH = 100;
     public const MAX_JOB_TITLE_LENGTH = 100;
     public const MAX_EMAIL_LENGTH = 180;
@@ -157,6 +159,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->roles = $roles;
 
         return $this;
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        return \in_array(self::ROLE_PLATFORM_ADMIN, $this->roles, true);
     }
 
     /**
