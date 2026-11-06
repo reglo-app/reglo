@@ -172,12 +172,12 @@ Secrets (SSH key, server address) are stored in GitHub Environments. Application
 - Make migrations safe to run on existing data.
 
 ### Scheduled tasks
-`app:send-action-reminders` e-mails each assignee their late and soon due actions, at 07:00 in France. It is planned once on the server, with `crontab -e` as the `deploy` user:
+`app:send-action-reminders` e-mails each assignee their late and soon due actions, at 07:00 in France. It is planned once on the server, in the crontab of the `deploy` user (`sudo crontab -u deploy -e`), with one line per environment. Add the line of an environment once the command is deployed there:
 ```
-0 5,6 * * * [ "$(TZ=Europe/Paris date +\%H)" = "07" ] && cd /srv/reglo-preprod && docker compose exec -T api php bin/console app:send-action-reminders >> reminders.log 2>&1
-0 5,6 * * * [ "$(TZ=Europe/Paris date +\%H)" = "07" ] && cd /srv/reglo-prod && docker compose exec -T api php bin/console app:send-action-reminders >> reminders.log 2>&1
+0 * * * * [ "$(TZ=Europe/Paris date +\%H)" = "07" ] && cd /srv/reglo-preprod && docker compose exec -T api php bin/console app:send-action-reminders >> reminders.log 2>&1
+0 * * * * [ "$(TZ=Europe/Paris date +\%H)" = "07" ] && cd /srv/reglo-prod && docker compose exec -T api php bin/console app:send-action-reminders >> reminders.log 2>&1
 ```
-The server clock is in UTC: 07:00 in France is 05:00 or 06:00 UTC depending on the season, so the line runs at both hours and only goes on when it is 07:00 in France. The command can safely run again: nobody gets two e-mails on the same day, and an e-mail that failed is sent on the next run. A failure is written to `reminders.log`.
+The line runs every hour and only goes on when it is 07:00 in France, so it works in summer and winter, whatever the time zone of the server. The command can safely run again: nobody gets two e-mails on the same day, and an e-mail that failed is sent on the next run. A failure is written to `reminders.log`.
 
 ### Releasing to production
 1. Check that the last **Deploy** run on `develop` is green and that pre-production works.
