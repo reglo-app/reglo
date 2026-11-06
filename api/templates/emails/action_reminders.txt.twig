@@ -1,0 +1,25 @@
+Bonjour{% if first_name %} {{ first_name }}{% endif %},
+
+Voici les actions du plan d'actions QHSE dont vous êtes responsable et qui demandent votre attention.
+{% if overdue %}
+
+En retard :
+{% for line in overdue %}
+- {{ line.title }} ({{ line.pillar }}, échéance le {{ line.due_date }})
+  {{ line.url }}
+{% endfor %}
+{% endif %}
+{% if due_soon %}
+
+Échéance dans 7 jours ou moins :
+{% for line in due_soon %}
+- {{ line.title }} ({{ line.pillar }}, échéance le {{ line.due_date }})
+  {{ line.url }}
+{% endfor %}
+{% endif %}
+
+Voir mes actions :
+
+{{ actions_url }}
+
+L'équipe Réglo

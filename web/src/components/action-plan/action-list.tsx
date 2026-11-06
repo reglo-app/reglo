@@ -23,10 +23,18 @@ export function StatusBadge({ status }: { status: ActionStatus }) {
     );
 }
 
-/**
- * Actions of the organization, soonest due first (US-09). Filters, overdue
- * and due soon badges come with US-10.
- */
+/** Late or due soon, in words (charter: never the colour alone). */
+export function DueBadge({ action }: { action: Action }) {
+    if (action.isOverdue) {
+        return <Badge variant="destructive">En retard</Badge>;
+    }
+    if (action.isDueSoon) {
+        return <Badge variant="warning">Échéance proche</Badge>;
+    }
+    return null;
+}
+
+/** Actions of the organization, in the order of the API. */
 export function ActionList({ actions }: { actions: Action[] }) {
     return (
         <Card className="gap-0 py-0">
@@ -51,6 +59,7 @@ export function ActionList({ actions }: { actions: Action[] }) {
                                     <span>
                                         Échéance : {formatDate(action.dueDate)}
                                     </span>
+                                    <DueBadge action={action} />
                                 </span>
                             </span>
                             <StatusBadge status={action.status} />
@@ -62,6 +71,17 @@ export function ActionList({ actions }: { actions: Action[] }) {
                     </li>
                 ))}
             </ul>
+        </Card>
+    );
+}
+
+/** The filters hide every action. */
+export function NoMatchingAction() {
+    return (
+        <Card>
+            <CardContent className="py-8 text-center text-ink-muted">
+                Aucune action ne correspond à ces filtres.
+            </CardContent>
         </Card>
     );
 }

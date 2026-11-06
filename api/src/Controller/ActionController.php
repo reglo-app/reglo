@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\ActionPlan\ActionDueDates;
+use App\ActionPlan\ActionDueFilter;
 use App\Entity\Action;
 use App\Entity\ActionStatus;
 use App\Entity\ActionStatusChange;
@@ -34,8 +36,8 @@ final class ActionController
 {
     public const STATUS_FORBIDDEN = 'Seuls le responsable de l\'action et les administrateurs peuvent changer son statut.';
 
-    /** "Today" for the due dates: the users are in France. */
-    private const TIMEZONE = 'Europe/Paris';
+    /** Actions listed by each block of the dashboard. */
+    private const OVERVIEW_LIMIT = 5;
 
     public function __construct(
         private readonly ActionRepository $repository,
@@ -43,13 +45,90 @@ final class ActionController
         private readonly EntityManagerInterface $entityManager,
         private readonly ActionAssignedMailer $mailer,
         private readonly LoggerInterface $logger,
+        private readonly ActionDueDates $dueDates,
     ) {
     }
 
+    /**
+     * Soonest due first, or latest with order=desc. Optional filters: status,
+     * domain, type, assignee (id), due (overdue, soon or upcoming).
+     */
     #[Route('', name: 'list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
-        return new JsonResponse(array_map(fn (Action $action): array => $this->view($action), $this->repository->findAllByDueDate()));
+        $query = $request->query;
+        $status = ActionStatus::tryFrom($query->getString('status'));
+        $pillar = QhsePillar::tryFrom($query->getString('domain'));
+        $type = ActionType::tryFrom($query->getString('type'));
+        $due = ActionDueFilter::tryFrom($query->getString('due'));
+        $assignee = $query->getString('assignee');
+        $order = $query->getString('order');
+
+        if (
+            (null === $status && '' !== $query->getString('status'))
+            || (null === $pillar && '' !== $query->getString('domain'))
+            || (null === $type && '' !== $query->getString('type'))
+            || (null === $due && '' !== $query->getString('due'))
+            || ('' !== $assignee && !ctype_digit($assignee))
+            || !\in_array($order, ['', 'asc', 'desc'], true)
+        ) {
+            return self::error('Ce filtre n\'existe pas.', 'invalid_filter');
+        }
+
+        $actions = $this->repository->findFiltered(
+            $status,
+            $pillar,
+            $type,
+            '' === $assignee ? null : (int) $assignee,
+            $due,
+            $this->dueDates->today(),
+            $this->dueDates->dueSoonLimit(),
+            'desc' === $order,
+        );
+
+        return new JsonResponse(array_map(fn (Action $action): array => $this->view($action), $actions));
+    }
+
+    /**
+     * For the dashboard: how many actions in each status, late and due soon,
+     * the most urgent ones and the next ones to do.
+     */
+    #[Route('/overview', name: 'overview', methods: ['GET'])]
+    public function overview(): JsonResponse
+    {
+        $today = $this->dueDates->today();
+        $actions = $this->repository->findFiltered(null, null, null, null, null, $today, $this->dueDates->dueSoonLimit());
+
+        $counts = ['overdue' => 0, 'dueSoon' => 0];
+        foreach (ActionStatus::cases() as $status) {
+            $counts[$status->value] = 0;
+        }
+        $urgent = [];
+        $upcoming = [];
+        foreach ($actions as $action) {
+            ++$counts[$action->getStatus()->value];
+
+            $overdue = $this->dueDates->isOverdue($action);
+            $dueSoon = $this->dueDates->isDueSoon($action);
+            $counts['overdue'] += (int) $overdue;
+            $counts['dueSoon'] += (int) $dueSoon;
+
+            if ($overdue || $dueSoon) {
+                $urgent[] = $action;
+            }
+            if (!$overdue && ActionStatus::Done !== $action->getStatus()) {
+                $upcoming[] = $action;
+            }
+        }
+
+        $views = fn (array $list): array => array_map(fn (Action $action): array => $this->view($action), \array_slice($list, 0, self::OVERVIEW_LIMIT));
+
+        return new JsonResponse([
+            'today' => $today->format('Y-m-d'),
+            'counts' => $counts,
+            'urgent' => $views($urgent),
+            'upcoming' => $views($upcoming),
+        ]);
     }
 
     #[Route('/{id}', name: 'show', requirements: ['id' => '\d+'], methods: ['GET'])]
@@ -202,7 +281,7 @@ final class ActionController
         $dueDate = \DateTimeImmutable::createFromFormat('!Y-m-d', $text('dueDate'));
         if (false === $dueDate || $dueDate->format('Y-m-d') !== $text('dueDate')) {
             $errors['dueDate'] = 'Indiquez l\'échéance de l\'action.';
-        } elseif ($dueDate->format('Y-m-d') < $this->today() && $dueDate->format('Y-m-d') !== $action?->getDueDate()->format('Y-m-d')) {
+        } elseif ($dueDate->format('Y-m-d') < $this->dueDates->today()->format('Y-m-d') && $dueDate->format('Y-m-d') !== $action?->getDueDate()->format('Y-m-d')) {
             $errors['dueDate'] = 'L\'échéance ne peut pas être dans le passé.';
         }
 
@@ -274,11 +353,6 @@ final class ActionController
         return $action;
     }
 
-    private function today(): string
-    {
-        return (new \DateTimeImmutable('now', new \DateTimeZone(self::TIMEZONE)))->format('Y-m-d');
-    }
-
     /**
      * Shape of Action in web/src/lib/api/types.ts; the history only on one
      * action.
@@ -295,6 +369,8 @@ final class ActionController
             'type' => $action->getType()->value,
             'status' => $action->getStatus()->value,
             'dueDate' => $action->getDueDate()->format('Y-m-d'),
+            'isOverdue' => $this->dueDates->isOverdue($action),
+            'isDueSoon' => $this->dueDates->isDueSoon($action),
             'assignee' => self::person($action->getAssignee()),
             'createdBy' => self::person($action->getCreatedBy()),
             'createdAt' => $action->getCreatedAt()->format(\DATE_ATOM),

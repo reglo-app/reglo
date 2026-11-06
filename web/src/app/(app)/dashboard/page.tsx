@@ -4,6 +4,7 @@ import { ArrowRight, Plus } from "lucide-react";
 import { Suspense } from "react";
 
 import {
+    ActionCountsCard,
     AlertsCard,
     NewsCard,
     UpcomingActionsCard,
@@ -12,23 +13,29 @@ import { ScoreOverview } from "@/components/dashboard/score-overview";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { withActionsOverview } from "@/lib/action-plan/overview";
 import { api, canEdit } from "@/lib/api";
 import { withDiagnosticScore } from "@/lib/diagnostic/result";
 
 export const metadata: Metadata = { title: "Tableau de bord" };
 
 /**
- * Home page: four blocks, each answering one question (score, alerts,
- * next actions, regulatory news). Kept short on purpose.
+ * Home page: blocks that each answer one question (score, state of the
+ * action plan, alerts, next actions, regulatory news). Kept short on purpose.
  */
 async function DashboardContent() {
-    const [mockedSummary, result, current] = await Promise.all([
+    const [mockedSummary, result, current, overview] = await Promise.all([
         api.getDashboardSummary(),
         api.getLatestResult(),
         api.getCurrentDiagnostic(),
+        api.getActionsOverview(),
     ]);
-    // The score block shows the real score of the latest diagnostic (US-06).
-    const summary = withDiagnosticScore(mockedSummary, result);
+    // Real score of the latest diagnostic (US-06) and real actions (US-10);
+    // only the news are still mock data.
+    const summary = withActionsOverview(
+        withDiagnosticScore(mockedSummary, result),
+        overview,
+    );
     const today = summary.generatedAt;
 
     return (
@@ -37,6 +44,7 @@ async function DashboardContent() {
                 summary={summary}
                 hasDraft={current.draft !== null}
             />
+            <ActionCountsCard counts={overview.counts} />
             <div className="grid gap-4 lg:grid-cols-2">
                 <AlertsCard alerts={summary.alerts} today={today} />
                 <UpcomingActionsCard
@@ -55,6 +63,7 @@ function DashboardSkeleton() {
         <div className="flex flex-col gap-4" aria-busy="true">
             <span className="sr-only">Chargement…</span>
             <Skeleton className="h-44 rounded-lg" />
+            <Skeleton className="h-36 rounded-lg" />
             <div className="grid gap-4 lg:grid-cols-2">
                 <Skeleton className="h-64 rounded-lg" />
                 <Skeleton className="h-64 rounded-lg" />

@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 
 import { StatusControl } from "@/components/action-plan/action-controls";
-import { StatusBadge } from "@/components/action-plan/action-list";
+import { DueBadge, StatusBadge } from "@/components/action-plan/action-list";
 import { DomainBadge } from "@/components/domain-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -61,7 +61,8 @@ export function ActionDetailView({
                             )}
                         </Item>
                         <Item label="Échéance">
-                            {formatDate(action.dueDate)}
+                            {formatDate(action.dueDate)}{" "}
+                            <DueBadge action={action} />
                             {action.status !== "done" && (
                                 <span className="block text-sm text-ink-muted">
                                     {formatDueIn(action.dueDate, today)}

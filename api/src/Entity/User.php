@@ -78,6 +78,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $lastSeenAt = null;
 
+    /**
+     * The day of the last daily e-mail about late and soon due actions: at
+     * most one a day.
+     */
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $actionRemindersSentOn = null;
+
     public function __construct(string $email)
     {
         $this->email = self::normalizeEmail($email);
@@ -285,6 +292,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->lastSeenAt = $now;
 
         return true;
+    }
+
+    public function getActionRemindersSentOn(): ?\DateTimeImmutable
+    {
+        return $this->actionRemindersSentOn;
+    }
+
+    public function markActionRemindersSent(\DateTimeImmutable $day): void
+    {
+        $this->actionRemindersSentOn = $day;
     }
 
     public function isActivated(): bool

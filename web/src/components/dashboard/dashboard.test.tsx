@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import {
+    ActionCountsCard,
     AlertsCard,
     NewsCard,
     UpcomingActionsCard,
@@ -10,7 +11,7 @@ import {
     ScoreOverview,
     scoreLevel,
 } from "@/components/dashboard/score-overview";
-import { mockDashboardSummary } from "@/lib/api/mocks";
+import { mockActionsOverview, mockDashboardSummary } from "@/lib/api/mocks";
 
 const summary = mockDashboardSummary;
 const today = summary.generatedAt;
@@ -98,6 +99,42 @@ describe("ScoreOverview with a diagnostic in progress", () => {
         expect(
             screen.getByRole("img", { name: "Score global : 64 sur 100" }),
         ).toBeInTheDocument();
+    });
+});
+
+describe("ActionCountsCard", () => {
+    it("links each number to the matching list", () => {
+        render(<ActionCountsCard counts={mockActionsOverview.counts} />);
+
+        expect(screen.getByRole("link", { name: "1 À faire" })).toHaveAttribute(
+            "href",
+            "/actions?status=todo",
+        );
+        expect(
+            screen.getByRole("link", { name: "1 En retard" }),
+        ).toHaveAttribute("href", "/actions?due=overdue");
+        expect(
+            screen.getByRole("link", { name: "1 Échéance proche" }),
+        ).toHaveAttribute("href", "/actions?due=soon");
+        expect(
+            screen.getByRole("link", { name: "1 Terminées" }),
+        ).toHaveAttribute("href", "/actions?status=done");
+    });
+
+    it("only colours the late actions when there are some", () => {
+        const { rerender } = render(
+            <ActionCountsCard counts={mockActionsOverview.counts} />,
+        );
+        const number = () =>
+            screen.getByRole("link", { name: /En retard/ }).firstElementChild;
+        expect(number()).toHaveClass("text-danger-700");
+
+        rerender(
+            <ActionCountsCard
+                counts={{ ...mockActionsOverview.counts, overdue: 0 }}
+            />,
+        );
+        expect(number()).not.toHaveClass("text-danger-700");
     });
 });
 

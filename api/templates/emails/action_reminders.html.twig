@@ -1,0 +1,33 @@
+{% extends 'emails/layout.html.twig' %}
+
+{% block title %}Vos actions à suivre{% endblock %}
+
+{% macro actions(heading, lines) %}
+    {% if lines %}
+        <h2 style="margin: 24px 0 8px; font-size: 16px; font-weight: bold;">{{ heading }}</h2>
+        <ul style="margin: 0 0 16px; padding-left: 20px; font-size: 16px; line-height: 1.5;">
+            {% for line in lines %}
+                <li style="margin-bottom: 8px;">
+                    <a href="{{ line.url }}" style="color: #0f6b63;">{{ line.title }}</a><br>
+                    {{ line.pillar }}, échéance le {{ line.due_date }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endmacro %}
+
+{% block content %}
+    <p style="margin: 0 0 16px; font-size: 16px;">Bonjour{% if first_name %} {{ first_name }}{% endif %},</p>
+    <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5;">
+        Voici les actions du plan d'actions QHSE dont vous êtes responsable et qui demandent votre attention.
+    </p>
+    {{ _self.actions('En retard', overdue) }}
+    {{ _self.actions('Échéance dans 7 jours ou moins', due_soon) }}
+    <p style="margin: 24px 0; text-align: center;">
+        <a href="{{ actions_url }}" style="display: inline-block; padding: 12px 24px; background: #0f6b63; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px;">Voir mes actions</a>
+    </p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #4b5856;">
+        Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :<br>
+        <a href="{{ actions_url }}" style="color: #0f6b63; word-break: break-all;">{{ actions_url }}</a>
+    </p>
+{% endblock %}
