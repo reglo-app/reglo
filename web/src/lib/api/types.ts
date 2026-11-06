@@ -60,7 +60,7 @@ export type DomainScore = {
 };
 
 export type AlertKind =
-    "action_overdue" | "document_expiring" | "training_expiring";
+    "action_due" | "document_expiring" | "training_expiring";
 
 /** Something late or about to expire (home page "Alertes" block). */
 export type DashboardAlert = {
@@ -106,6 +106,10 @@ export type Action = {
     status: ActionStatus;
     /** Calendar date, "YYYY-MM-DD". */
     dueDate: string;
+    /** Unfinished and past its due date. */
+    isOverdue: boolean;
+    /** Unfinished and due in 7 days or less. */
+    isDueSoon: boolean;
     /** Null once the assignee left the organization. */
     assignee: ActionPerson | null;
     createdBy: ActionPerson | null;
@@ -124,6 +128,17 @@ export type ActionStatusChange = {
 
 /** `GET /api/actions/{id}`: the action with its history, oldest first. */
 export type ActionDetail = Action & { history: ActionStatusChange[] };
+
+/** `GET /api/actions/overview`: the action plan on the dashboard (US-10). */
+export type ActionsOverview = {
+    /** "YYYY-MM-DD" in France, the day the due dates are compared with. */
+    today: string;
+    counts: Record<ActionStatus | "overdue" | "dueSoon", number>;
+    /** Late and soon due actions, most urgent first (at most 5). */
+    urgent: Action[];
+    /** Next unfinished actions that are not late, soonest first (at most 5). */
+    upcoming: Action[];
+};
 
 /** Action of the action plan (US-09). */
 export type ActionSummary = {

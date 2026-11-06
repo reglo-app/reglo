@@ -67,6 +67,11 @@ describe("mock api", () => {
     });
 
     it("returns the action plan, and one action with its history", async () => {
+        const overdue = await api.getActions({ due: "overdue" });
+        expect(overdue.every((a) => a.isOverdue)).toBe(true);
+        const overview = await api.getActionsOverview();
+        expect(overview.counts.overdue).toBe(overdue.length);
+
         const actions = await api.getActions();
         expect(actions.length).toBeGreaterThan(0);
 
@@ -175,6 +180,27 @@ describe("http api", () => {
         expect(await httpApi().getAction("42")).toBeNull();
         expect(fetchMock).toHaveBeenCalledWith(
             expect.stringMatching(/\/api\/actions\/42$/),
+            expect.anything(),
+        );
+    });
+
+    it("sends the filters of the action plan to the API", async () => {
+        const fetchMock = vi
+            .fn()
+            .mockImplementation(
+                async () => new Response("[]", { status: 200 }),
+            );
+        vi.stubGlobal("fetch", fetchMock);
+
+        await httpApi().getActions({ status: "todo", due: "overdue" });
+        expect(fetchMock).toHaveBeenLastCalledWith(
+            expect.stringMatching(/\/api\/actions\?status=todo&due=overdue$/),
+            expect.anything(),
+        );
+
+        await httpApi().getActions();
+        expect(fetchMock).toHaveBeenLastCalledWith(
+            expect.stringMatching(/\/api\/actions$/),
             expect.anything(),
         );
     });

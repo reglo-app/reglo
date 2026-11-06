@@ -1,12 +1,17 @@
 import { redirect } from "next/navigation";
 
 import { getSessionToken } from "@/lib/auth/session";
+import {
+    actionFiltersQuery,
+    type ActionFilters,
+} from "@/lib/action-plan/filters";
 import type { DomainKey } from "@/lib/domains";
 
 import { API_INTERNAL_URL } from "./internal-url";
 import {
+    filterMockActions,
     mockActionDetails,
-    mockActions,
+    mockActionsOverview,
     mockCurrentDiagnostic,
     mockCurrentUser,
     mockDiagnosticResult,
@@ -21,6 +26,7 @@ import {
 import type {
     Action,
     ActionDetail,
+    ActionsOverview,
     CurrentDiagnostic,
     CurrentUser,
     DashboardSummary,
@@ -90,8 +96,10 @@ export type Api = {
     getCurrentDiagnostic(): Promise<CurrentDiagnostic>;
     /** Score of the latest submitted diagnostic; null if never (US-06). */
     getLatestResult(): Promise<DiagnosticResult | null>;
-    /** Action plan of the organization, soonest due first (US-09). */
-    getActions(): Promise<Action[]>;
+    /** Action plan of the organization, soonest due first by default. */
+    getActions(filters?: ActionFilters): Promise<Action[]>;
+    /** Counts, urgent and next actions for the dashboard (US-10). */
+    getActionsOverview(): Promise<ActionsOverview>;
     /** null when the action does not exist (or is not visible). */
     getAction(id: string): Promise<ActionDetail | null>;
     /** Evidence documents of the organization, latest first (US-11). */
@@ -196,11 +204,20 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
                         "/api/diagnostics/latest/result",
                     ),
             ),
-        getActions: () =>
+        getActions: (filters = {}) =>
             load(
                 "actions",
-                () => mockActions,
-                () => request<Action[]>("/api/actions"),
+                () => filterMockActions(filters),
+                () =>
+                    request<Action[]>(
+                        `/api/actions${actionFiltersQuery(filters)}`,
+                    ),
+            ),
+        getActionsOverview: () =>
+            load(
+                "actions",
+                () => mockActionsOverview,
+                () => request<ActionsOverview>("/api/actions/overview"),
             ),
         getAction: (id) =>
             load(

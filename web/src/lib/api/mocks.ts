@@ -2,12 +2,14 @@
 // News covers are generated placeholders in public/mock/news/.
 // No real person or company: names are invented.
 
+import type { ActionFilters } from "@/lib/action-plan/filters";
 import type { DomainKey } from "@/lib/domains";
 
 import type {
     Action,
     ActionDetail,
     ActionPerson,
+    ActionsOverview,
     ActionSummary,
     CurrentDiagnostic,
     DiagnosticResult,
@@ -167,7 +169,7 @@ export const mockDashboardSummary: DashboardSummary = {
     alerts: [
         {
             id: "alert-1",
-            kind: "action_overdue",
+            kind: "action_due",
             title: "Mettre à jour le DUERP",
             domain: "safety",
             dueDate: "2026-10-10T00:00:00.000Z",
@@ -188,7 +190,7 @@ export const mockDashboardSummary: DashboardSummary = {
         },
         {
             id: "alert-4",
-            kind: "action_overdue",
+            kind: "action_due",
             title: "Afficher le protocole de nettoyage des vestiaires",
             domain: "hygiene",
             dueDate: "2026-10-14T00:00:00.000Z",
@@ -649,6 +651,8 @@ export const mockActions: Action[] = [
         type: "corrective",
         status: "in_progress",
         dueDate: "2026-10-10",
+        isOverdue: true,
+        isDueSoon: false,
         assignee: person(camille),
         createdBy: person(camille),
         createdAt: "2026-09-20T08:00:00.000Z",
@@ -662,6 +666,8 @@ export const mockActions: Action[] = [
         type: "preventive",
         status: "todo",
         dueDate: "2026-10-22",
+        isOverdue: false,
+        isDueSoon: true,
         assignee: person(hugo),
         createdBy: person(camille),
         createdAt: "2026-10-02T08:00:00.000Z",
@@ -675,6 +681,8 @@ export const mockActions: Action[] = [
         type: "improvement",
         status: "in_review",
         dueDate: "2026-11-15",
+        isOverdue: false,
+        isDueSoon: false,
         assignee: person(julien),
         createdBy: person(camille),
         createdAt: "2026-09-25T08:00:00.000Z",
@@ -688,12 +696,48 @@ export const mockActions: Action[] = [
         type: "improvement",
         status: "done",
         dueDate: "2026-12-01",
+        isOverdue: false,
+        isDueSoon: false,
         assignee: null,
         createdBy: person(camille),
         createdAt: "2026-09-10T08:00:00.000Z",
         updatedAt: "2026-10-05T11:00:00.000Z",
     },
 ];
+
+/** What the API does with the filters of the action plan (US-10). */
+export function filterMockActions(filters: ActionFilters): Action[] {
+    const { status, domain, type, assignee, due, order } = filters;
+    const matchesDue = (action: Action) =>
+        due === undefined ||
+        (due === "overdue" && action.isOverdue) ||
+        (due === "soon" && action.isDueSoon) ||
+        (due === "upcoming" && action.status !== "done" && !action.isOverdue);
+    const actions = mockActions.filter(
+        (action) =>
+            (!status || action.status === status) &&
+            (!domain || action.domain === domain) &&
+            (!type || action.type === type) &&
+            (!assignee || action.assignee?.id === assignee) &&
+            matchesDue(action),
+    );
+    return order === "desc" ? actions.reverse() : actions;
+}
+
+/** The dashboard view of the same actions, on the day of the mock summary. */
+export const mockActionsOverview: ActionsOverview = {
+    today: mockDashboardSummary.generatedAt.slice(0, 10),
+    counts: {
+        todo: 1,
+        in_progress: 1,
+        in_review: 1,
+        done: 1,
+        overdue: 1,
+        dueSoon: 1,
+    },
+    urgent: mockActions.filter((a) => a.isOverdue || a.isDueSoon),
+    upcoming: mockActions.filter((a) => a.status !== "done" && !a.isOverdue),
+};
 
 /** The same actions with their history. */
 export const mockActionDetails: ActionDetail[] = mockActions.map((action) => {

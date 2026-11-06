@@ -7,6 +7,7 @@ import { DomainBadge } from "@/components/domain-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type {
+    ActionsOverview,
     ActionSummary,
     AlertKind,
     DashboardAlert,
@@ -31,10 +32,78 @@ function DomainIcon({ domain }: { domain: DomainKey }) {
 }
 
 const ALERT_KIND_LABELS: Record<AlertKind, string> = {
-    action_overdue: "Action",
+    action_due: "Action",
     document_expiring: "Justificatif",
     training_expiring: "Habilitation",
 };
+
+/** "Où en est le plan d'actions ?": each number opens the matching list. */
+export function ActionCountsCard({
+    counts,
+}: {
+    counts: ActionsOverview["counts"];
+}) {
+    const items = [
+        { label: "À faire", value: counts.todo, query: "status=todo" },
+        {
+            label: "En cours",
+            value: counts.in_progress,
+            query: "status=in_progress",
+        },
+        {
+            label: "En revue",
+            value: counts.in_review,
+            query: "status=in_review",
+        },
+        { label: "Terminées", value: counts.done, query: "status=done" },
+        {
+            label: "En retard",
+            value: counts.overdue,
+            query: "due=overdue",
+            tone: "text-danger-700",
+        },
+        {
+            label: "Échéance proche",
+            value: counts.dueSoon,
+            query: "due=soon",
+            tone: "text-yellow-900",
+        },
+    ];
+
+    return (
+        <Card>
+            <BlockHeader
+                icon={ListChecks}
+                title="Suivi des actions"
+                seeAll={{ href: "/actions", label: "plan d'actions" }}
+            />
+            <CardContent>
+                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                    {items.map(({ label, value, query, tone }) => (
+                        <li key={label}>
+                            <Link
+                                href={`/actions?${query}`}
+                                className="flex h-full flex-col gap-0.5 rounded-md border border-border px-3 py-2.5 transition-colors hover:bg-green-50/40"
+                            >
+                                <span
+                                    className={cn(
+                                        "text-2xl font-semibold text-ink",
+                                        value > 0 && tone,
+                                    )}
+                                >
+                                    {value}
+                                </span>{" "}
+                                <span className="text-sm text-ink-muted">
+                                    {label}
+                                </span>
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+    );
+}
 
 /** Block 2, "Qu'est-ce qui presse ?": late or expiring items, max 5. */
 export function AlertsCard({

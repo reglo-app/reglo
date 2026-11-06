@@ -44,6 +44,7 @@ test("home page shows the four blocks", async ({ page }) => {
     await page.goto("/dashboard");
     for (const title of [
         "Score QHSE",
+        "Suivi des actions",
         "Alertes",
         "Prochaines actions",
         "Veille réglementaire",
@@ -58,6 +59,22 @@ test("home page shows the four blocks", async ({ page }) => {
         .getByRole("link", { name: /^Environnement \d+ sur 100/ })
         .click();
     await expect(page).toHaveURL(/\/domains\/environment$/);
+});
+
+test("home page counts the late actions and opens them", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page
+        .getByRole("main")
+        .getByRole("link", { name: "1 En retard" })
+        .click();
+
+    await expect(page).toHaveURL(/\/actions\?due=overdue$/);
+    await expect(page.getByLabel("Échéance", { exact: true })).toHaveValue(
+        "overdue",
+    );
+    await expect(
+        page.getByRole("link", { name: /Mettre à jour le DUERP/ }),
+    ).toBeVisible();
 });
 
 test("Diagnostic appears in the sidebar only in its branch", async ({
