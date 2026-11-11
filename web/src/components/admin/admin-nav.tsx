@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
+import { Building2, ShieldUser, UsersRound } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-    { href: "/admin", label: "Organisations" },
-    { href: "/admin/utilisateurs", label: "Utilisateurs" },
-    { href: "/admin/equipe", label: "Équipe Réglo" },
+    { href: "/admin", label: "Organisations", icon: Building2 },
+    { href: "/admin/utilisateurs", label: "Utilisateurs", icon: UsersRound },
+    { href: "/admin/equipe", label: "Équipe Réglo", icon: ShieldUser },
 ];
 
 /** The page of an organization belongs to "Organisations". */
@@ -23,8 +24,9 @@ function isCurrent(href: string, pathname: string | null): boolean {
 function AdminNavView({ pathname }: { pathname: string | null }) {
     return (
         <nav aria-label="Navigation du back office">
-            <ul className="flex flex-wrap gap-1">
-                {LINKS.map(({ href, label }) => {
+            {/* On a phone, three columns with the icon above the name. */}
+            <ul className="grid grid-cols-3 gap-1 sm:flex sm:justify-center">
+                {LINKS.map(({ href, label, icon: Icon }) => {
                     const current = isCurrent(href, pathname);
                     return (
                         <li key={href}>
@@ -32,12 +34,21 @@ function AdminNavView({ pathname }: { pathname: string | null }) {
                                 href={href}
                                 aria-current={current ? "page" : undefined}
                                 className={cn(
-                                    "flex min-h-10 items-center rounded-md px-3 text-base font-medium transition-colors",
+                                    "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-md px-2 text-xs font-medium transition-colors sm:min-h-10 sm:flex-row sm:gap-2 sm:px-3 sm:text-base",
                                     current
                                         ? "bg-green-50 text-ink"
                                         : "text-ink-muted hover:bg-surface-subtle hover:text-ink",
                                 )}
                             >
+                                <Icon
+                                    aria-hidden="true"
+                                    className={cn(
+                                        "size-4 shrink-0",
+                                        current
+                                            ? "text-green-700"
+                                            : "text-ink-muted",
+                                    )}
+                                />
                                 {label}
                             </Link>
                         </li>

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, Info, Plus } from "lucide-react";
 import { Suspense } from "react";
 
 import {
@@ -12,6 +11,7 @@ import {
 } from "@/components/dashboard/dashboard-lists";
 import { ScoreOverview } from "@/components/dashboard/score-overview";
 import { PageHeader } from "@/components/page-header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { withActionsOverview } from "@/lib/action-plan/overview";
@@ -25,11 +25,8 @@ export const metadata: Metadata = { title: "Tableau de bord" };
  * action plan, alerts, next actions, regulatory news). Kept short on purpose.
  */
 async function DashboardContent() {
-    // The REGLO team has no client data: home is the back office.
-    const user = await api.getCurrentUser();
-    if (user.platformAdmin) redirect("/admin");
-
-    const [mockedSummary, result, current, overview] = await Promise.all([
+    const [user, mockedSummary, result, current, overview] = await Promise.all([
+        api.getCurrentUser(),
         api.getDashboardSummary(),
         api.getLatestResult(),
         api.getCurrentDiagnostic(),
@@ -45,6 +42,17 @@ async function DashboardContent() {
 
     return (
         <div className="flex flex-col gap-4">
+            {/* The REGLO team: no client data, nothing to change. */}
+            {user.organization === null && (
+                <Alert variant="info">
+                    <Info aria-hidden="true" />
+                    <AlertDescription>
+                        Votre compte n&apos;appartient à aucune organisation :
+                        ce tableau de bord reste vide et vous ne pouvez rien
+                        modifier.
+                    </AlertDescription>
+                </Alert>
+            )}
             <ScoreOverview
                 summary={summary}
                 hasDraft={current.draft !== null}

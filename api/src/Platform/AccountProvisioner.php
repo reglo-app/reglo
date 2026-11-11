@@ -71,6 +71,19 @@ final class AccountProvisioner
             $errors['email'] = self::EMAIL_TAKEN;
         }
 
+        return $errors + $this->personNameErrors($firstName, $lastName);
+    }
+
+    /**
+     * The problems with a first and last name, by field: when creating an
+     * account or renaming one.
+     *
+     * @return array<'firstName'|'lastName', string>
+     */
+    public function personNameErrors(string $firstName, string $lastName): array
+    {
+        $errors = [];
+
         if (!self::isValidName($firstName)) {
             $errors['firstName'] = self::FIRST_NAME_INVALID;
         }

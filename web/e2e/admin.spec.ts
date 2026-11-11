@@ -45,6 +45,24 @@ test("the REGLO team goes from the organizations to the accounts", async ({
     ).toBeVisible();
 });
 
+test("the interface switch goes from the back office to the user interface", async ({
+    page,
+}) => {
+    await page.goto("/admin");
+
+    await page
+        .getByRole("button", {
+            name: "Interface administrateur : changer d'interface",
+        })
+        .click();
+    await page.getByRole("menuitem", { name: "Interface utilisateur" }).click();
+
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 30_000 });
+    await expect(
+        page.getByRole("heading", { level: 1, name: "Tableau de bord" }),
+    ).toBeVisible();
+});
+
 test("the creation dialog opens and closes with the keyboard", async ({
     page,
 }) => {

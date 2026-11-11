@@ -31,11 +31,14 @@ async function BackOfficeShell({ children }: { children: React.ReactNode }) {
             >
                 Aller au contenu
             </a>
-            {/* Fixed on large screens only: on a phone, it takes three rows. */}
-            <header className="z-40 flex flex-wrap lg:sticky lg:top-0 items-center gap-x-6 gap-y-2 border-b border-border bg-white px-4 py-3 sm:px-6">
+            {/* Fixed on large screens only: on a phone, it takes two rows.
+                On large screens, the links are centered between the logo and
+                the menus. */}
+            <header className="z-40 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-white px-4 py-3 sm:px-6 lg:sticky lg:top-0 lg:grid lg:grid-cols-[1fr_auto_1fr]">
                 <Link
                     href="/admin"
-                    className="flex min-h-10 items-center gap-2 rounded-md"
+                    aria-label="REGLO Admin"
+                    className="flex min-h-10 items-center gap-2 justify-self-start rounded-md"
                 >
                     <Image
                         src="/brand/reglo-symbol.png"
@@ -46,17 +49,17 @@ async function BackOfficeShell({ children }: { children: React.ReactNode }) {
                     />
                     <span className="font-display text-2xl font-extrabold text-brand-teal">
                         REGLO
-                    </span>
-                    <span className="text-sm font-medium text-ink-muted">
-                        Back office
+                        <sup className="relative -top-3 ml-1 align-baseline font-sans text-[0.625rem] font-bold tracking-widest text-green-700">
+                            ADMIN
+                        </sup>
                     </span>
                 </Link>
                 <div className="order-last w-full lg:order-none lg:w-auto">
                     <AdminNav />
                 </div>
-                <div className="ml-auto">
+                <div className="ml-auto lg:justify-self-end">
                     <Suspense fallback={<CurrentUserMenuSkeleton />}>
-                        <CurrentUserMenu />
+                        <CurrentUserMenu area="admin" />
                     </Suspense>
                 </div>
             </header>

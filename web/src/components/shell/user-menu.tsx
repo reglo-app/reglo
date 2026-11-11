@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { ChevronDown, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, UserRound } from "lucide-react";
 
 import {
     DropdownMenu,
@@ -23,8 +23,6 @@ export type UserMenuProps = {
     organizationName: string | null;
     /** Profile photo; the initials without it. */
     avatar?: Pick<CurrentUser, "id" | "avatarVersion">;
-    /** REGLO team: a link to the back office (the API checks the access). */
-    platformAdmin?: boolean;
 };
 
 const NO_AVATAR = { id: "", avatarVersion: null };
@@ -34,7 +32,6 @@ export function UserMenu({
     roleLabel,
     organizationName,
     avatar = NO_AVATAR,
-    platformAdmin = false,
 }: UserMenuProps) {
     const [isLoggingOut, startLogout] = useTransition();
 
@@ -70,14 +67,6 @@ export function UserMenu({
                     </span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {platformAdmin && (
-                    <DropdownMenuItem asChild>
-                        <Link href="/admin">
-                            <ShieldCheck aria-hidden="true" />
-                            Back office
-                        </Link>
-                    </DropdownMenuItem>
-                )}
                 <DropdownMenuItem asChild>
                     <Link href="/settings">
                         <UserRound aria-hidden="true" />

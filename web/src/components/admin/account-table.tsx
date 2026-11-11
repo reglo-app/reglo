@@ -1,17 +1,24 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useActionState, useCallback, useState, useTransition } from "react";
 import Link from "next/link";
 import {
     LoaderCircle,
     MoreVertical,
+    Pencil,
     RotateCw,
     Search,
     UserMinus,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+    FormError,
+    SubmitRow,
+    useDoneMessage,
+} from "@/components/admin/admin-form";
 import { useTableSearch } from "@/components/admin/use-table-search";
+import { FormField } from "@/components/profile/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +53,9 @@ import { memberName, Pagination } from "@/components/team/member-table";
 import {
     changeUserRole,
     removeAccount,
+    renameUser,
     resendActivation,
+    type AdminFormState,
 } from "@/lib/admin/actions";
 import {
     ROLE_KEYS,
@@ -84,9 +93,10 @@ export type AccountTableProps = {
     changeRole?: typeof changeUserRole;
     remove?: typeof removeAccount;
     resend?: typeof resendActivation;
+    rename?: typeof renameUser;
 };
 
-/** Accounts in the back office: search, role, new link, removal. */
+/** Accounts in the back office: search, name, role, new link, removal. */
 export function AccountTable({
     title,
     accounts,
@@ -97,12 +107,15 @@ export function AccountTable({
     changeRole = changeUserRole,
     remove = removeAccount,
     resend = resendActivation,
+    rename = renameUser,
 }: AccountTableProps) {
     const table = useTableSearch(accounts, textOf);
     // Shown at once, before the API answers (back on refusal).
     const [roles, setRoles] = useState<Record<string, RoleKey>>({});
     const [toRemove, setToRemove] = useState<AdminUser | null>(null);
     const [isRemoving, startRemoving] = useTransition();
+    const [toRename, setToRename] = useState<AdminUser | null>(null);
+    const closeRename = useCallback(() => setToRename(null), []);
 
     const hasRole = (account: AdminUser) =>
         !team && account.organization !== null;
@@ -295,6 +308,9 @@ export function AccountTable({
                                                     ? null
                                                     : () => sendLink(account)
                                             }
+                                            onRename={() =>
+                                                setToRename(account)
+                                            }
                                             onRemove={() =>
                                                 setToRemove(account)
                                             }
@@ -315,6 +331,32 @@ export function AccountTable({
                     label="Pages des comptes"
                 />
             )}
+
+            <Dialog
+                open={toRename !== null}
+                onOpenChange={(open) => {
+                    if (!open) closeRename();
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Modifier le nom</DialogTitle>
+                        <DialogDescription>
+                            Compte {toRename?.email}.{" "}
+                            {team
+                                ? "Le nouveau nom est visible tout de suite par l'équipe."
+                                : "Le nouveau nom est visible tout de suite par son organisation."}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {toRename && (
+                        <RenameForm
+                            account={toRename}
+                            action={rename}
+                            onDone={closeRename}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
 
             <Dialog
                 open={toRemove !== null}
@@ -360,11 +402,69 @@ export function AccountTable({
     );
 }
 
+function RenameForm({
+    account,
+    action,
+    onDone,
+}: {
+    account: AdminUser;
+    action: typeof renameUser;
+    onDone: () => void;
+}) {
+    const [state, formAction, isPending] = useActionState<
+        AdminFormState,
+        FormData
+    >(action, {});
+    // Controlled: what was typed stays in the fields after a refusal.
+    const [values, setValues] = useState({
+        firstName: account.firstName ?? "",
+        lastName: account.lastName ?? "",
+    });
+    useDoneMessage(state, onDone);
+
+    function field(name: keyof typeof values) {
+        return {
+            id: `rename-account-${name}`,
+            name,
+            value: values[name],
+            onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+                setValues({ ...values, [name]: event.target.value }),
+            invalid: Boolean(state.fieldErrors?.[name]),
+            errorId: "rename-account-error",
+        };
+    }
+
+    return (
+        <form action={formAction} className="flex flex-col gap-5" noValidate>
+            <FormError id="rename-account-error" message={state.error} />
+            <input type="hidden" name="userId" value={account.id} />
+            <div className="grid gap-5 sm:grid-cols-2">
+                <FormField
+                    label="Prénom"
+                    autoComplete="off"
+                    maxLength={100}
+                    required
+                    {...field("firstName")}
+                />
+                <FormField
+                    label="Nom"
+                    autoComplete="off"
+                    maxLength={100}
+                    required
+                    {...field("lastName")}
+                />
+            </div>
+            <SubmitRow isPending={isPending} label="Enregistrer" />
+        </form>
+    );
+}
+
 function RowMenu({
     name,
     role,
     onRole,
     onResend,
+    onRename,
     onRemove,
 }: {
     name: string;
@@ -373,6 +473,7 @@ function RowMenu({
     onRole: (role: RoleKey) => void;
     /** null: the account is activated, no link to send. */
     onResend: (() => void) | null;
+    onRename: () => void;
     onRemove: () => void;
 }) {
     return (
@@ -407,6 +508,13 @@ function RowMenu({
                         <DropdownMenuSeparator />
                     </>
                 )}
+                <DropdownMenuItem
+                    onSelect={onRename}
+                    className={cn(MENU_ITEM, "pr-2.5")}
+                >
+                    <Pencil aria-hidden="true" />
+                    Modifier le nom
+                </DropdownMenuItem>
                 {onResend && (
                     <DropdownMenuItem
                         onSelect={onResend}

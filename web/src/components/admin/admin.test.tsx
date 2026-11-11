@@ -416,6 +416,63 @@ describe("AccountTable", () => {
         );
     });
 
+    it("changes the name, starting from the current one", async () => {
+        const rename = vi
+            .fn()
+            .mockResolvedValueOnce({
+                error: "Saisissez le prénom (100 caractères au maximum).",
+                fieldErrors: { firstName: "Saisissez le prénom." },
+            })
+            .mockResolvedValueOnce({ done: "Le nom est enregistré." });
+        render(
+            <AccountTable
+                title="Comptes"
+                accounts={[pending]}
+                rename={rename}
+            />,
+        );
+
+        await openRowMenu("Hugo Bernard");
+        await userEvent.click(
+            screen.getByRole("menuitem", { name: "Modifier le nom" }),
+        );
+        const dialog = screen.getByRole("dialog", { name: "Modifier le nom" });
+        const firstName = within(dialog).getByLabelText("Prénom");
+        expect(firstName).toHaveValue("Hugo");
+        expect(within(dialog).getByLabelText("Nom")).toHaveValue("Bernard");
+
+        await userEvent.clear(firstName);
+        await userEvent.click(
+            within(dialog).getByRole("button", { name: "Enregistrer" }),
+        );
+        expect(
+            await within(dialog).findByText(
+                "Saisissez le prénom (100 caractères au maximum).",
+            ),
+        ).toBeInTheDocument();
+        expect(firstName).toHaveAttribute("aria-invalid", "true");
+
+        await userEvent.type(firstName, "Hugues");
+        await userEvent.click(
+            within(dialog).getByRole("button", { name: "Enregistrer" }),
+        );
+
+        await waitFor(() =>
+            expect(toast.success).toHaveBeenCalledWith(
+                "Le nom est enregistré.",
+            ),
+        );
+        const sent = rename.mock.calls[1][1] as FormData;
+        expect([
+            sent.get("userId"),
+            sent.get("firstName"),
+            sent.get("lastName"),
+        ]).toEqual(["12", "Hugues", "Bernard"]);
+        await waitFor(() =>
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+        );
+    });
+
     it("gives no role to an account without organization", async () => {
         render(
             <AccountTable title="Comptes" accounts={[withoutOrganization]} />,

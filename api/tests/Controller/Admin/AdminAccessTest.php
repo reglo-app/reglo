@@ -29,6 +29,7 @@ final class AdminAccessTest extends AdminTestCase
             ['GET', '/api/admin/users'],
             ['PATCH', '/api/admin/users/1'],
             ['DELETE', '/api/admin/users/1'],
+            ['PUT', '/api/admin/users/1/name'],
             ['POST', '/api/admin/users/1/resend-activation'],
             ['GET', '/api/admin/team'],
             ['POST', '/api/admin/team'],
@@ -95,6 +96,8 @@ final class AdminAccessTest extends AdminTestCase
     {
         $this->getAs('/api/auth/me', $this->teamToken);
         self::assertTrue($this->responseData()['platformAdmin']);
+        // In the interface of the clients, the team changes nothing.
+        self::assertSame('reader', $this->responseData()['role']);
 
         $this->getAs('/api/auth/me');
         self::assertFalse($this->responseData()['platformAdmin']);

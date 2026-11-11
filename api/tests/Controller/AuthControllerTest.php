@@ -39,9 +39,21 @@ final class AuthControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $data = $this->responseData();
-        self::assertSame(['token'], array_keys($data));
+        self::assertSame(['token', 'platformAdmin'], array_keys($data));
         self::assertIsString($data['token']);
         self::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $data['token']);
+        self::assertFalse($data['platformAdmin']);
+    }
+
+    public function testLoginTellsTheWebAppWhenTheAccountIsFromTheTeam(): void
+    {
+        $this->createUser()->setRoles([User::ROLE_PLATFORM_ADMIN]);
+        $this->entityManager->flush();
+
+        $this->login(self::EMAIL, self::PASSWORD);
+
+        self::assertResponseIsSuccessful();
+        self::assertTrue($this->responseData()['platformAdmin']);
     }
 
     public function testTokenIsStoredHashed(): void
@@ -140,7 +152,8 @@ final class AuthControllerTest extends WebTestCase
             'lastName' => null,
             'jobTitle' => null,
             'avatarVersion' => null,
-            'role' => 'member',
+            // No organization: nothing to change, as a reader
+            'role' => 'reader',
             'platformAdmin' => false,
             'organization' => null,
         ], $this->responseData());
@@ -178,8 +191,10 @@ final class AuthControllerTest extends WebTestCase
     #[DataProvider('roleKeys')]
     public function testMeReturnsTheRoleKeyOfTheWebApp(array $roles, string $expected): void
     {
+        $organization = new Organization('Acme');
+        $this->entityManager->persist($organization);
         $user = $this->createUser();
-        $user->setRoles($roles);
+        $user->setRoles($roles)->setOrganization($organization);
         $this->entityManager->flush();
 
         $this->client->request('GET', '/api/auth/me', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$this->loginToken()]);

@@ -58,7 +58,9 @@ export async function login(
     }
 
     await setSessionToken(result.token);
-    redirect(safeRedirectPath(formData.get("next")));
+    // Without a page to go back to, the REGLO team starts on the back office.
+    const next = formData.get("next");
+    redirect(!next && result.platformAdmin ? "/admin" : safeRedirectPath(next));
 }
 
 export async function logout(): Promise<void> {

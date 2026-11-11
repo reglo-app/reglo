@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\OrganizationRole;
 use App\Entity\User;
 
 /**
@@ -25,7 +26,9 @@ final class CurrentUserView
             'jobTitle' => $user->getJobTitle(),
             // Changes with each new photo; null without photo
             'avatarVersion' => $user->getAvatarUpdatedAt()?->format('U'),
-            'role' => $user->getOrganizationRole()->value,
+            // Without an organization nothing can be changed (no ROLE_MEMBER,
+            // see User::getRoles()): the web app hides the buttons as for a reader.
+            'role' => (null === $organization ? OrganizationRole::Reader : $user->getOrganizationRole())->value,
             // REGLO team: the web app opens the back office for them
             'platformAdmin' => $user->isPlatformAdmin(),
             // Null for accounts outside any client (REGLO team)
