@@ -1,7 +1,8 @@
 import { API_INTERNAL_URL } from "@/lib/api/internal-url";
 
 export type LoginResult =
-    | { status: "success"; token: string }
+    /** platformAdmin: REGLO team, who land on the back office. */
+    | { status: "success"; token: string; platformAdmin: boolean }
     | { status: "invalid" }
     | { status: "throttled" }
     | { status: "unavailable" };
@@ -38,10 +39,15 @@ export async function requestAccessToken(
 
     const body = (await response.json().catch(() => null)) as {
         token?: unknown;
+        platformAdmin?: unknown;
     } | null;
 
     return typeof body?.token === "string"
-        ? { status: "success", token: body.token }
+        ? {
+              status: "success",
+              token: body.token,
+              platformAdmin: body.platformAdmin === true,
+          }
         : { status: "unavailable" };
 }
 

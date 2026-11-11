@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
+import { InterfaceSwitch } from "./interface-switch";
 import { UserMenu } from "./user-menu";
 
 describe("UserMenu", () => {
@@ -42,34 +43,67 @@ describe("UserMenu", () => {
         expect(screen.queryByText(/·/)).not.toBeInTheDocument();
     });
 
-    it("links to the back office for the REGLO team only", async () => {
-        const { unmount } = render(
-            <UserMenu
-                fullName="Camille Martin"
-                roleLabel="Administrateur"
-                organizationName="Atelier Démo"
-            />,
-        );
-        await userEvent.click(screen.getByRole("button"));
-        expect(
-            await screen.findByRole("menuitem", { name: "Mon profil" }),
-        ).toBeInTheDocument();
-        expect(
-            screen.queryByRole("menuitem", { name: "Back office" }),
-        ).not.toBeInTheDocument();
-        unmount();
-
+    it("has no link to the back office: the interface switch does it", async () => {
         render(
             <UserMenu
                 fullName="Sacha Equipe"
                 roleLabel="Équipe Réglo"
                 organizationName={null}
-                platformAdmin
             />,
         );
         await userEvent.click(screen.getByRole("button"));
+
         expect(
-            await screen.findByRole("menuitem", { name: "Back office" }),
-        ).toHaveAttribute("href", "/admin");
+            await screen.findByRole("menuitem", { name: "Mon profil" }),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByRole("menuitem", { name: /back office|admin/i }),
+        ).not.toBeInTheDocument();
+    });
+});
+
+describe("InterfaceSwitch", () => {
+    it.each([
+        [
+            "admin",
+            "Interface administrateur",
+            "Interface utilisateur",
+            "/dashboard",
+        ],
+        ["app", "Interface utilisateur", "Interface administrateur", "/admin"],
+    ] as const)(
+        "in the %s interface, shows it and offers the other one",
+        async (current, currentLabel, otherLabel, otherHref) => {
+            render(<InterfaceSwitch current={current} />);
+            const trigger = screen.getByRole("button", {
+                name: `${currentLabel} : changer d'interface`,
+            });
+
+            await userEvent.click(trigger);
+
+            expect(
+                await screen.findByRole("menuitem", { name: otherLabel }),
+            ).toHaveAttribute("href", otherHref);
+            expect(
+                screen.getByRole("menuitem", { name: currentLabel }),
+            ).toHaveAttribute("aria-current", "page");
+        },
+    );
+
+    it("opens and moves with the keyboard", async () => {
+        render(<InterfaceSwitch current="admin" />);
+
+        await userEvent.tab();
+        await userEvent.keyboard("{Enter}");
+
+        expect(
+            await screen.findByRole("menuitem", {
+                name: "Interface administrateur",
+            }),
+        ).toHaveFocus();
+        await userEvent.keyboard("{ArrowDown}");
+        expect(
+            screen.getByRole("menuitem", { name: "Interface utilisateur" }),
+        ).toHaveFocus();
     });
 });

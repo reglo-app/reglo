@@ -204,6 +204,29 @@ export async function changeUserRole(
     };
 }
 
+/** First and last name of any account: a client or a member of the team. */
+export async function renameUser(
+    _previous: AdminFormState,
+    formData: FormData,
+): Promise<AdminFormState> {
+    const id = text(formData, "userId");
+    const result = await callApi<{ firstName?: string; lastName?: string }>(
+        "PUT",
+        `/api/admin/users/${encodeURIComponent(id)}/name`,
+        {
+            firstName: text(formData, "firstName"),
+            lastName: text(formData, "lastName"),
+        },
+    );
+
+    if (result.status !== "success") return rejection(result);
+
+    refresh();
+    return {
+        done: `Le nom est enregistré : ${result.data?.firstName} ${result.data?.lastName}.`,
+    };
+}
+
 /** Deletes a client account, or the account of a member of the team. */
 export async function removeAccount(
     id: string,

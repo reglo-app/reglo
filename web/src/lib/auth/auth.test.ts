@@ -86,6 +86,38 @@ describe("login", () => {
             "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
         );
     });
+
+    it.each([
+        [false, {}, DEFAULT_AFTER_LOGIN],
+        // The REGLO team starts on the back office...
+        [true, {}, "/admin"],
+        // ...unless they were sent to the login from another page.
+        [true, { next: "/actions" }, "/actions"],
+        [false, { next: "/actions" }, "/actions"],
+    ])(
+        "team account %s with %j goes to %s",
+        async (platformAdmin, extra, target) => {
+            vi.stubGlobal(
+                "fetch",
+                vi
+                    .fn()
+                    .mockResolvedValue(
+                        Response.json({ token: "abc", platformAdmin }),
+                    ),
+            );
+
+            await expect(
+                login(
+                    {},
+                    formData({
+                        email: "ana@demo.test",
+                        password: "x",
+                        ...extra,
+                    }),
+                ),
+            ).rejects.toThrow(`redirect:${target}`);
+        },
+    );
 });
 
 describe("safeRedirectPath", () => {
@@ -125,7 +157,11 @@ describe("requestAccessToken", () => {
 
         const result = await requestAccessToken("ana@demo.test", "secret");
 
-        expect(result).toEqual({ status: "success", token: "abc" });
+        expect(result).toEqual({
+            status: "success",
+            token: "abc",
+            platformAdmin: false,
+        });
         expect(fetchMock).toHaveBeenCalledWith(
             expect.stringMatching(/\/api\/auth\/login$/),
             expect.objectContaining({

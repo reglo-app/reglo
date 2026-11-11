@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Platform\AccountProvisioner;
 use App\Platform\AdminAuditLog;
 use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,6 +34,7 @@ final class AdminUserController
         private readonly OrganizationMembers $members,
         private readonly AccountProvisioner $provisioner,
         private readonly AdminAuditLog $auditLog,
+        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -65,6 +67,32 @@ final class AdminUserController
             return AdminResponse::error(AdminResponse::LAST_ADMIN, 'last_admin');
         }
         $this->auditLog->record($actor, AdminAction::UserRoleChanged, $user->getEmail().' -> '.$role->value);
+
+        return new JsonResponse(AdminResponse::user($user));
+    }
+
+    /**
+     * Body: {"firstName", "lastName"}. Any account, a client or a member of
+     * the team.
+     */
+    #[Route('/users/{id}/name', name: 'user_rename', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    public function renameUser(int $id, Request $request, #[CurrentUser] User $actor): JsonResponse
+    {
+        $user = $this->users->find($id);
+        if (null === $user) {
+            return AdminResponse::notFound(self::NOT_FOUND);
+        }
+
+        $firstName = JsonBody::string($request, 'firstName');
+        $lastName = JsonBody::string($request, 'lastName');
+        $errors = $this->provisioner->personNameErrors($firstName, $lastName);
+        if ([] !== $errors) {
+            return AdminResponse::invalidFields($errors);
+        }
+
+        $user->setName($firstName, $lastName);
+        $this->entityManager->flush();
+        $this->auditLog->record($actor, AdminAction::UserRenamed, $user->getEmail());
 
         return new JsonResponse(AdminResponse::user($user));
     }

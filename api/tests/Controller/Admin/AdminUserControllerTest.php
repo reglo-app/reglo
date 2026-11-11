@@ -79,6 +79,34 @@ final class AdminUserControllerTest extends AdminTestCase
         $this->assertRefused('no_organization');
     }
 
+    public function testRenamesAClientAccountOrATeamMember(): void
+    {
+        $paul = $this->createUser('paul@acme.test', $this->organization);
+
+        $this->adminCall('PUT', '/api/admin/users/'.$paul->getId().'/name', ['firstName' => ' Paul ', 'lastName' => 'Durand']);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['Paul', 'Durand'], [$this->responseData()['firstName'], $this->responseData()['lastName']]);
+        self::assertSame('Durand', $this->findUser('paul@acme.test')?->getLastName());
+        $this->assertAudited(AdminAction::UserRenamed, 'paul@acme.test');
+
+        $this->adminCall('PUT', '/api/admin/users/'.$this->teamMember->getId().'/name', ['firstName' => 'Lou', 'lastName' => 'Dupont']);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('Lou', $this->findUser(self::TEAM_EMAIL)?->getFirstName());
+    }
+
+    public function testRefusesAnEmptyOrTooLongName(): void
+    {
+        $this->adminCall('PUT', '/api/admin/users/'.$this->user->getId().'/name', ['firstName' => '  ', 'lastName' => str_repeat('a', User::MAX_NAME_LENGTH + 1)]);
+
+        $this->assertInvalidFields(['firstName', 'lastName']);
+        $this->assertNothingAudited();
+
+        $this->adminCall('PUT', '/api/admin/users/999999/name', ['firstName' => 'Paul', 'lastName' => 'Durand']);
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testRemovesAnAccountWithItsSessionsAndPhoto(): void
     {
         $paul = $this->createUser('paul@acme.test', $this->organization);

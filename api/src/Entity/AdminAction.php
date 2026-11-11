@@ -12,6 +12,7 @@ enum AdminAction: string
     case OrganizationDeleted = 'organization.deleted';
     case UserCreated = 'user.created';
     case UserRoleChanged = 'user.role_changed';
+    case UserRenamed = 'user.renamed';
     case UserRemoved = 'user.removed';
     case ActivationResent = 'user.activation_resent';
     case TeamMemberInvited = 'team.invited';

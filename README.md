@@ -81,8 +81,9 @@ docker compose exec api php bin/console app:user:create team@reglo.site --platfo
 
 ### Back office
 
-The REGLO team manages accesses at `/admin`: organizations (create with their first administrator, rename, delete), accounts of the clients (add, change the role, send a new activation link, remove) and the team itself (invite, remove). Every new account receives an activation link: nobody chooses a password for someone else.
+The REGLO team manages accesses at `/admin`: organizations (create with their first administrator, rename, delete), accounts of the clients (add, rename, change the role, send a new activation link, remove) and the team itself (invite, rename, remove). Every new account receives an activation link: nobody chooses a password for someone else.
 
+- A team member signs in on the back office. The switch next to the profile menu goes to the interface of the clients and back. With no organization, that interface stays empty and read only.
 - Only `ROLE_PLATFORM_ADMIN` gets in: the routes are `/api/admin/*`, and anybody else sees the "not found" page. The role of a client never gives it. The first account of each environment is created with the command above, the next ones from the "Équipe Réglo" page.
 - The back office manages accesses and does not read the data of the clients: `OrganizationFilter` still hides their diagnostics, actions and documents from the team.
 - Deleting an organization is final: accounts, data and files are removed. Its exact name is asked, and checked by the API.

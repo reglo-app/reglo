@@ -26,6 +26,10 @@ final class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
             throw new \LogicException('Unexpected user class.');
         }
 
-        return new JsonResponse(['token' => $this->tokenManager->issue($user)]);
+        return new JsonResponse([
+            'token' => $this->tokenManager->issue($user),
+            // The web app opens the back office for the REGLO team
+            'platformAdmin' => $user->isPlatformAdmin(),
+        ]);
     }
 }
