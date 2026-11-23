@@ -8,10 +8,16 @@ import { Pencil } from "lucide-react";
 import { DeleteActionButton } from "@/components/action-plan/action-controls";
 import { ActionDetailView } from "@/components/action-plan/action-detail";
 import { ActionDetailSkeleton } from "@/components/action-plan/skeletons";
+import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { canChangeStatus, todayInFrance } from "@/lib/action-plan/labels";
 import { api, canEdit } from "@/lib/api";
+import {
+    linkActionDocument,
+    unlinkActionDocument,
+} from "@/lib/documents/actions";
 
 type Params = PageProps<"/actions/[id]">["params"];
 
@@ -25,9 +31,10 @@ export async function generateMetadata({
 
 async function ActionContent({ params }: { params: Params }) {
     const { id } = await params;
-    const [user, action] = await Promise.all([
+    const [user, action, documents] = await Promise.all([
         api.getCurrentUser(),
         api.getAction(id),
+        api.getDocuments(),
     ]);
     if (!action) {
         notFound();
@@ -60,6 +67,26 @@ async function ActionContent({ params }: { params: Params }) {
                 action={action}
                 canChangeStatus={canChangeStatus(action, user)}
                 today={todayInFrance()}
+                evidence={
+                    <Card>
+                        <CardContent className="flex flex-col gap-4">
+                            <h2 className="text-lg font-semibold">
+                                Justificatifs
+                            </h2>
+                            <LinkedDocuments
+                                documents={action.documents}
+                                available={documents}
+                                subject="cette action"
+                                canEdit={canEdit(user.role)}
+                                link={linkActionDocument.bind(null, action.id)}
+                                unlink={unlinkActionDocument.bind(
+                                    null,
+                                    action.id,
+                                )}
+                            />
+                        </CardContent>
+                    </Card>
+                }
             />
         </>
     );

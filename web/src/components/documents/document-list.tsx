@@ -1,4 +1,5 @@
-import { Download, FileText } from "lucide-react";
+import Link from "next/link";
+import { Download, FileText, ListChecks, ClipboardCheck } from "lucide-react";
 
 import { DomainBadge } from "@/components/domain-badge";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +14,13 @@ import {
 } from "@/lib/documents/documents";
 import { formatDate } from "@/lib/format";
 
+import { AccessHistoryButton } from "./access-history";
 import { DeleteDocumentButton } from "./delete-document-button";
 import { DocumentViewer } from "./document-viewer";
 
 /**
- * Documents of the organization, latest first (US-11). Filters and links to
- * the actions come with US-12.
+ * Documents of the organization (US-11), with what each one proves and,
+ * for administrators, who opened it (US-12).
  */
 export function DocumentList({
     documents,
@@ -50,7 +52,7 @@ export function DocumentList({
 
     return (
         <Card className="gap-0 py-0">
-            <ul className="divide-y divide-border">
+            <ul aria-label="Justificatifs" className="divide-y divide-border">
                 {documents.map((document) => (
                     <li
                         key={document.id}
@@ -73,6 +75,7 @@ export function DocumentList({
                                         : "Ancien membre"}
                                 </span>
                             </span>
+                            <DocumentLinks document={document} />
                         </div>
                         <div className="flex shrink-0 flex-wrap gap-2">
                             <Button asChild variant="outline" size="row">
@@ -85,6 +88,12 @@ export function DocumentList({
                                     Télécharger
                                 </a>
                             </Button>
+                            {user.role === "admin" && (
+                                <AccessHistoryButton
+                                    documentId={document.id}
+                                    name={document.name}
+                                />
+                            )}
                             {canDeleteDocument(document, user) && (
                                 <DeleteDocumentButton
                                     documentId={document.id}
@@ -96,5 +105,55 @@ export function DocumentList({
                 ))}
             </ul>
         </Card>
+    );
+}
+
+/** The actions and questions of the diagnostic a document proves. */
+export function DocumentLinks({ document }: { document: EvidenceDocument }) {
+    if (document.actions.length === 0 && document.questions.length === 0) {
+        return null;
+    }
+
+    return (
+        <ul
+            aria-label={`Ce que prouve ${document.name}`}
+            className="flex flex-wrap gap-x-4 gap-y-1 text-sm"
+        >
+            {document.actions.map((action) => (
+                <li
+                    key={`action-${action.id}`}
+                    className="flex min-w-0 gap-1.5"
+                >
+                    <ListChecks
+                        aria-hidden="true"
+                        className="mt-0.5 size-4 shrink-0 text-green-700"
+                    />
+                    <span className="min-w-0">
+                        <span className="text-ink-muted">Action : </span>
+                        <Link
+                            href={`/actions/${action.id}`}
+                            className="link-underline text-green-700"
+                        >
+                            {action.title}
+                        </Link>
+                    </span>
+                </li>
+            ))}
+            {document.questions.map((question) => (
+                <li
+                    key={`question-${question.id}`}
+                    className="flex min-w-0 gap-1.5"
+                >
+                    <ClipboardCheck
+                        aria-hidden="true"
+                        className="mt-0.5 size-4 shrink-0 text-green-700"
+                    />
+                    <span className="min-w-0">
+                        <span className="text-ink-muted">Question : </span>
+                        {question.label}
+                    </span>
+                </li>
+            ))}
+        </ul>
     );
 }

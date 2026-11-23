@@ -180,7 +180,10 @@ describe("DocumentList", () => {
             <DocumentList documents={mockDocuments} user={mockCurrentUser} />,
         );
 
-        const items = screen.getAllByRole("listitem");
+        const list = screen.getByRole("list", { name: "Justificatifs" });
+        const items = within(list)
+            .getAllByRole("listitem")
+            .filter((item) => item.parentElement === list);
         expect(items).toHaveLength(4);
         expect(items[0]).toHaveTextContent("DUERP-2026.pdf");
         expect(items[0]).toHaveTextContent("PDF");
@@ -223,7 +226,53 @@ describe("DocumentList", () => {
         expect(
             screen.queryByRole("button", { name: /^Supprimer/ }),
         ).not.toBeInTheDocument();
-        expect(screen.getAllByRole("link")).toHaveLength(4);
+        expect(
+            screen.getAllByRole("link", { name: /^Télécharger/ }),
+        ).toHaveLength(4);
+    });
+
+    it("says which actions and questions each document proves", () => {
+        render(
+            <DocumentList documents={mockDocuments} user={mockCurrentUser} />,
+        );
+
+        const proves = screen.getByRole("list", {
+            name: "Ce que prouve DUERP-2026.pdf",
+        });
+        expect(
+            within(proves).getByRole("link", {
+                name: "Mettre à jour le DUERP",
+            }),
+        ).toHaveAttribute("href", "/actions/1");
+        expect(proves).toHaveTextContent(
+            "Question : Votre document unique d'évaluation des risques (DUERP) est-il à jour ?",
+        );
+        // Nothing to say for a document that proves nothing yet.
+        expect(
+            screen.queryByRole("list", {
+                name: "Ce que prouve Registre des contrôles.xlsx",
+            }),
+        ).not.toBeInTheDocument();
+    });
+
+    it("shows the access history to administrators only", () => {
+        const { unmount } = render(
+            <DocumentList documents={mockDocuments} user={mockCurrentUser} />,
+        );
+        expect(
+            screen.getAllByRole("button", { name: /^Historique des accès/ }),
+        ).toHaveLength(4);
+        unmount();
+
+        render(
+            <DocumentList
+                documents={mockDocuments}
+                user={{ ...mockCurrentUser, role: "member" }}
+            />,
+        );
+        expect(
+            screen.queryByRole("button", { name: /^Historique des accès/ }),
+        ).not.toBeInTheDocument();
     });
 
     it("says what to put here when there is nothing", () => {
