@@ -8,12 +8,16 @@ import { api, canEdit } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Diagnostic" };
 
-/** QHSE diagnostic (US-05): the shared draft of the organization. */
+/**
+ * QHSE diagnostic (US-05): the shared draft of the organization, with the
+ * evidence of each question (US-12).
+ */
 async function DiagnosticContent() {
-    const [user, questionnaire, current] = await Promise.all([
+    const [user, questionnaire, current, documents] = await Promise.all([
         api.getCurrentUser(),
         api.getQuestionnaire(),
         api.getCurrentDiagnostic(),
+        api.getDocuments(),
     ]);
 
     return (
@@ -21,6 +25,7 @@ async function DiagnosticContent() {
             questionnaire={questionnaire}
             current={current}
             canEdit={canEdit(user.role)}
+            documents={documents}
         />
     );
 }
