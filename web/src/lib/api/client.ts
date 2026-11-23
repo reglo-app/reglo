@@ -18,7 +18,9 @@ import {
     mockActionsOverview,
     mockCurrentDiagnostic,
     mockCurrentUser,
+    mockDiagnosticHistory,
     mockDiagnosticResult,
+    mockDiagnosticResultById,
     mockDashboardSummary,
     mockDocuments,
     mockDomainDetails,
@@ -37,6 +39,7 @@ import type {
     CurrentDiagnostic,
     CurrentUser,
     DashboardSummary,
+    DiagnosticHistoryEntry,
     DiagnosticResult,
     DomainDetail,
     EvidenceDocument,
@@ -104,6 +107,10 @@ export type Api = {
     getCurrentDiagnostic(): Promise<CurrentDiagnostic>;
     /** Score of the latest submitted diagnostic; null if never (US-06). */
     getLatestResult(): Promise<DiagnosticResult | null>;
+    /** The submitted diagnostics, latest first (US-07). */
+    getDiagnosticHistory(): Promise<DiagnosticHistoryEntry[]>;
+    /** null when the diagnostic does not exist (or is not submitted). */
+    getDiagnosticResult(id: string): Promise<DiagnosticResult | null>;
     /** Action plan of the organization, soonest due first by default. */
     getActions(filters?: ActionFilters): Promise<Action[]>;
     /** Counts, urgent and next actions for the dashboard (US-10). */
@@ -218,6 +225,23 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
                 () =>
                     request<DiagnosticResult | null>(
                         "/api/diagnostics/latest/result",
+                    ),
+            ),
+        getDiagnosticHistory: () =>
+            load(
+                "diagnostic",
+                () => mockDiagnosticHistory,
+                () => request<DiagnosticHistoryEntry[]>("/api/diagnostics"),
+            ),
+        getDiagnosticResult: (id) =>
+            load(
+                "diagnostic",
+                () => mockDiagnosticResultById(id),
+                () =>
+                    orNotFound(
+                        request<DiagnosticResult>(
+                            `/api/diagnostics/${encodeURIComponent(id)}/result`,
+                        ),
                     ),
             ),
         getActions: (filters = {}) =>

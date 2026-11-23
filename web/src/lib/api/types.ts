@@ -429,6 +429,16 @@ export type DiagnosticResult = {
     } | null;
 };
 
+/** `GET /api/diagnostics`: one submitted diagnostic of the history (US-07). */
+export type DiagnosticHistoryEntry = {
+    id: string;
+    submittedAt: string;
+    questionnaireVersion: string;
+    global: number | null;
+    maturity: string | null;
+    pillars: Partial<Record<DomainKey, number | null>>;
+};
+
 /** `GET /api/diagnostics/current`: the shared draft of the organization. */
 export type CurrentDiagnostic = {
     draft: Diagnostic | null;

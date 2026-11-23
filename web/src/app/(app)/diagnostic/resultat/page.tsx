@@ -1,19 +1,23 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { History } from "lucide-react";
 
 import { NoResult, ResultView } from "@/components/diagnostic/result-view";
 import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, canEdit } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Résultat du diagnostic" };
 
-/** Score of the latest submitted diagnostic (US-06). */
+/** Score of the latest submitted diagnostic (US-06), with its PDF (US-07). */
 async function ResultContent() {
-    const [user, questionnaire, result] = await Promise.all([
+    const [user, questionnaire, result, current] = await Promise.all([
         api.getCurrentUser(),
         api.getQuestionnaire(),
         api.getLatestResult(),
+        api.getCurrentDiagnostic(),
     ]);
 
     return result === null ? (
@@ -23,6 +27,7 @@ async function ResultContent() {
             result={result}
             questionnaire={questionnaire}
             canEdit={canEdit(user.role)}
+            hasDraft={current.draft !== null}
         />
     );
 }
@@ -46,6 +51,14 @@ export default function ResultPage() {
             <PageHeader
                 title="Résultat du diagnostic"
                 description="Votre score sur les quatre domaines QHSE et les points à améliorer en priorité."
+                action={
+                    <Button asChild variant="outline">
+                        <Link href="/diagnostic/historique">
+                            <History aria-hidden="true" />
+                            Historique des diagnostics
+                        </Link>
+                    </Button>
+                }
             />
             <Suspense fallback={<ResultSkeleton />}>
                 <ResultContent />

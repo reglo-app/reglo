@@ -1,12 +1,14 @@
 import Link from "next/link";
 import {
+    ArrowRight,
     ChevronDown,
     ClipboardCheck,
+    Download,
     Lightbulb,
     Plus,
-    RotateCcw,
 } from "lucide-react";
 
+import { RestartDiagnosticButton } from "@/components/diagnostic/restart-diagnostic";
 import { ScoreRing, Trend } from "@/components/score";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -73,11 +75,14 @@ export function ResultView({
     result,
     questionnaire,
     canEdit,
+    hasDraft = false,
 }: {
     result: DiagnosticResult;
     /** Labels of the pillars and themes. */
     questionnaire: Questionnaire;
     canEdit: boolean;
+    /** A diagnostic is in progress: resume it rather than start one. */
+    hasDraft?: boolean;
 }) {
     const { score, previous } = result;
     const global = score.global === null ? null : roundScore(score.global);
@@ -420,14 +425,28 @@ export function ResultView({
                     {score.algoVersion &&
                         ` · méthode de calcul ${score.algoVersion}`}
                 </p>
-                {canEdit && (
+                <div className="flex flex-wrap gap-3">
                     <Button asChild variant="outline">
-                        <Link href="/diagnostic">
-                            <RotateCcw aria-hidden="true" />
-                            Refaire un diagnostic
-                        </Link>
+                        {/* An attachment: the page stays open (US-07). */}
+                        <a href={`/diagnostic-files/${result.diagnosticId}`}>
+                            <Download aria-hidden="true" />
+                            Télécharger la synthèse (PDF)
+                        </a>
                     </Button>
-                )}
+                    {canEdit &&
+                        (hasDraft ? (
+                            <Button asChild variant="outline">
+                                <Link href="/diagnostic">
+                                    Reprendre le diagnostic en cours
+                                    <ArrowRight aria-hidden="true" />
+                                </Link>
+                            </Button>
+                        ) : (
+                            <RestartDiagnosticButton
+                                diagnosticId={result.diagnosticId}
+                            />
+                        ))}
+                </div>
             </div>
         </div>
     );

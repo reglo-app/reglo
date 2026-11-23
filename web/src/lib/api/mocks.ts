@@ -15,6 +15,7 @@ import type {
     AdminOrganizationDetail,
     AdminUser,
     CurrentDiagnostic,
+    DiagnosticHistoryEntry,
     DiagnosticResult,
     CurrentUser,
     DashboardSummary,
@@ -718,6 +719,50 @@ export const mockDiagnosticResult: DiagnosticResult = {
         pillars: { quality: 65, hygiene: 60, safety: 45, environment: 70 },
     },
 };
+
+/** The submitted diagnostics, latest first (US-07). */
+export const mockDiagnosticHistory: DiagnosticHistoryEntry[] = [
+    {
+        id: mockDiagnosticResult.diagnosticId,
+        submittedAt: mockDiagnosticResult.submittedAt,
+        questionnaireVersion: mockDiagnosticResult.questionnaireVersion,
+        global: mockDiagnosticResult.score.global,
+        maturity: mockDiagnosticResult.score.maturity,
+        pillars: mockDiagnosticResult.score.pillars,
+    },
+    {
+        id: "0",
+        submittedAt: "2026-07-01T09:00:00.000Z",
+        questionnaireVersion: "mock-1",
+        global: 57,
+        maturity: "Maîtrisé",
+        pillars: { quality: 65, hygiene: 60, safety: 45, environment: 70 },
+    },
+];
+
+/** The result of one diagnostic of the history; null if unknown. */
+export function mockDiagnosticResultById(id: string): DiagnosticResult | null {
+    if (id === mockDiagnosticResult.diagnosticId) return mockDiagnosticResult;
+    const entry = mockDiagnosticHistory.find(
+        (diagnostic) => diagnostic.id === id,
+    );
+    if (!entry) return null;
+    return {
+        diagnosticId: entry.id,
+        submittedAt: entry.submittedAt,
+        questionnaireVersion: entry.questionnaireVersion,
+        score: {
+            global: entry.global,
+            maturity: entry.maturity,
+            pillars: entry.pillars,
+            themes: {},
+            coverage: 1,
+            gaps: [],
+            algoVersion: "1.0.0",
+        },
+        previous: null,
+    };
+}
 
 const [camille, hugo, , julien] = mockMembers;
 

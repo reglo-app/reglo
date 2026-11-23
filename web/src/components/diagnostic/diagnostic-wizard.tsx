@@ -53,6 +53,11 @@ export type DiagnosticWizardProps = {
     current: CurrentDiagnostic;
     /** False for readers: answers shown, never changed. */
     canEdit: boolean;
+    /**
+     * Just started again from a submitted diagnostic (US-07): every answer
+     * is there, so the review starts at the first question.
+     */
+    fromStart?: boolean;
     /** Injected in tests; the server actions by default. */
     saveAnswer?: typeof saveAnswerAction;
     submit?: typeof submitAction;
@@ -67,6 +72,7 @@ export function DiagnosticWizard({
     questionnaire,
     current,
     canEdit,
+    fromStart = false,
     saveAnswer = saveAnswerAction,
     submit = submitAction,
 }: DiagnosticWizardProps) {
@@ -78,7 +84,7 @@ export function DiagnosticWizard({
         current.draft ? "questions" : "intro",
     );
     const [index, setIndex] = useState(() =>
-        resumeIndex(steps, current.draft?.answers ?? {}),
+        fromStart ? 0 : resumeIndex(steps, current.draft?.answers ?? {}),
     );
     const [saveState, setSaveState] = useState<SaveState>("idle");
     const [saveError, setSaveError] = useState<string | null>(null);

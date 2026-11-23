@@ -143,6 +143,12 @@ describe("QuestionField", () => {
 });
 
 describe("DiagnosticWizard", () => {
+    it("starts at the first question after starting again with the last answers (US-07)", () => {
+        renderWizard(draft(allAnsweredBut()), { fromStart: true });
+
+        expect(screen.getByText(/^Question 1 sur /)).toBeInTheDocument();
+    });
+
     it("starts with the introduction, then the first question", async () => {
         renderWizard(NO_DIAGNOSTIC);
 
