@@ -109,3 +109,60 @@ test("lists the documents with what identifies them", async ({ page }) => {
         item.getByRole("link", { name: "Télécharger DUERP-2026.pdf" }),
     ).toHaveAttribute("href", "/document-files/1");
 });
+
+test("finds documents with the filters, and keeps them on reload", async ({
+    page,
+}) => {
+    await page.goto("/documents");
+
+    await page.getByLabel("Format").selectOption("spreadsheet");
+
+    await expect(page).toHaveURL(/\/documents\?format=spreadsheet$/);
+    await expect(page.getByRole("status")).toHaveText("2 justificatifs");
+    await expect(
+        page.getByRole("button", { name: "Voir DUERP-2026.pdf" }),
+    ).toHaveCount(0);
+
+    await page.reload();
+    await expect(page.getByLabel("Format")).toHaveValue("spreadsheet");
+    await page.getByLabel("Nom").fill("extincteurs");
+    await expect(page).toHaveURL(/q=extincteurs/);
+    await expect(page.getByRole("status")).toHaveText("1 justificatif");
+
+    await page.getByRole("button", { name: "Effacer les filtres" }).click();
+    await expect(page.getByRole("status")).toHaveText("4 justificatifs");
+});
+
+test("goes from a document to the action it proves, and back", async ({
+    page,
+}) => {
+    await page.goto("/documents");
+
+    await page
+        .getByRole("list", { name: "Ce que prouve DUERP-2026.pdf" })
+        .getByRole("link", { name: "Mettre à jour le DUERP" })
+        .click();
+
+    await expect(page).toHaveURL(/\/actions\/1$/, { timeout: 30_000 });
+    const evidence = page.getByRole("heading", { name: "Justificatifs" });
+    await expect(evidence).toBeVisible();
+    await expect(
+        page.getByRole("link", { name: "Télécharger DUERP-2026.pdf" }),
+    ).toHaveAttribute("href", "/document-files/1");
+
+    await page.getByRole("button", { name: "Joindre un justificatif" }).click();
+    const dialog = page.getByRole("dialog", {
+        name: "Joindre un justificatif",
+    });
+    // Already linked: not offered again.
+    await expect(
+        dialog.getByRole("button", { name: "Joindre DUERP-2026.pdf" }),
+    ).toHaveCount(0);
+    await expect(
+        dialog.getByRole("button", {
+            name: "Joindre Registre des contrôles.xlsx",
+        }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+});

@@ -5,6 +5,11 @@ import {
     actionFiltersQuery,
     type ActionFilters,
 } from "@/lib/action-plan/filters";
+import {
+    documentFiltersQuery,
+    filterDocuments,
+    type DocumentFilters,
+} from "@/lib/documents/filters";
 import type { DomainKey } from "@/lib/domains";
 
 import { API_INTERNAL_URL } from "./internal-url";
@@ -20,6 +25,7 @@ import {
     mockCurrentUser,
     mockDiagnosticResult,
     mockDashboardSummary,
+    mockDocumentAccesses,
     mockDocuments,
     mockDomainDetails,
     mockInvitations,
@@ -39,6 +45,7 @@ import type {
     DashboardSummary,
     DiagnosticResult,
     DomainDetail,
+    DocumentAccess,
     EvidenceDocument,
     Invitation,
     Member,
@@ -110,8 +117,13 @@ export type Api = {
     getActionsOverview(): Promise<ActionsOverview>;
     /** null when the action does not exist (or is not visible). */
     getAction(id: string): Promise<ActionDetail | null>;
-    /** Evidence documents of the organization, latest first (US-11). */
-    getDocuments(): Promise<EvidenceDocument[]>;
+    /**
+     * Evidence documents of the organization (US-11), latest first unless
+     * sorted, with what they prove (US-12).
+     */
+    getDocuments(filters?: DocumentFilters): Promise<EvidenceDocument[]>;
+    /** Who opened a document, latest first: administrators only (403). */
+    getDocumentAccesses(id: string): Promise<DocumentAccess[]>;
     /** Back office, REGLO team only (403 otherwise): every client. */
     getAdminOrganizations(): Promise<AdminOrganization[]>;
     /** null when the organization does not exist. */
@@ -246,11 +258,23 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
                         ),
                     ),
             ),
-        getDocuments: () =>
+        getDocuments: (filters = {}) =>
             load(
                 "documents",
-                () => mockDocuments,
-                () => request<EvidenceDocument[]>("/api/documents"),
+                () => filterDocuments(mockDocuments, filters),
+                () =>
+                    request<EvidenceDocument[]>(
+                        `/api/documents${documentFiltersQuery(filters)}`,
+                    ),
+            ),
+        getDocumentAccesses: (id) =>
+            load(
+                "documents",
+                () => mockDocumentAccesses,
+                () =>
+                    request<DocumentAccess[]>(
+                        `/api/documents/${encodeURIComponent(id)}/accesses`,
+                    ),
             ),
         getAdminOrganizations: () =>
             load(

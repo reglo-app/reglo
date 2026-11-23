@@ -1,22 +1,40 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
+import { DocumentFilters } from "@/components/documents/document-filters";
 import { DocumentList } from "@/components/documents/document-list";
 import { DocumentUploader } from "@/components/documents/document-uploader";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, canEdit } from "@/lib/api";
+import {
+    hasDocumentFilters,
+    parseDocumentFilters,
+} from "@/lib/documents/filters";
 
 export const metadata: Metadata = { title: "Justificatifs" };
 
-/** Evidence documents of the organization (US-11). */
-async function DocumentsContent() {
-    const [user, documents] = await Promise.all([
+type SearchParams = PageProps<"/documents">["searchParams"];
+
+/** Evidence documents of the organization (US-11), with filters (US-12). */
+async function DocumentsContent({
+    searchParams,
+}: {
+    searchParams: SearchParams;
+}) {
+    const [user, members, params] = await Promise.all([
         api.getCurrentUser(),
-        api.getDocuments(),
+        api.getMembers(),
+        searchParams,
     ]);
+    const filters = parseDocumentFilters(
+        params,
+        members.map((member) => member.id),
+    );
+    const documents = await api.getDocuments(filters);
     const editable = canEdit(user.role);
+    const filtered = hasDocumentFilters(filters);
 
     return (
         <>
@@ -39,7 +57,40 @@ async function DocumentsContent() {
                         </CardContent>
                     </Card>
                 )}
-                <DocumentList documents={documents} user={user} />
+                {documents.length === 0 && !filtered ? (
+                    <DocumentList documents={documents} user={user} />
+                ) : (
+                    <section
+                        aria-labelledby="documents-list-title"
+                        className="flex flex-col gap-4"
+                    >
+                        <h2
+                            id="documents-list-title"
+                            className="text-lg font-semibold"
+                        >
+                            Justificatifs de l&apos;organisation
+                        </h2>
+                        <DocumentFilters
+                            filters={filters}
+                            authors={members.filter(
+                                (member) =>
+                                    member.activated ||
+                                    member.id === filters.author,
+                            )}
+                            count={documents.length}
+                        />
+                        {documents.length === 0 ? (
+                            <Card>
+                                <CardContent className="py-8 text-center text-ink-muted">
+                                    Aucun justificatif ne correspond à ces
+                                    filtres.
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <DocumentList documents={documents} user={user} />
+                        )}
+                    </section>
+                )}
             </div>
         </>
     );
@@ -56,10 +107,13 @@ function DocumentsSkeleton() {
     );
 }
 
-export default function DocumentsPage() {
+export default function DocumentsPage({
+    searchParams,
+}: PageProps<"/documents">) {
+    // Reading the URL inside Suspense keeps navigation instant.
     return (
         <Suspense fallback={<DocumentsSkeleton />}>
-            <DocumentsContent />
+            <DocumentsContent searchParams={searchParams} />
         </Suspense>
     );
 }
