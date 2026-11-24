@@ -36,7 +36,7 @@ final class DiagnosticControllerTest extends ProfileTestCase
         $questionnaire = static::getContainer()->get(Questionnaire::class);
         self::assertSame($questionnaire->version(), $request['body']['questionnaire_version']);
         self::assertSame($questionnaire->toArray(), $request['body']['questionnaire']);
-        self::assertContains(['question_id' => 'quality.pilotage.01', 'value' => 'yes', 'not_applicable' => false], $request['body']['answers']);
+        self::assertContains(['question_id' => 'quality.pilotage.01', 'value' => 'yes', 'not_applicable' => false, 'has_document' => false], $request['body']['answers']);
 
         $this->getAs('/api/diagnostics/latest/result');
         $result = $this->responseData();

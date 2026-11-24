@@ -4,10 +4,12 @@ namespace App\Controller;
 
 use App\ActionPlan\ActionDueDates;
 use App\ActionPlan\ActionDueFilter;
+use App\Diagnostic\Questionnaire;
 use App\Entity\Action;
 use App\Entity\ActionStatus;
 use App\Entity\ActionStatusChange;
 use App\Entity\ActionType;
+use App\Entity\Document;
 use App\Entity\OrganizationRole;
 use App\Entity\QhsePillar;
 use App\Entity\User;
@@ -46,6 +48,7 @@ final class ActionController
         private readonly ActionAssignedMailer $mailer,
         private readonly LoggerInterface $logger,
         private readonly ActionDueDates $dueDates,
+        private readonly Questionnaire $questionnaire,
     ) {
     }
 
@@ -354,8 +357,8 @@ final class ActionController
     }
 
     /**
-     * Shape of Action in web/src/lib/api/types.ts; the history only on one
-     * action.
+     * Shape of Action in web/src/lib/api/types.ts; the history and the
+     * documents (US-12) only on one action.
      *
      * @return array<string, mixed>
      */
@@ -384,6 +387,10 @@ final class ActionController
                 'by' => self::person($change->getChangedBy()),
                 'at' => $change->getChangedAt()->format(\DATE_ATOM),
             ], $action->getStatusChanges()->getValues());
+            $view['documents'] = array_map(
+                fn (Document $document): array => DocumentView::of($document, $this->questionnaire),
+                $action->getDocuments()->getValues(),
+            );
         }
 
         return $view;
@@ -394,12 +401,7 @@ final class ActionController
      */
     private static function person(?User $user): ?array
     {
-        return null === $user ? null : [
-            'id' => (string) $user->getId(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
-            'email' => $user->getEmail(),
-        ];
+        return DocumentView::person($user);
     }
 
     private static function error(string $message, string $code, int $status = Response::HTTP_UNPROCESSABLE_ENTITY): JsonResponse

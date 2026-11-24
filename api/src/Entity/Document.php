@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Repository\DocumentRepository;
 use App\Tenant\OrganizationOwnedInterface;
 use App\Tenant\OrganizationOwnedTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -52,6 +54,22 @@ class Document implements OrganizationOwnedInterface
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
+    /**
+     * Actions this document proves (US-12). Owned by Action.
+     *
+     * @var Collection<int, Action>
+     */
+    #[ORM\ManyToMany(targetEntity: Action::class, mappedBy: 'documents')]
+    private Collection $actions;
+
+    /**
+     * Questions of the diagnostic this document proves (US-12).
+     *
+     * @var Collection<int, QuestionDocument>
+     */
+    #[ORM\OneToMany(targetEntity: QuestionDocument::class, mappedBy: 'document')]
+    private Collection $questionLinks;
+
     public function __construct(
         Organization $organization,
         string $originalName,
@@ -69,6 +87,8 @@ class Document implements OrganizationOwnedInterface
         $this->pillar = $pillar;
         $this->uploadedBy = $uploadedBy;
         $this->createdAt = new \DateTimeImmutable();
+        $this->actions = new ArrayCollection();
+        $this->questionLinks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -109,5 +129,21 @@ class Document implements OrganizationOwnedInterface
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    /**
+     * @return Collection<int, Action>
+     */
+    public function getActions(): Collection
+    {
+        return $this->actions;
+    }
+
+    /**
+     * @return Collection<int, QuestionDocument>
+     */
+    public function getQuestionLinks(): Collection
+    {
+        return $this->questionLinks;
     }
 }

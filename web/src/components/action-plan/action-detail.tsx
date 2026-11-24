@@ -25,70 +25,76 @@ const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
 
 /**
  * One action (US-09): what to do, who, by when, its status with the way to
- * move it, and the history of its status changes.
+ * move it, the history of its status changes and its evidence (US-12).
  */
 export function ActionDetailView({
     action,
     canChangeStatus,
     today,
+    evidence,
 }: {
     action: ActionDetail;
     /** The assignee or an administrator (same rule as the API). */
     canChangeStatus: boolean;
     /** "YYYY-MM-DD", for "En retard de 3 jours". */
     today: string;
+    /** The "Justificatifs" card, under the details. */
+    evidence?: React.ReactNode;
 }) {
     const current = ACTION_STATUSES.indexOf(action.status);
 
     return (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <Card>
-                <CardContent className="flex flex-col gap-5">
-                    <h2 className="text-lg font-semibold">Détails</h2>
-                    <dl className="grid gap-4 sm:grid-cols-2">
-                        <Item label="Domaine">
-                            <DomainBadge domain={action.domain} />
-                        </Item>
-                        <Item label="Type">{TYPE_LABELS[action.type]}</Item>
-                        <Item label="Responsable">
-                            {action.assignee ? (
-                                personName(action.assignee)
-                            ) : (
-                                <span className="text-ink-muted">
-                                    Aucun : la personne a quitté
-                                    l&apos;organisation.
-                                </span>
-                            )}
-                        </Item>
-                        <Item label="Échéance">
-                            {formatDate(action.dueDate)}{" "}
-                            <DueBadge action={action} />
-                            {action.status !== "done" && (
-                                <span className="block text-sm text-ink-muted">
-                                    {formatDueIn(action.dueDate, today)}
-                                </span>
-                            )}
-                        </Item>
-                    </dl>
-                    <div className="flex flex-col gap-1">
-                        <h3 className="text-sm font-medium text-ink-muted">
-                            Description
-                        </h3>
-                        <p className="whitespace-pre-line">
-                            {action.description || (
-                                <span className="text-ink-muted">
-                                    Pas de description.
-                                </span>
-                            )}
+            <div className="flex flex-col gap-6">
+                <Card>
+                    <CardContent className="flex flex-col gap-5">
+                        <h2 className="text-lg font-semibold">Détails</h2>
+                        <dl className="grid gap-4 sm:grid-cols-2">
+                            <Item label="Domaine">
+                                <DomainBadge domain={action.domain} />
+                            </Item>
+                            <Item label="Type">{TYPE_LABELS[action.type]}</Item>
+                            <Item label="Responsable">
+                                {action.assignee ? (
+                                    personName(action.assignee)
+                                ) : (
+                                    <span className="text-ink-muted">
+                                        Aucun : la personne a quitté
+                                        l&apos;organisation.
+                                    </span>
+                                )}
+                            </Item>
+                            <Item label="Échéance">
+                                {formatDate(action.dueDate)}{" "}
+                                <DueBadge action={action} />
+                                {action.status !== "done" && (
+                                    <span className="block text-sm text-ink-muted">
+                                        {formatDueIn(action.dueDate, today)}
+                                    </span>
+                                )}
+                            </Item>
+                        </dl>
+                        <div className="flex flex-col gap-1">
+                            <h3 className="text-sm font-medium text-ink-muted">
+                                Description
+                            </h3>
+                            <p className="whitespace-pre-line">
+                                {action.description || (
+                                    <span className="text-ink-muted">
+                                        Pas de description.
+                                    </span>
+                                )}
+                            </p>
+                        </div>
+                        <p className="text-sm text-ink-muted">
+                            Créée le {formatDate(action.createdAt)}
+                            {action.createdBy &&
+                                ` par ${personName(action.createdBy)}`}
                         </p>
-                    </div>
-                    <p className="text-sm text-ink-muted">
-                        Créée le {formatDate(action.createdAt)}
-                        {action.createdBy &&
-                            ` par ${personName(action.createdBy)}`}
-                    </p>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+                {evidence}
+            </div>
 
             <div className="flex flex-col gap-6">
                 <Card>

@@ -3,6 +3,7 @@
 namespace App\Diagnostic;
 
 use App\Entity\Diagnostic;
+use App\Repository\QuestionDocumentRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -10,7 +11,9 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 /**
  * Asks the data service for the score of a diagnostic (US-06): POST
  * /scores with the answers and the questionnaire itself, so the data service
- * never needs its own copy. Timeout and retry: framework.yaml.
+ * never needs its own copy. Timeout and retry: framework.yaml. An answer
+ * says whether its question has a document of the organization (US-12): the
+ * score of a question that requires a proof is capped without one.
  */
 final class ScoreCalculator
 {
@@ -18,6 +21,7 @@ final class ScoreCalculator
         private readonly HttpClientInterface $dataServiceClient,
         private readonly Questionnaire $questionnaire,
         private readonly LoggerInterface $logger,
+        private readonly QuestionDocumentRepository $questionDocuments,
     ) {
     }
 
@@ -29,12 +33,16 @@ final class ScoreCalculator
      */
     public function compute(Diagnostic $diagnostic): array
     {
+        $organization = $diagnostic->getOrganization();
+        $withDocument = null === $organization ? [] : $this->questionDocuments->questionIdsWithDocument($organization);
+
         $answers = [];
         foreach ($diagnostic->getAnswers() as $answer) {
             $answers[] = [
                 'question_id' => $answer->getQuestionId(),
                 'value' => $answer->getValue(),
                 'not_applicable' => $answer->isNotApplicable(),
+                'has_document' => \in_array($answer->getQuestionId(), $withDocument, true),
             ];
         }
 

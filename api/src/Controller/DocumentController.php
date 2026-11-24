@@ -2,10 +2,14 @@
 
 namespace App\Controller;
 
+use App\Diagnostic\Questionnaire;
 use App\Entity\Document;
+use App\Entity\DocumentAccess;
+use App\Entity\DocumentAccessKind;
 use App\Entity\OrganizationRole;
 use App\Entity\QhsePillar;
 use App\Entity\User;
+use App\Repository\DocumentAccessRepository;
 use App\Repository\DocumentRepository;
 use App\Storage\DocumentStorage;
 use App\Storage\InvalidDocumentException;
@@ -20,15 +24,23 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 /**
- * Evidence documents of the organization (US-11). Every role consults and
- * downloads them; administrators and members upload (readers are refused by
- * security.yaml); a document is deleted by its author or an administrator.
- * Another organization's document is never found (OrganizationFilter).
+ * Evidence documents of the organization (US-11, US-12). Every role
+ * consults and downloads them, and each opening is logged; administrators
+ * and members upload (readers are refused by security.yaml); a document is
+ * deleted by its author or an administrator, with its links. Another
+ * organization's document is never found (OrganizationFilter).
  */
 #[Route('/api/documents', name: 'document_')]
 final class DocumentController
 {
     public const DELETE_FORBIDDEN = 'Seuls l\'auteur du justificatif et les administrateurs peuvent le supprimer.';
+    public const ACCESSES_FORBIDDEN = 'Seuls les administrateurs consultent l\'historique des accès.';
+
+    /** Values of the "period" filter: how far back. */
+    private const PERIODS = ['30d' => '-30 days', '12m' => '-12 months'];
+
+    /** Longest text searched in the names. */
+    private const SEARCH_MAX_LENGTH = 100;
 
     /**
      * Shown in the browser: types found in the content at the upload that
@@ -47,13 +59,48 @@ final class DocumentController
         private readonly DocumentRepository $repository,
         private readonly DocumentStorage $storage,
         private readonly EntityManagerInterface $entityManager,
+        private readonly DocumentAccessRepository $accesses,
+        private readonly Questionnaire $questionnaire,
     ) {
     }
 
+    /**
+     * Latest first. Optional filters (US-12): q (part of the name), format
+     * (pdf, image, spreadsheet), domain, author (id), period (30d, 12m), and
+     * sort (recent, oldest, name).
+     */
     #[Route('', name: 'list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
-        return new JsonResponse(array_map(self::view(...), $this->repository->findLatestFirst()));
+        $query = $request->query;
+        $search = trim($query->getString('q'));
+        $format = $query->getString('format');
+        $pillar = QhsePillar::tryFrom($query->getString('domain'));
+        $author = $query->getString('author');
+        $period = $query->getString('period');
+        $sort = $query->getString('sort');
+
+        if (
+            mb_strlen($search) > self::SEARCH_MAX_LENGTH
+            || ('' !== $format && !isset(DocumentRepository::FORMATS[$format]))
+            || (null === $pillar && '' !== $query->getString('domain'))
+            || ('' !== $author && !ctype_digit($author))
+            || ('' !== $period && !isset(self::PERIODS[$period]))
+            || ('' !== $sort && !\in_array($sort, DocumentRepository::SORTS, true))
+        ) {
+            return self::error('Ce filtre n\'existe pas.', 'invalid_filter');
+        }
+
+        $documents = $this->repository->findFiltered(
+            $search,
+            '' === $format ? null : $format,
+            $pillar,
+            '' === $author ? null : (int) $author,
+            '' === $period ? null : new \DateTimeImmutable(self::PERIODS[$period]),
+            '' === $sort ? 'recent' : $sort,
+        );
+
+        return new JsonResponse(array_map($this->view(...), $documents));
     }
 
     /**
@@ -100,7 +147,7 @@ final class DocumentController
             throw $exception;
         }
 
-        return new JsonResponse(self::view($document), Response::HTTP_CREATED);
+        return new JsonResponse($this->view($document), Response::HTTP_CREATED);
     }
 
     /**
@@ -114,6 +161,7 @@ final class DocumentController
         if (null === $document || !is_file($this->storage->path($document->getStoredName()))) {
             return self::notFound();
         }
+        $this->accesses->record($document, $user, DocumentAccessKind::Download);
 
         return $this->fileResponse($document, ResponseHeaderBag::DISPOSITION_ATTACHMENT, "default-src 'none'; sandbox");
     }
@@ -133,8 +181,30 @@ final class DocumentController
         if (!\in_array($document->getMimeType(), self::VIEWABLE_TYPES, true)) {
             return self::error('Ce format ne peut pas être affiché : téléchargez le fichier.', 'not_viewable', Response::HTTP_NOT_FOUND);
         }
+        $this->accesses->record($document, $user, DocumentAccessKind::View);
 
         return $this->fileResponse($document, ResponseHeaderBag::DISPOSITION_INLINE, "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'self'");
+    }
+
+    /**
+     * Who opened the document, latest first (US-12): administrators only.
+     */
+    #[Route('/{id}/accesses', name: 'accesses', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function accesses(int $id, #[CurrentUser] User $user): JsonResponse
+    {
+        $document = $this->findDocument($id, $user);
+        if (null === $document) {
+            return self::notFound();
+        }
+        if (OrganizationRole::Admin !== $user->getOrganizationRole()) {
+            return self::error(self::ACCESSES_FORBIDDEN, 'accesses_forbidden', Response::HTTP_FORBIDDEN);
+        }
+
+        return new JsonResponse(array_map(static fn (DocumentAccess $access): array => [
+            'by' => DocumentView::person($access->getAccessedBy()),
+            'kind' => $access->getKind()->value,
+            'at' => $access->getAccessedAt()->format(\DATE_ATOM),
+        ], $this->accesses->findForDocument($document)));
     }
 
     #[Route('/{id}', name: 'delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
@@ -188,29 +258,11 @@ final class DocumentController
     }
 
     /**
-     * Shape of EvidenceDocument in web/src/lib/api/types.ts. The stored name
-     * is never sent.
-     *
      * @return array<string, mixed>
      */
-    private static function view(Document $document): array
+    private function view(Document $document): array
     {
-        $author = $document->getUploadedBy();
-
-        return [
-            'id' => (string) $document->getId(),
-            'name' => $document->getOriginalName(),
-            'mimeType' => $document->getMimeType(),
-            'size' => $document->getSize(),
-            'domain' => $document->getPillar()?->value,
-            'uploadedBy' => null === $author ? null : [
-                'id' => (string) $author->getId(),
-                'firstName' => $author->getFirstName(),
-                'lastName' => $author->getLastName(),
-                'email' => $author->getEmail(),
-            ],
-            'createdAt' => $document->getCreatedAt()->format(\DATE_ATOM),
-        ];
+        return DocumentView::of($document, $this->questionnaire);
     }
 
     private static function error(string $message, string $code, int $status = Response::HTTP_UNPROCESSABLE_ENTITY): JsonResponse

@@ -131,8 +131,14 @@ export type ActionStatusChange = {
     at: string;
 };
 
-/** `GET /api/actions/{id}`: the action with its history, oldest first. */
-export type ActionDetail = Action & { history: ActionStatusChange[] };
+/**
+ * `GET /api/actions/{id}`: the action with its history, oldest first, and
+ * its evidence, latest first (US-12).
+ */
+export type ActionDetail = Action & {
+    history: ActionStatusChange[];
+    documents: EvidenceDocument[];
+};
 
 /** `GET /api/actions/overview`: the action plan on the dashboard (US-10). */
 export type ActionsOverview = {
@@ -156,6 +162,9 @@ export type ActionSummary = {
     status: ActionStatus;
 };
 
+/** An action or a question of the diagnostic a document proves (US-12). */
+export type DocumentLink = { id: string; title: string };
+
 /** `GET /api/documents`: evidence kept by the organization (US-11). */
 export type EvidenceDocument = {
     id: string;
@@ -170,6 +179,22 @@ export type EvidenceDocument = {
     uploadedBy: ActionPerson | null;
     /** ISO 8601 date. */
     createdAt: string;
+    /** Actions it proves (US-12). */
+    actions: DocumentLink[];
+    /** Questions of the diagnostic it proves, for the organization. */
+    questions: { id: string; label: string }[];
+};
+
+export const DOCUMENT_ACCESS_KINDS = ["download", "view"] as const;
+export type DocumentAccessKind = (typeof DOCUMENT_ACCESS_KINDS)[number];
+
+/** `GET /api/documents/{id}/accesses`: who opened it (US-12), admins only. */
+export type DocumentAccess = {
+    /** Null once the member left the organization. */
+    by: ActionPerson | null;
+    kind: DocumentAccessKind;
+    /** ISO 8601 date. */
+    at: string;
 };
 
 /** Regulatory news item (US-15). */
@@ -336,6 +361,8 @@ type QuestionBase = {
     mandatory?: boolean;
     /** "Non concerné" is allowed. */
     allow_na?: boolean;
+    /** Without a document (US-12), a good answer is capped at 50. */
+    requires_proof?: boolean;
 };
 
 /**

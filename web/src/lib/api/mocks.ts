@@ -16,6 +16,7 @@ import type {
     AdminUser,
     CurrentDiagnostic,
     DiagnosticResult,
+    DocumentAccess,
     CurrentUser,
     DashboardSummary,
     DomainDetail,
@@ -628,6 +629,7 @@ export const mockQuestionnaire: Questionnaire = {
                             id: "safety.risques.01",
                             label: "Votre document unique d'évaluation des risques (DUERP) est-il à jour ?",
                             reference: "Code du travail, art. R4121-1",
+                            requires_proof: true,
                             type: "single_choice",
                             options: [
                                 { id: "none", label: "Nous n'en avons pas" },
@@ -825,7 +827,64 @@ export const mockActionsOverview: ActionsOverview = {
     upcoming: mockActions.filter((a) => a.status !== "done" && !a.isOverdue),
 };
 
-/** The same actions with their history. */
+/**
+ * Evidence documents of "Atelier Démo" (US-11), latest first, with what
+ * they prove (US-12).
+ */
+export const mockDocuments: EvidenceDocument[] = [
+    {
+        id: "1",
+        name: "DUERP-2026.pdf",
+        mimeType: "application/pdf",
+        size: 2_457_600,
+        domain: "safety",
+        uploadedBy: person(camille),
+        createdAt: "2026-10-12T09:30:00.000Z",
+        actions: [{ id: "1", title: "Mettre à jour le DUERP" }],
+        questions: [
+            {
+                id: "safety.risques.01",
+                label: "Votre document unique d'évaluation des risques (DUERP) est-il à jour ?",
+            },
+        ],
+    },
+    {
+        id: "2",
+        name: "Registre des contrôles.xlsx",
+        mimeType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        size: 48_300,
+        domain: null,
+        uploadedBy: person(hugo),
+        createdAt: "2026-10-05T14:10:00.000Z",
+        actions: [],
+        questions: [],
+    },
+    {
+        id: "3",
+        name: "Certificat-tri-dechets.jpg",
+        mimeType: "image/jpeg",
+        size: 830,
+        domain: "environment",
+        uploadedBy: null,
+        createdAt: "2026-09-20T08:00:00.000Z",
+        actions: [{ id: "4", title: "Mettre en place le tri des biodéchets" }],
+        questions: [],
+    },
+    {
+        id: "4",
+        name: "Vérifications-extincteurs.csv",
+        mimeType: "text/csv",
+        size: 640,
+        domain: "safety",
+        uploadedBy: person(hugo),
+        createdAt: "2026-09-15T10:00:00.000Z",
+        actions: [{ id: "2", title: "Vérifier les extincteurs de l'atelier" }],
+        questions: [],
+    },
+];
+
+/** The same actions with their history and their evidence. */
 export const mockActionDetails: ActionDetail[] = mockActions.map((action) => {
     const steps = ["todo", "in_progress", "in_review", "done"] as const;
     const reached = steps.slice(0, steps.indexOf(action.status) + 1);
@@ -837,46 +896,23 @@ export const mockActionDetails: ActionDetail[] = mockActions.map((action) => {
             by: index === 0 ? action.createdBy : action.assignee,
             at: index === 0 ? action.createdAt : action.updatedAt,
         })),
+        documents: mockDocuments.filter((document) =>
+            document.actions.some((linked) => linked.id === action.id),
+        ),
     };
 });
 
-/** Evidence documents of "Atelier Démo" (US-11), latest first. */
-export const mockDocuments: EvidenceDocument[] = [
+/** Who opened a document (US-12): the same lines for every document. */
+export const mockDocumentAccesses: DocumentAccess[] = [
     {
-        id: "1",
-        name: "DUERP-2026.pdf",
-        mimeType: "application/pdf",
-        size: 2_457_600,
-        domain: "safety",
-        uploadedBy: person(camille),
-        createdAt: "2026-10-12T09:30:00.000Z",
+        by: person(hugo),
+        kind: "download",
+        at: "2026-11-20T08:15:00.000Z",
     },
     {
-        id: "2",
-        name: "Registre des contrôles.xlsx",
-        mimeType:
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        size: 48_300,
-        domain: null,
-        uploadedBy: person(hugo),
-        createdAt: "2026-10-05T14:10:00.000Z",
+        by: person(camille),
+        kind: "view",
+        at: "2026-11-18T16:40:00.000Z",
     },
-    {
-        id: "3",
-        name: "Certificat-tri-dechets.jpg",
-        mimeType: "image/jpeg",
-        size: 830,
-        domain: "environment",
-        uploadedBy: null,
-        createdAt: "2026-09-20T08:00:00.000Z",
-    },
-    {
-        id: "4",
-        name: "Vérifications-extincteurs.csv",
-        mimeType: "text/csv",
-        size: 640,
-        domain: "safety",
-        uploadedBy: person(hugo),
-        createdAt: "2026-09-15T10:00:00.000Z",
-    },
+    { by: null, kind: "download", at: "2026-10-30T10:05:00.000Z" },
 ];
