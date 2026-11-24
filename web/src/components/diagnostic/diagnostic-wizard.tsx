@@ -15,13 +15,19 @@ import {
 } from "lucide-react";
 
 import { QuestionField } from "@/components/diagnostic/question-field";
+import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import type {
     AnswerValue,
     CurrentDiagnostic,
+    EvidenceDocument,
     Questionnaire,
 } from "@/lib/api/types";
+import {
+    linkQuestionDocument as linkDocumentAction,
+    unlinkQuestionDocument as unlinkDocumentAction,
+} from "@/lib/documents/actions";
 import {
     saveAnswer as saveAnswerAction,
     submitDiagnostic as submitAction,
@@ -61,6 +67,13 @@ export type DiagnosticWizardProps = {
     /** Injected in tests; the server actions by default. */
     saveAnswer?: typeof saveAnswerAction;
     submit?: typeof submitAction;
+    /**
+     * Every document of the organization, with the questions they prove
+     * (US-12). Without it, no "Justificatifs" under the questions.
+     */
+    documents?: EvidenceDocument[];
+    linkDocument?: typeof linkDocumentAction;
+    unlinkDocument?: typeof unlinkDocumentAction;
 };
 
 /**
@@ -75,6 +88,9 @@ export function DiagnosticWizard({
     fromStart = false,
     saveAnswer = saveAnswerAction,
     submit = submitAction,
+    documents,
+    linkDocument = linkDocumentAction,
+    unlinkDocument = unlinkDocumentAction,
 }: DiagnosticWizardProps) {
     const steps = useMemo(() => questionSteps(questionnaire), [questionnaire]);
     const [answers, setAnswers] = useState<Answers>(
@@ -413,6 +429,42 @@ export function DiagnosticWizard({
                             answer(step.question.id, value, notApplicable)
                         }
                     />
+                    {documents && (
+                        <section
+                            aria-labelledby={`${headingId}-evidence`}
+                            className="flex flex-col gap-3 border-t border-border pt-5"
+                        >
+                            <h3
+                                id={`${headingId}-evidence`}
+                                className="text-base font-semibold"
+                            >
+                                Justificatifs
+                            </h3>
+                            {step.question.requires_proof && (
+                                <p className="text-sm text-ink-muted">
+                                    Cette question demande une preuve : sans
+                                    justificatif, son score est plafonné à 50 %.
+                                </p>
+                            )}
+                            <LinkedDocuments
+                                documents={documents.filter((document) =>
+                                    document.questions.some(
+                                        (question) =>
+                                            question.id === step.question.id,
+                                    ),
+                                )}
+                                available={documents}
+                                subject="cette question"
+                                canEdit={canEdit}
+                                link={(documentId) =>
+                                    linkDocument(step.question.id, documentId)
+                                }
+                                unlink={(documentId) =>
+                                    unlinkDocument(step.question.id, documentId)
+                                }
+                            />
+                        </section>
+                    )}
                 </div>
                 <Footer>
                     <Button

@@ -1,8 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { mockQuestionnaire } from "@/lib/api/mocks";
+import { mockDocuments, mockQuestionnaire } from "@/lib/api/mocks";
 import type { CurrentDiagnostic, Diagnostic, Question } from "@/lib/api/types";
 
 import { DiagnosticWizard } from "./diagnostic-wizard";
@@ -147,6 +147,48 @@ describe("DiagnosticWizard", () => {
         renderWizard(draft(allAnsweredBut()), { fromStart: true });
 
         expect(screen.getByText(/^Question 1 sur /)).toBeInTheDocument();
+    });
+
+    it("shows and links the evidence of a question (US-12)", async () => {
+        const linkDocument = vi.fn().mockResolvedValue({ ok: true });
+        renderWizard(draft(allAnsweredBut("safety.risques.01")), {
+            documents: mockDocuments,
+            linkDocument,
+        });
+
+        const evidence = screen.getByRole("region", { name: "Justificatifs" });
+        // The DUERP already proves this question: the score is not capped.
+        expect(
+            within(evidence).getByText(
+                /sans justificatif, son score est plafonné/,
+            ),
+        ).toBeInTheDocument();
+        expect(
+            within(evidence).getByRole("button", {
+                name: "Voir DUERP-2026.pdf",
+            }),
+        ).toBeInTheDocument();
+
+        await userEvent.click(
+            within(evidence).getByRole("button", {
+                name: "Joindre un justificatif",
+            }),
+        );
+        await userEvent.click(
+            screen.getByRole("button", {
+                name: "Joindre Registre des contrôles.xlsx",
+            }),
+        );
+
+        expect(linkDocument).toHaveBeenCalledWith("safety.risques.01", "2");
+    });
+
+    it("shows no evidence without the documents of the organization", () => {
+        renderWizard(draft(allAnsweredBut("safety.risques.01")));
+
+        expect(
+            screen.queryByRole("region", { name: "Justificatifs" }),
+        ).not.toBeInTheDocument();
     });
 
     it("starts with the introduction, then the first question", async () => {

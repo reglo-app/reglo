@@ -68,6 +68,19 @@ class Action implements OrganizationOwnedInterface
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
 
+    /**
+     * Evidence of the action (US-12), from the documents of the same
+     * organization. Removing a document or the action removes the link only.
+     *
+     * @var Collection<int, Document>
+     */
+    #[ORM\ManyToMany(targetEntity: Document::class, inversedBy: 'actions')]
+    #[ORM\JoinTable(name: 'action_document')]
+    #[ORM\JoinColumn(name: 'action_id', nullable: false, onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: 'document_id', nullable: false, onDelete: 'CASCADE')]
+    #[ORM\OrderBy(['createdAt' => 'DESC', 'id' => 'DESC'])]
+    private Collection $documents;
+
     /** @var Collection<int, ActionStatusChange> oldest first */
     #[ORM\OneToMany(targetEntity: ActionStatusChange::class, mappedBy: 'action', cascade: ['persist'])]
     #[ORM\OrderBy(['changedAt' => 'ASC', 'id' => 'ASC'])]
@@ -94,6 +107,7 @@ class Action implements OrganizationOwnedInterface
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = $this->createdAt;
         $this->statusChanges = new ArrayCollection([new ActionStatusChange($this, null, $this->status, $createdBy)]);
+        $this->documents = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -157,6 +171,39 @@ class Action implements OrganizationOwnedInterface
     public function getStatusChanges(): Collection
     {
         return $this->statusChanges;
+    }
+
+    /**
+     * @return Collection<int, Document> latest first
+     */
+    public function getDocuments(): Collection
+    {
+        return $this->documents;
+    }
+
+    /**
+     * Links a document of the same organization (checked by the caller).
+     * False when it was already linked.
+     */
+    public function attachDocument(Document $document): bool
+    {
+        if ($document->getOrganization()?->getId() !== $this->getOrganization()?->getId()) {
+            throw new \LogicException('A document is only linked to an action of its own organization.');
+        }
+        if ($this->documents->contains($document)) {
+            return false;
+        }
+
+        $this->documents->add($document);
+        $document->getActions()->add($this);
+
+        return true;
+    }
+
+    public function detachDocument(Document $document): void
+    {
+        $this->documents->removeElement($document);
+        $document->getActions()->removeElement($this);
     }
 
     public function change(

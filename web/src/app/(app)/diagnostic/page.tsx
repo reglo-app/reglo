@@ -8,24 +8,31 @@ import { api, canEdit } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Diagnostic" };
 
-/** QHSE diagnostic (US-05): the shared draft of the organization. */
+/**
+ * QHSE diagnostic (US-05): the shared draft of the organization, with the
+ * evidence of each question (US-12).
+ */
 async function DiagnosticContent({
     searchParams,
 }: {
     searchParams: PageProps<"/diagnostic">["searchParams"];
 }) {
-    const [user, questionnaire, current, params] = await Promise.all([
-        api.getCurrentUser(),
-        api.getQuestionnaire(),
-        api.getCurrentDiagnostic(),
-        searchParams,
-    ]);
+    const [user, questionnaire, current, documents, params] = await Promise.all(
+        [
+            api.getCurrentUser(),
+            api.getQuestionnaire(),
+            api.getCurrentDiagnostic(),
+            api.getDocuments(),
+            searchParams,
+        ],
+    );
 
     return (
         <DiagnosticWizard
             questionnaire={questionnaire}
             current={current}
             canEdit={canEdit(user.role)}
+            documents={documents}
             // "?reprise=1": just started again with the last answers (US-07).
             fromStart={params.reprise === "1"}
         />
