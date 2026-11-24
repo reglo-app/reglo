@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password";
+import { clearSession } from "@/lib/auth/session";
 
 import { callProfileApi, confirmEmailChange } from "./api";
 import { AVATAR_MAX_BYTES, AVATAR_MESSAGES, AVATAR_TYPES } from "./avatar";
@@ -33,6 +35,12 @@ export type EmailState = {
 
 export type AvatarState = {
     error?: string;
+};
+
+export type DeleteAccountState = {
+    error?: string;
+    /** The password is the field in error. */
+    wrongPassword?: boolean;
 };
 
 export type EmailConfirmationState = {
@@ -231,4 +239,44 @@ export async function confirmNewEmail(
         };
     }
     return { error: MESSAGES.unavailable };
+}
+
+/**
+ * Deletes the account of the signed-in user (US-04), after their password
+ * and an explicit confirmation. The session ends at once; the login page
+ * says it is done.
+ */
+export async function deleteAccount(
+    _previous: DeleteAccountState,
+    formData: FormData,
+): Promise<DeleteAccountState> {
+    if (formData.get("confirm") !== "on") {
+        return {
+            error: "Cochez la case pour confirmer la suppression de votre compte.",
+        };
+    }
+    const password = String(formData.get("password") ?? "");
+    if (!password) {
+        return {
+            error: "Saisissez votre mot de passe pour confirmer.",
+            wrongPassword: true,
+        };
+    }
+
+    const result = await callProfileApi("DELETE", "/api/me", { password });
+
+    if (result.status === "rejected") {
+        return {
+            error: result.message,
+            wrongPassword: result.code === "wrong_password",
+        };
+    }
+    if (result.status !== "success") {
+        return {
+            error: "La suppression est impossible pour le moment. Réessayez dans un instant.",
+        };
+    }
+
+    await clearSession();
+    redirect("/login?compte=supprime");
 }

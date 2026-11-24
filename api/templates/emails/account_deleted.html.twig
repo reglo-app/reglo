@@ -1,0 +1,18 @@
+{% extends 'emails/layout.html.twig' %}
+
+{% block title %}Votre compte Réglo a été supprimé{% endblock %}
+
+{% block content %}
+    <p style="margin: 0 0 16px; font-size: 16px;">Bonjour{% if first_name %} {{ first_name }}{% endif %},</p>
+    <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5;">
+        Votre compte Réglo vient d'être supprimé, comme vous l'avez demandé. Votre nom, votre adresse e-mail,
+        votre mot de passe et votre photo sont effacés, et vos sessions sont fermées.
+    </p>
+    <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5;">
+        Ce que vous avez fait pour votre organisation (actions, justificatifs, réponses au diagnostic) lui reste
+        utile : il est conservé, sans votre nom.
+    </p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #4b5856;">
+        Si vous n'êtes pas à l'origine de cette suppression, contactez l'administrateur de votre organisation au plus vite.
+    </p>
+{% endblock %}

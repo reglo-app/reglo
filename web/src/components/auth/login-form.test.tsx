@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
     ACTIVATED_NOTICE,
+    DELETED_NOTICE,
     LoginForm,
     REMEMBERED_EMAIL_KEY,
 } from "./login-form";
@@ -220,6 +221,18 @@ describe("LoginForm", () => {
                 "ana@demo.test",
             );
             expect(screen.getByLabelText("Se souvenir de moi")).toBeChecked();
+        });
+
+        it("forgets the remembered e-mail after the deletion of the account (US-04)", () => {
+            localStorage.setItem(REMEMBERED_EMAIL_KEY, "ana@demo.test");
+            render(<LoginForm action={vi.fn()} deleted />);
+
+            expect(screen.getByRole("alert")).toHaveTextContent(DELETED_NOTICE);
+            expect(screen.getByLabelText("Adresse e-mail")).toHaveValue("");
+            expect(
+                screen.getByLabelText("Se souvenir de moi"),
+            ).not.toBeChecked();
+            expect(localStorage.getItem(REMEMBERED_EMAIL_KEY)).toBeNull();
         });
 
         describe("after an activation", () => {

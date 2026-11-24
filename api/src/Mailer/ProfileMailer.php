@@ -10,7 +10,8 @@ use Symfony\Component\Mime\Address;
 
 /**
  * E-mails about the account itself: confirmation of a new e-mail address,
- * and the notice sent to the old one once it changed.
+ * the notice sent to the old one once it changed, and the notice of the
+ * deletion of the account.
  */
 final class ProfileMailer
 {
@@ -43,6 +44,17 @@ final class ProfileMailer
         $this->mailer->send($this->email($oldEmail, 'Votre adresse e-mail Réglo a été modifiée', 'email_changed', [
             'first_name' => $user->getFirstName(),
             'new_email' => $user->getEmail(),
+        ]));
+    }
+
+    /**
+     * Sent once the account is deleted (US-04): if someone else did it with
+     * the password, the user learns it at once.
+     */
+    public function sendAccountDeletedNotice(string $email, ?string $firstName): void
+    {
+        $this->mailer->send($this->email($email, 'Votre compte Réglo a été supprimé', 'account_deleted', [
+            'first_name' => $firstName,
         ]));
     }
 
