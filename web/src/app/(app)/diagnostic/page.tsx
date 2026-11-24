@@ -12,13 +12,20 @@ export const metadata: Metadata = { title: "Diagnostic" };
  * QHSE diagnostic (US-05): the shared draft of the organization, with the
  * evidence of each question (US-12).
  */
-async function DiagnosticContent() {
-    const [user, questionnaire, current, documents] = await Promise.all([
-        api.getCurrentUser(),
-        api.getQuestionnaire(),
-        api.getCurrentDiagnostic(),
-        api.getDocuments(),
-    ]);
+async function DiagnosticContent({
+    searchParams,
+}: {
+    searchParams: PageProps<"/diagnostic">["searchParams"];
+}) {
+    const [user, questionnaire, current, documents, params] = await Promise.all(
+        [
+            api.getCurrentUser(),
+            api.getQuestionnaire(),
+            api.getCurrentDiagnostic(),
+            api.getDocuments(),
+            searchParams,
+        ],
+    );
 
     return (
         <DiagnosticWizard
@@ -26,6 +33,8 @@ async function DiagnosticContent() {
             current={current}
             canEdit={canEdit(user.role)}
             documents={documents}
+            // "?reprise=1": just started again with the last answers (US-07).
+            fromStart={params.reprise === "1"}
         />
     );
 }
@@ -43,7 +52,9 @@ function DiagnosticSkeleton() {
     );
 }
 
-export default function DiagnosticPage() {
+export default function DiagnosticPage({
+    searchParams,
+}: PageProps<"/diagnostic">) {
     return (
         <>
             <PageHeader
@@ -51,7 +62,7 @@ export default function DiagnosticPage() {
                 description="Évaluez votre entreprise sur les quatre domaines QHSE."
             />
             <Suspense fallback={<DiagnosticSkeleton />}>
-                <DiagnosticContent />
+                <DiagnosticContent searchParams={searchParams} />
             </Suspense>
         </>
     );
