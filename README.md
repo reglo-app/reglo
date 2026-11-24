@@ -115,7 +115,7 @@ In the web app, only the Next.js server calls the API (server components and act
 ### Personal data (GDPR)
 Every user, readers included, has a "Mes données" tab in "Mon profil" (US-04):
 
-- `GET /api/me/export` (web: `/account-data`) downloads a JSON file with their profile, their organization, the actions they are responsible for or created, their status changes, the documents they uploaded (metadata only) and their answers to the diagnostic. Nothing about the other members.
+- `GET /api/me/export` (web: `/account-data`) downloads a JSON file with their profile, their organization, the actions they are responsible for or created, their status changes, the documents they uploaded (metadata only), the documents they opened (access log) and their answers to the diagnostic. Nothing about the other members.
 - `DELETE /api/me` (body `{"password"}`) deletes the account: the user row with its name, e-mail, password hash and photo, and every session. The organization keeps what the user did (actions, documents, answers): the foreign keys are set to null and the web app shows "Ancien membre". An e-mail confirms it to the old address. The last administrator of an organization is refused, and a REGLO team account is deleted from the back office only.
 
 These two processings belong in the processing register (CYB-05).

@@ -8,6 +8,8 @@ use App\Entity\ActionStatus;
 use App\Entity\ActionType;
 use App\Entity\Diagnostic;
 use App\Entity\Document;
+use App\Entity\DocumentAccess;
+use App\Entity\DocumentAccessKind;
 use App\Entity\OrganizationRole;
 use App\Entity\QhsePillar;
 use App\Entity\User;
@@ -28,8 +30,10 @@ final class PersonalDataTest extends ProfileTestCase
         $this->createAction('Former au maniement', $paul, $this->user);
         $assigned->moveTo(ActionStatus::InProgress, $this->user);
         $this->createAction('Action de Paul', $paul, $paul);
-        $this->createDocument('DUERP 2026.pdf', $this->user);
+        $duerp = $this->createDocument('DUERP 2026.pdf', $this->user);
         $this->createDocument('Photo de Paul.jpg', $paul);
+        $this->entityManager->persist(new DocumentAccess($duerp, $this->user, DocumentAccessKind::Download));
+        $this->entityManager->persist(new DocumentAccess($duerp, $paul, DocumentAccessKind::View));
         $diagnostic = new Diagnostic($this->organization, 'v1', $this->user);
         $diagnostic->answer('quality.pilotage.01', 'yes', false, $this->user);
         $diagnostic->answer('quality.pilotage.02', 'no', false, $paul);
@@ -51,6 +55,7 @@ final class PersonalDataTest extends ProfileTestCase
         self::assertSame('in_progress', $data['actionStatusChanges'][array_key_last($data['actionStatusChanges'])]['to']);
         // Only their own documents and answers.
         self::assertSame(['DUERP 2026.pdf'], array_column($data['documentsUploaded'], 'name'));
+        self::assertSame([['document' => 'DUERP 2026.pdf', 'kind' => 'download']], array_map(static fn (array $access): array => array_intersect_key($access, ['document' => 1, 'kind' => 1]), $data['documentAccesses']));
         self::assertCount(1, $data['diagnosticAnswers']);
         self::assertSame('yes', $data['diagnosticAnswers'][0]['value']);
         self::assertStringEndsWith('?', $data['diagnosticAnswers'][0]['question']);

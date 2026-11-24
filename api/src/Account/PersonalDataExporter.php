@@ -7,6 +7,7 @@ use App\Entity\Action;
 use App\Entity\ActionStatusChange;
 use App\Entity\DiagnosticAnswer;
 use App\Entity\Document;
+use App\Entity\DocumentAccess;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -60,6 +61,11 @@ final class PersonalDataExporter
                 'domain' => $document->getPillar()?->value,
                 'uploadedAt' => self::date($document->getCreatedAt()),
             ], $this->findBy(Document::class, 'uploadedBy', $user, 'createdAt')),
+            'documentAccesses' => array_map(static fn (DocumentAccess $access): array => [
+                'document' => $access->getDocument()->getOriginalName(),
+                'kind' => $access->getKind()->value,
+                'at' => self::date($access->getAccessedAt()),
+            ], $this->findBy(DocumentAccess::class, 'accessedBy', $user, 'accessedAt')),
             'diagnosticAnswers' => array_map(fn (DiagnosticAnswer $answer): array => [
                 'question' => $this->questionnaire->question($answer->getQuestionId())['label'] ?? $answer->getQuestionId(),
                 'value' => $answer->getValue(),
