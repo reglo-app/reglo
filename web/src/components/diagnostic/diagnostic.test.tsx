@@ -143,6 +143,12 @@ describe("QuestionField", () => {
 });
 
 describe("DiagnosticWizard", () => {
+    it("starts at the first question after starting again with the last answers (US-07)", () => {
+        renderWizard(draft(allAnsweredBut()), { fromStart: true });
+
+        expect(screen.getByText(/^Question 1 sur /)).toBeInTheDocument();
+    });
+
     it("shows and links the evidence of a question (US-12)", async () => {
         const linkDocument = vi.fn().mockResolvedValue({ ok: true });
         renderWizard(draft(allAnsweredBut("safety.risques.01")), {

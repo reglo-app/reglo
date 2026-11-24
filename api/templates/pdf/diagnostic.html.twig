@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Synthèse du diagnostic QHSE – {{ organization }}</title>
+    <style>
+        @page { margin: 22mm 18mm 20mm 18mm; }
+        body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; color: #1f2a28; line-height: 1.4; }
+        h1 { font-size: 18pt; margin: 0 0 2mm 0; color: #0f6b63; }
+        h2 { font-size: 12.5pt; margin: 8mm 0 3mm 0; color: #0f6b63; }
+        h3 { font-size: 10.5pt; margin: 4mm 0 1.5mm 0; }
+        p { margin: 0 0 2mm 0; }
+        .muted { color: #5b6b67; }
+        .header { width: 100%; border-bottom: 1px solid #d5dedb; padding-bottom: 3mm; margin-bottom: 5mm; }
+        .brand { font-size: 15pt; font-weight: bold; color: #0f6b63; }
+        .summary { width: 100%; border-collapse: collapse; background: #f4f6f5; }
+        .summary td { padding: 4mm 5mm; vertical-align: middle; }
+        .global { font-size: 30pt; font-weight: bold; color: #0f6b63; }
+        .maturity { display: inline-block; padding: 1mm 3mm; border-radius: 3mm; background: #0f6b63; color: #ffffff; font-weight: bold; }
+        table.scores { width: 100%; border-collapse: collapse; }
+        table.scores td, table.scores th { padding: 1.6mm 0; border-bottom: 1px solid #e3e9e7; text-align: left; vertical-align: middle; }
+        table.scores th { font-size: 9pt; color: #5b6b67; font-weight: normal; }
+        td.label { width: 46%; padding-right: 3mm; }
+        td.value { width: 12%; text-align: right; font-weight: bold; padding-left: 3mm; }
+        .bar { height: 3.2mm; background: #e3e9e7; }
+        .bar-fill { height: 3.2mm; background: #0f6b63; }
+        .theme td.label { padding-left: 5mm; color: #3c4a47; }
+        .theme .bar-fill { background: #6aa79f; }
+        ol.gaps { margin: 0; padding-left: 5mm; }
+        ol.gaps li { margin-bottom: 2mm; }
+        .method { margin-top: 8mm; padding: 4mm 5mm; background: #f4f6f5; font-size: 9pt; }
+        .footer { position: fixed; bottom: -12mm; left: 0; right: 0; font-size: 8pt; color: #5b6b67; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="footer">REGLO · Synthèse du diagnostic QHSE de {{ organization }} · {{ date }}</div>
+
+    <table class="header">
+        <tr>
+            <td>
+                {% if logo %}<img src="{{ logo }}" width="36" height="28" alt="" style="vertical-align: middle;">{% endif %}
+                <span class="brand" style="vertical-align: middle;">REGLO</span>
+            </td>
+            <td style="text-align: right;" class="muted">Synthèse du diagnostic QHSE</td>
+        </tr>
+    </table>
+
+    <h1>{{ organization }}</h1>
+    <p class="muted">Diagnostic validé le {{ date }}</p>
+
+    <h2>Score global</h2>
+    <table class="summary">
+        <tr>
+            <td style="width: 32%;">
+                {% if global is not null %}
+                    <span class="global">{{ global }}</span> <span class="muted">/ 100</span>
+                {% else %}
+                    <span class="muted">Aucune question notée.</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if maturity %}<p>Niveau de maturité : <span class="maturity">{{ maturity }}</span></p>{% endif %}
+                {% if coverage is not null %}<p class="muted">{{ coverage }} % des questions notées ont reçu une réponse.</p>{% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <h2>Score par domaine et par thématique</h2>
+    <table class="scores">
+        <thead>
+            <tr>
+                <th>Domaine / thématique</th>
+                <th></th>
+                <th style="text-align: right; white-space: nowrap;">Score / 100</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pillar in pillars %}
+                <tr>
+                    <td class="label"><strong>{{ pillar.label }}</strong></td>
+                    <td>{% if pillar.score is not null %}<div class="bar"><div class="bar-fill" style="width: {{ pillar.score }}%;"></div></div>{% endif %}</td>
+                    <td class="value">{{ pillar.score ?? '–' }}</td>
+                </tr>
+                {% for theme in pillar.themes %}
+                    <tr class="theme">
+                        <td class="label">{{ theme.label }}</td>
+                        <td>{% if theme.score is not null %}<div class="bar"><div class="bar-fill" style="width: {{ theme.score }}%;"></div></div>{% endif %}</td>
+                        <td class="value">{{ theme.score ?? 'Non concerné' }}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if gaps is not empty %}
+        <h2>Points à améliorer en priorité</h2>
+        <ol class="gaps">
+            {% for gap in gaps %}
+                <li>
+                    <strong>{{ gap.label }}</strong>
+                    <span class="muted">({{ gap.pillar }}{% if gap.gain is not null %}, jusqu'à {{ gap.gain }} point{{ gap.gain > 1 ? 's' : '' }} de score global{% endif %})</span>
+                    {% if gap.cappedForProof %}<br><span class="muted">Score limité à 50 : un justificatif est attendu pour cette question.</span>{% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    {% endif %}
+
+    <div class="method">
+        <h3 style="margin-top: 0;">Comment le score est calculé</h3>
+        <p>Chaque réponse reçoit une note de 0 à 100. Les notes sont regroupées par thématique, puis par domaine, puis en un score global, avec les pondérations du questionnaire. Les questions « non concernées » sont exclues du calcul. Une question qui demande une preuve est limitée à 50 sans justificatif.</p>
+        <p>Niveaux de maturité : moins de 25 Initial, moins de 50 En structuration, moins de 75 Maîtrisé, 75 et plus Exemplaire.</p>
+        <p class="muted" style="margin: 0;">Questionnaire {{ questionnaireVersion }}{% if algoVersion %} · méthode de calcul {{ algoVersion }}{% endif %}. Le détail de la méthode est disponible dans l'application REGLO.</p>
+    </div>
+</body>
+</html>

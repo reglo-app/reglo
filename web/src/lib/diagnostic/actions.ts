@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { callApi } from "@/lib/api/call";
 import type { AnswerValue, Diagnostic } from "@/lib/api/types";
@@ -56,4 +57,29 @@ export async function submitDiagnostic(): Promise<
         error:
             result.status === "rejected" ? result.message : SCORE_UNAVAILABLE,
     };
+}
+
+/**
+ * "Refaire un diagnostic" (US-07): a new draft with the answers of this
+ * diagnostic, which stays in the history. Opens the questions.
+ */
+export async function restartDiagnostic(
+    diagnosticId: string,
+): Promise<DiagnosticActionResult> {
+    const result = await callApi(
+        "POST",
+        `/api/diagnostics/${encodeURIComponent(diagnosticId)}/restart`,
+    );
+
+    if (result.status !== "success") {
+        return {
+            error:
+                result.status === "rejected"
+                    ? result.message
+                    : "Le nouveau diagnostic n'a pas pu être créé. Réessayez dans un instant.",
+        };
+    }
+    revalidatePath("/", "layout");
+    // Every answer is there: the review starts at the first question.
+    redirect("/diagnostic?reprise=1");
 }

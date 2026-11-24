@@ -119,19 +119,49 @@ describe("ResultView", () => {
         expect(screen.getAllByText("Premier diagnostic")).toHaveLength(5);
     });
 
+    it("downloads the summary as a PDF, for every role", () => {
+        renderResult(mockDiagnosticResult, false);
+
+        expect(
+            screen.getByRole("link", {
+                name: "Télécharger la synthèse (PDF)",
+            }),
+        ).toHaveAttribute("href", "/diagnostic-files/1");
+    });
+
     it("lets only members who can edit start a new diagnostic", () => {
         const { unmount } = renderResult();
         expect(
-            screen.getByRole("link", { name: "Refaire un diagnostic" }),
-        ).toHaveAttribute("href", "/diagnostic");
+            screen.getByRole("button", { name: "Refaire un diagnostic" }),
+        ).toBeInTheDocument();
         unmount();
 
         renderResult(mockDiagnosticResult, false);
         expect(
-            screen.queryByRole("link", { name: "Refaire un diagnostic" }),
+            screen.queryByRole("button", { name: "Refaire un diagnostic" }),
         ).not.toBeInTheDocument();
         expect(
             screen.queryByRole("link", { name: /Créer une action/ }),
+        ).not.toBeInTheDocument();
+    });
+
+    it("resumes the diagnostic in progress rather than starting one", () => {
+        render(
+            <ResultView
+                result={mockDiagnosticResult}
+                questionnaire={mockQuestionnaire}
+                canEdit
+                hasDraft
+            />,
+        );
+
+        expect(
+            screen.getByRole("link", {
+                name: "Reprendre le diagnostic en cours",
+            }),
+        ).toHaveAttribute("href", "/diagnostic");
+        expect(
+            screen.queryByRole("button", { name: "Refaire un diagnostic" }),
         ).not.toBeInTheDocument();
     });
 });

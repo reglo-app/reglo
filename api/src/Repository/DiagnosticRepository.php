@@ -31,12 +31,12 @@ class DiagnosticRepository extends ServiceEntityRepository
     }
 
     /**
-     * The submitted diagnostics with a score, latest first: the result and
-     * the one before it (to show the trend).
+     * The submitted diagnostics with a score, latest first: the history,
+     * or the latest result with a limit of 1.
      *
      * @return list<Diagnostic>
      */
-    public function findScored(int $limit): array
+    public function findScored(?int $limit = null): array
     {
         return $this->createQueryBuilder('d')
             ->where('d.status = :submitted')
@@ -47,5 +47,24 @@ class DiagnosticRepository extends ServiceEntityRepository
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * The scored diagnostic submitted just before this one, for the trend.
+     */
+    public function findScoredBefore(Diagnostic $diagnostic): ?Diagnostic
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.status = :submitted')
+            ->andWhere('d.score IS NOT NULL')
+            ->andWhere('(d.submittedAt < :at OR (d.submittedAt = :at AND d.id < :id))')
+            ->setParameter('submitted', DiagnosticStatus::Submitted)
+            ->setParameter('at', $diagnostic->getSubmittedAt())
+            ->setParameter('id', $diagnostic->getId())
+            ->orderBy('d.submittedAt', 'DESC')
+            ->addOrderBy('d.id', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }
