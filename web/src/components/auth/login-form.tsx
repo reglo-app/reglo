@@ -2,6 +2,7 @@
 
 import {
     useActionState,
+    useEffect,
     useRef,
     useState,
     useSyncExternalStore,
@@ -33,11 +34,17 @@ export type LoginFormProps = {
     action?: typeof login;
     /** Opened right after an account activation: notice and its e-mail. */
     activated?: boolean;
+    /** Opened right after the account was deleted (US-04): notice. */
+    deleted?: boolean;
 };
 
 /** Shown after the activation page redirects here (`?activated=1`). */
 export const ACTIVATED_NOTICE =
     "Votre compte est activé. Connectez-vous avec votre nouveau mot de passe.";
+
+/** Shown after the deletion of the account (`?compte=supprime`). */
+export const DELETED_NOTICE =
+    "Votre compte est supprimé. Un e-mail de confirmation vous a été envoyé.";
 
 /** Remembered e-mail, kept on this device only when the user asks for it. */
 export const REMEMBERED_EMAIL_KEY = "reglo.rememberedEmail";
@@ -63,6 +70,11 @@ function writeRememberedEmail(email: string | null) {
     }
 }
 
+/** Nothing remembered: right after the deletion of an account. */
+function readNothing(): null {
+    return null;
+}
+
 // Only read once on load: the value is written on submit, right before
 // leaving the page, so there is nothing to subscribe to.
 const noSubscription = () => () => {};
@@ -71,6 +83,7 @@ export function LoginForm({
     next,
     action = login,
     activated = false,
+    deleted = false,
 }: LoginFormProps) {
     const [state, formAction, isPending] = useActionState<LoginState, FormData>(
         action,
@@ -93,13 +106,22 @@ export function LoginForm({
         Boolean(state.error) &&
         (invalidFields.length === 0 || invalidFields.some(isInvalid));
     // Right after an activation, the new account's e-mail, never the one
-    // remembered for another account.
+    // remembered for another account. After a deletion, nothing.
     const prefilledEmail = useSyncExternalStore(
         noSubscription,
-        activated ? readActivatedEmail : readRememberedEmail,
+        activated
+            ? readActivatedEmail
+            : deleted
+              ? readNothing
+              : readRememberedEmail,
         () => null,
     );
-    const isRemembered = !activated && prefilledEmail !== null;
+    const isRemembered = !activated && !deleted && prefilledEmail !== null;
+
+    // The deleted account must not stay suggested on this device (US-04).
+    useEffect(() => {
+        if (deleted) writeRememberedEmail(null);
+    }, [deleted]);
     const rememberRef = useRef<HTMLInputElement>(null);
 
     function markEdited(field: LoginField) {
@@ -139,6 +161,12 @@ export function LoginForm({
                 <Alert variant="success">
                     <CircleCheck aria-hidden="true" />
                     <AlertDescription>{ACTIVATED_NOTICE}</AlertDescription>
+                </Alert>
+            )}
+            {deleted && !state.error && (
+                <Alert variant="success">
+                    <CircleCheck aria-hidden="true" />
+                    <AlertDescription>{DELETED_NOTICE}</AlertDescription>
                 </Alert>
             )}
 
@@ -238,12 +266,14 @@ export function LoginForm({
 }
 
 /**
- * Reads ?next= set by the proxy when a private page was requested, and
- * ?activated=1 set by the activation page.
+ * Reads ?next= set by the proxy when a private page was requested,
+ * ?activated=1 set by the activation page and ?compte=supprime set after
+ * the deletion of the account.
  */
 export function LoginFormWithRedirect() {
     const searchParams = useSearchParams();
     const next = searchParams.get("next") ?? undefined;
     const activated = searchParams.get("activated") === "1";
-    return <LoginForm next={next} activated={activated} />;
+    const deleted = searchParams.get("compte") === "supprime";
+    return <LoginForm next={next} activated={activated} deleted={deleted} />;
 }

@@ -112,6 +112,14 @@ Every `/api` route requires a token, except `/api/auth/login`, `/api/activation/
 
 In the web app, only the Next.js server calls the API (server components and actions, through `API_INTERNAL_URL`): the browser never does. The token is kept in an `HttpOnly` cookie and sent by the server as `Authorization: Bearer`. When the API refuses it (expired or revoked), `/session-expired` deletes the cookie and opens the login page.
 
+### Personal data (GDPR)
+Every user, readers included, has a "Mes données" tab in "Mon profil" (US-04):
+
+- `GET /api/me/export` (web: `/account-data`) downloads a JSON file with their profile, their organization, the actions they are responsible for or created, their status changes, the documents they uploaded (metadata only) and their answers to the diagnostic. Nothing about the other members.
+- `DELETE /api/me` (body `{"password"}`) deletes the account: the user row with its name, e-mail, password hash and photo, and every session. The organization keeps what the user did (actions, documents, answers): the foreign keys are set to null and the web app shows "Ancien membre". An e-mail confirms it to the old address. The last administrator of an organization is refused, and a REGLO team account is deleted from the back office only.
+
+These two processings belong in the processing register (CYB-05).
+
 ### Mock data
 Features whose API endpoints do not exist yet still use the data of `web/src/lib/api/mocks.ts`. `API_MOCKS` (see `.env.example`) lists them; by default `dashboard,domains,news`, while the signed-in user (`me`) comes from the API. It is read by the server at runtime. The Playwright tests start their own server with `API_MOCKS=all` on port 3100.
 

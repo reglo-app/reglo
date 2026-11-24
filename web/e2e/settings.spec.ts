@@ -53,3 +53,32 @@ test.describe("signed out", () => {
         ).toBeVisible();
     });
 });
+
+test("exports the personal data, and asks a lot before deleting the account", async ({
+    page,
+}) => {
+    await page.goto("/settings");
+    await page.getByRole("tab", { name: "Mes données" }).click();
+
+    await expect(
+        page.getByRole("link", { name: "Exporter mes données" }),
+    ).toHaveAttribute("href", "/account-data");
+
+    await page.getByRole("button", { name: "Supprimer mon compte" }).click();
+    const dialog = page.getByRole("dialog", {
+        name: "Supprimer votre compte ?",
+    });
+    const submit = dialog.getByRole("button", {
+        name: "Supprimer définitivement",
+    });
+    await dialog.getByLabel("Mot de passe").fill("correct-horse-battery");
+    await expect(submit).toBeDisabled();
+    await dialog
+        .getByLabel("Je comprends que mon compte sera supprimé définitivement.")
+        .check();
+    await expect(submit).toBeEnabled();
+
+    // Not sent here: the mock data has no account to delete.
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+});

@@ -1,12 +1,21 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { Building2, KeyRound, Mail, UserRound } from "lucide-react";
+import {
+    Building2,
+    Download,
+    KeyRound,
+    Mail,
+    ShieldCheck,
+    UserRound,
+} from "lucide-react";
 
 import { AvatarForm } from "@/components/profile/avatar-form";
+import { DeleteAccountButton } from "@/components/profile/delete-account";
 import { EmailForm } from "@/components/profile/email-form";
 import { PasswordForm } from "@/components/profile/password-form";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -133,6 +142,10 @@ async function SettingsContent() {
                                 <KeyRound aria-hidden="true" />
                                 Mot de passe
                             </TabsTrigger>
+                            <TabsTrigger value="data" className={TAB_TRIGGER}>
+                                <ShieldCheck aria-hidden="true" />
+                                Mes données
+                            </TabsTrigger>
                         </TabsList>
                     </div>
 
@@ -189,6 +202,48 @@ async function SettingsContent() {
                             description="Vos autres sessions seront déconnectées."
                         >
                             <PasswordForm email={user.email} />
+                        </SettingsSection>
+                    </TabsContent>
+
+                    <TabsContent
+                        value="data"
+                        className={cn(TAB_PANEL, "divide-y divide-border")}
+                    >
+                        <SettingsSection
+                            title="Exporter mes données"
+                            description="Un fichier JSON avec votre profil, votre organisation et ce que vous avez fait dans Réglo : actions, justificatifs déposés, réponses au diagnostic."
+                        >
+                            <Button asChild variant="outline" className="w-fit">
+                                {/* An attachment: the page stays open. */}
+                                <a href="/account-data">
+                                    <Download aria-hidden="true" />
+                                    Exporter mes données
+                                </a>
+                            </Button>
+                        </SettingsSection>
+                        <SettingsSection
+                            title="Supprimer mon compte"
+                            description="Votre mot de passe est demandé, puis une confirmation. Un e-mail vous confirme la suppression."
+                        >
+                            {user.platformAdmin ? (
+                                <p className="text-ink-muted">
+                                    Un compte de l&apos;équipe Réglo se supprime
+                                    depuis le back office, par un autre membre
+                                    de l&apos;équipe.
+                                </p>
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    {user.role === "admin" && (
+                                        <p className="text-ink-muted">
+                                            Si vous êtes le seul administrateur
+                                            de votre organisation, nommez
+                                            d&apos;abord un autre administrateur
+                                            depuis la page Équipe.
+                                        </p>
+                                    )}
+                                    <DeleteAccountButton email={user.email} />
+                                </div>
+                            )}
                         </SettingsSection>
                     </TabsContent>
                 </Tabs>
