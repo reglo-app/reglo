@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Info, Plus } from "lucide-react";
+import { ArrowRight, Info, Newspaper, Plus } from "lucide-react";
 import { Suspense } from "react";
 
 import {
     ActionCountsCard,
     AlertsCard,
-    NewsCard,
     UpcomingActionsCard,
 } from "@/components/dashboard/dashboard-lists";
+import { ComingSoonCard } from "@/components/dashboard/block";
 import { ScoreOverview } from "@/components/dashboard/score-overview";
 import { PageHeader } from "@/components/page-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -33,7 +33,7 @@ async function DashboardContent() {
         api.getActionsOverview(),
     ]);
     // Real score of the latest diagnostic (US-06) and real actions (US-10);
-    // only the news are still mock data.
+    // the news are not shown until US-15.
     const summary = withActionsOverview(
         withDiagnosticScore(mockedSummary, result),
         overview,
@@ -66,7 +66,11 @@ async function DashboardContent() {
                     today={today}
                 />
             </div>
-            <NewsCard news={summary.latestNews} />
+            {/* The regulatory news come with US-15. */}
+            <ComingSoonCard icon={Newspaper} title="Veille réglementaire">
+                Les dernières évolutions réglementaires qui concernent votre
+                organisation.
+            </ComingSoonCard>
         </div>
     );
 }

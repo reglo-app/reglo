@@ -10,6 +10,8 @@ import {
     filterDocuments,
     type DocumentFilters,
 } from "@/lib/documents/filters";
+import { todayInFrance } from "@/lib/action-plan/labels";
+import { buildDomainDetail } from "@/lib/domain/detail";
 import type { DomainKey } from "@/lib/domains";
 
 import { API_INTERNAL_URL } from "./internal-url";
@@ -70,8 +72,11 @@ export const API_FEATURES = [
 ] as const;
 export type ApiFeature = (typeof API_FEATURES)[number];
 
-/** Features whose API endpoints do not exist yet. */
-const DEFAULT_MOCKS: readonly ApiFeature[] = ["dashboard", "domains", "news"];
+/**
+ * Features whose API endpoints do not exist yet. Their blocks say "Bientôt
+ * disponible" instead of showing this data (news, documents to renew).
+ */
+const DEFAULT_MOCKS: readonly ApiFeature[] = ["dashboard", "news"];
 
 /**
  * Reads API_MOCKS: "all", "none" or a comma-separated list of features
@@ -339,7 +344,24 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
             load(
                 "domains",
                 () => mockDomainDetails[domain],
-                () => request<DomainDetail>(`/api/domains/${domain}`),
+                async () => {
+                    const [result, questionnaire, actions] = await Promise.all([
+                        request<DiagnosticResult | null>(
+                            "/api/diagnostics/latest/result",
+                        ),
+                        request<Questionnaire>("/api/questionnaire"),
+                        request<Action[]>(
+                            `/api/actions${actionFiltersQuery({ domain })}`,
+                        ),
+                    ]);
+                    return buildDomainDetail(
+                        domain,
+                        result,
+                        questionnaire,
+                        actions,
+                        todayInFrance(),
+                    );
+                },
             ),
         getNewsArticle: (id) =>
             load(
