@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
+import { Newspaper } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
+import { ComingSoonCard } from "@/components/dashboard/block";
 import {
     ActionCountsCard,
     AlertsCard,
@@ -204,5 +206,24 @@ describe("NewsCard", () => {
                 name: /Tri à la source des biodéchets/,
             }),
         ).toHaveAttribute("href", "/news/news-2");
+    });
+});
+
+describe("ComingSoonCard", () => {
+    it("says the block is not available instead of showing data", () => {
+        render(
+            <ComingSoonCard icon={Newspaper} title="Veille réglementaire">
+                Les dernières évolutions réglementaires.
+            </ComingSoonCard>,
+        );
+
+        expect(
+            screen.getByRole("heading", {
+                level: 2,
+                name: "Veille réglementaire",
+            }),
+        ).toBeInTheDocument();
+        expect(screen.getByText("Bientôt disponible")).toBeVisible();
+        expect(screen.queryByRole("link")).toBeNull();
     });
 });

@@ -121,7 +121,7 @@ Every user, readers included, has a "Mes données" tab in "Mon profil" (US-04):
 These two processings belong in the processing register (CYB-05).
 
 ### Mock data
-Features whose API endpoints do not exist yet still use the data of `web/src/lib/api/mocks.ts`. `API_MOCKS` (see `.env.example`) lists them; by default `dashboard,domains,news`, while the signed-in user (`me`) comes from the API. It is read by the server at runtime. The Playwright tests start their own server with `API_MOCKS=all` on port 3100.
+Features whose API endpoints do not exist yet still use the data of `web/src/lib/api/mocks.ts`. `API_MOCKS` (see `.env.example`) lists them; by default `dashboard,news`, while the signed-in user (`me`) comes from the API. The dashboard only keeps the mock base of its summary: its score and actions are real, and the news block says "Bientôt disponible" until US-15. The QHSE pillar pages (`/domains/{key}`) are built from the real diagnostic and action plan; their "documents to renew" and news blocks also say "Bientôt disponible". It is read by the server at runtime. The Playwright tests start their own server with `API_MOCKS=all` on port 3100.
 
 `make test-api` creates and migrates the test database (`reglo_test`) before running PHPUnit.
 

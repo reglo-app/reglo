@@ -6,7 +6,7 @@ import type {
     DashboardSummary,
 } from "@/lib/api/types";
 
-function toSummary(action: Action): ActionSummary {
+export function toSummary(action: Action): ActionSummary {
     return {
         id: action.id,
         title: action.title,
