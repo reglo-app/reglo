@@ -27,6 +27,8 @@ export type NavItem = {
     domain?: DomainKey;
     /** Sub-pages, visible in the sidebar only inside this branch. */
     children?: NavChild[];
+    /** Breadcrumb label of its detail pages (e.g. `/trainings/{id}`). */
+    detailLabel?: string;
 };
 
 export const HOME_ITEM: NavItem = {
@@ -66,7 +68,12 @@ export const NAV_SECTIONS: NavSection[] = [
         items: [
             HOME_ITEM,
             { href: "/documents", label: "Justificatifs", icon: FileCheck },
-            { href: "/trainings", label: "Formations", icon: GraduationCap },
+            {
+                href: "/trainings",
+                label: "Formations",
+                icon: GraduationCap,
+                detailLabel: "Formation",
+            },
             { href: "/team", label: "Équipe", icon: Users },
         ],
     },
@@ -92,7 +99,13 @@ export const SETTINGS_ITEM: NavItem = {
 type Entry = NavChild & { item: NavItem; isChild: boolean };
 
 const ALL_ENTRIES: Entry[] = [...NAV_ITEMS, SETTINGS_ITEM].flatMap((item) => [
-    { href: item.href, label: item.label, item, isChild: false },
+    {
+        href: item.href,
+        label: item.label,
+        detailLabel: item.detailLabel,
+        item,
+        isChild: false,
+    },
     ...(item.children ?? []).map((child) => ({
         ...child,
         item,

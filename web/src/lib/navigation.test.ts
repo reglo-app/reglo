@@ -93,6 +93,12 @@ describe("getBreadcrumb", () => {
         ]);
     });
 
+    it("names a training page instead of showing its id", () => {
+        expect(
+            getBreadcrumb("/trainings/initiation-duerp").map((c) => c.label),
+        ).toEqual(["Formations", "Formation"]);
+    });
+
     it("adds a detail crumb for a sub-page", () => {
         expect(getBreadcrumb("/actions/42").map((c) => c.href)).toEqual([
             "/dashboard",

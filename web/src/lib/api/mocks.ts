@@ -28,6 +28,8 @@ import type {
     NewsArticle,
     Questionnaire,
     ThemeScore,
+    TrainingDetail,
+    TrainingSummary,
 } from "./types";
 
 export const mockCurrentUser: CurrentUser = {
@@ -961,3 +963,125 @@ export const mockDocumentAccesses: DocumentAccess[] = [
     },
     { by: null, kind: "download", at: "2026-10-30T10:05:00.000Z" },
 ];
+
+/** Training catalog (US-13): one course per kind of lesson, and a paid one. */
+export const mockTrainingDetails: TrainingDetail[] = [
+    {
+        id: "initiation-duerp",
+        title: "Initiation au DUERP",
+        summary:
+            "Comprendre le document unique d'évaluation des risques professionnels.",
+        domain: "safety",
+        level: "beginner",
+        free: true,
+        durationMinutes: 18,
+        lessonCount: 3,
+        completedCount: 1,
+        lessons: [
+            {
+                id: "role",
+                title: "À quoi sert le document unique ?",
+                type: "text",
+                durationMinutes: 5,
+                completed: true,
+                paragraphs: [
+                    "Le document unique rassemble les risques de chaque unité de travail.",
+                    "C'est le point de départ de la prévention.",
+                ],
+                keyPoints: ["Une obligation de l'employeur."],
+                videoUrl: null,
+                transcript: [],
+                pdfUrl: null,
+            },
+            {
+                id: "video",
+                title: "Évaluer les risques en vidéo",
+                type: "video",
+                durationMinutes: 8,
+                completed: false,
+                paragraphs: [],
+                keyPoints: [],
+                videoUrl: "https://www.youtube-nocookie.com/embed/demo",
+                transcript: [
+                    "Bonjour, dans cette vidéo nous découpons l'atelier en unités de travail.",
+                ],
+                pdfUrl: null,
+            },
+            {
+                id: "guide",
+                title: "Guide à télécharger",
+                type: "pdf",
+                durationMinutes: 5,
+                completed: false,
+                paragraphs: ["Un guide pas à pas pour votre premier DUERP."],
+                keyPoints: [],
+                videoUrl: null,
+                transcript: [],
+                pdfUrl: "https://example.com/guide-duerp.pdf",
+            },
+        ],
+    },
+    {
+        id: "bases-iso-9001",
+        title: "Les bases de l'ISO 9001",
+        summary: "Découvrir les principes du management de la qualité.",
+        domain: "quality",
+        level: "beginner",
+        free: true,
+        durationMinutes: 6,
+        lessonCount: 1,
+        completedCount: 0,
+        lessons: [
+            {
+                id: "principes",
+                title: "Les principes du management de la qualité",
+                type: "text",
+                durationMinutes: 6,
+                completed: false,
+                paragraphs: [
+                    "L'ISO 9001 décrit un système de management de la qualité.",
+                ],
+                keyPoints: [],
+                videoUrl: null,
+                transcript: [],
+                pdfUrl: null,
+            },
+        ],
+    },
+    {
+        id: "hygiene-haccp",
+        title: "Hygiène alimentaire : la méthode HACCP",
+        summary: "Maîtriser les dangers sanitaires en restauration.",
+        domain: "hygiene",
+        level: "intermediate",
+        free: false,
+        durationMinutes: 37,
+        lessonCount: 2,
+        completedCount: 0,
+        lessons: [
+            {
+                id: "dangers",
+                title: "Les dangers sanitaires",
+                type: "text",
+                durationMinutes: 10,
+                completed: false,
+            },
+            {
+                id: "points-critiques",
+                title: "Identifier les points critiques",
+                type: "text",
+                durationMinutes: 27,
+                completed: false,
+            },
+        ],
+    },
+];
+
+export const mockTrainings: TrainingSummary[] = mockTrainingDetails.map(
+    (training) => {
+        // The catalog does not send the lessons.
+        const summary: Partial<TrainingDetail> = { ...training };
+        delete summary.lessons;
+        return summary as TrainingSummary;
+    },
+);

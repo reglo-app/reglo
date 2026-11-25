@@ -472,3 +472,46 @@ export type CurrentDiagnostic = {
     /** ISO 8601 date the last diagnostic was submitted; null if never. */
     lastSubmittedAt: string | null;
 };
+
+export type TrainingLevel = "beginner" | "intermediate" | "advanced";
+
+/** `GET /api/trainings`: a course of the catalog with the user's progress (US-13). */
+export type TrainingSummary = {
+    id: string;
+    title: string;
+    summary: string;
+    domain: DomainKey;
+    level: TrainingLevel;
+    /** Paid courses show their description only (no payment in the MVP). */
+    free: boolean;
+    durationMinutes: number;
+    lessonCount: number;
+    completedCount: number;
+};
+
+export type TrainingLessonType = "text" | "video" | "pdf";
+
+/** A lesson; the content fields are only sent for free courses. */
+export type TrainingLesson = {
+    id: string;
+    title: string;
+    type: TrainingLessonType;
+    durationMinutes: number;
+    completed: boolean;
+    paragraphs?: string[];
+    keyPoints?: string[];
+    /** Privacy-friendly embed (youtube-nocookie, Vimeo). */
+    videoUrl?: string | null;
+    /** Text of the video (RGAA). */
+    transcript?: string[];
+    pdfUrl?: string | null;
+};
+
+/** `GET /api/trainings/{id}`. */
+export type TrainingDetail = TrainingSummary & { lessons: TrainingLesson[] };
+
+/** Answer of `PUT|DELETE /api/me/trainings/{course}/lessons/{lesson}`. */
+export type TrainingProgress = {
+    completedCount: number;
+    lessonCount: number;
+};
