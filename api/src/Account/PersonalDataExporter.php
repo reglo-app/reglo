@@ -8,7 +8,9 @@ use App\Entity\ActionStatusChange;
 use App\Entity\DiagnosticAnswer;
 use App\Entity\Document;
 use App\Entity\DocumentAccess;
+use App\Entity\LessonCompletion;
 use App\Entity\User;
+use App\Training\TrainingCatalog;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -22,6 +24,7 @@ final class PersonalDataExporter
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly Questionnaire $questionnaire,
+        private readonly TrainingCatalog $trainingCatalog,
     ) {
     }
 
@@ -72,6 +75,11 @@ final class PersonalDataExporter
                 'notApplicable' => $answer->isNotApplicable(),
                 'answeredAt' => self::date($answer->getAnsweredAt()),
             ], $this->findBy(DiagnosticAnswer::class, 'answeredBy', $user, 'answeredAt')),
+            'lessonsCompleted' => array_map(fn (LessonCompletion $completion): array => [
+                'training' => $this->trainingCatalog->course($completion->getCourseId())['title'] ?? $completion->getCourseId(),
+                'lesson' => $this->trainingCatalog->lesson($completion->getCourseId(), $completion->getLessonId())['title'] ?? $completion->getLessonId(),
+                'completedAt' => self::date($completion->getCompletedAt()),
+            ], $this->findBy(LessonCompletion::class, 'user', $user, 'completedAt')),
         ];
     }
 
