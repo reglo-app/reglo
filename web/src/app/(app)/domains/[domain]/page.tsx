@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { FileWarning, Newspaper } from "lucide-react";
 
-import { NewsCard } from "@/components/dashboard/dashboard-lists";
+import { ComingSoonCard } from "@/components/dashboard/block";
 import {
     DomainActionsCard,
     DomainScoreCard,
-    ExpiringDocumentsCard,
 } from "@/components/domain/domain-blocks";
 import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,8 +27,9 @@ export async function generateMetadata({
 }
 
 /**
- * Same five blocks for the four pillars: score, score per theme, open
- * actions, documents to renew and the pillar's regulatory news.
+ * Same five blocks for the four pillars, from the real data of the
+ * organization: score, score per theme and open actions. Documents to renew
+ * and the pillar's regulatory news are not available yet.
  */
 async function DomainContent({ params }: { params: Params }) {
     const { domain } = await params;
@@ -52,12 +53,19 @@ async function DomainContent({ params }: { params: Params }) {
                         actions={detail.actions}
                         today={detail.generatedAt}
                     />
-                    <ExpiringDocumentsCard
-                        documents={detail.expiringDocuments}
-                        today={detail.generatedAt}
-                    />
+                    {/* Documents have no expiry date yet. */}
+                    <ComingSoonCard
+                        icon={FileWarning}
+                        title="Justificatifs à renouveler"
+                    >
+                        Les justificatifs de ce domaine dont la date de validité
+                        approche.
+                    </ComingSoonCard>
                 </div>
-                <NewsCard news={detail.latestNews} />
+                {/* The regulatory news come with US-15. */}
+                <ComingSoonCard icon={Newspaper} title="Veille réglementaire">
+                    Les dernières évolutions réglementaires en {label}.
+                </ComingSoonCard>
             </div>
         </>
     );

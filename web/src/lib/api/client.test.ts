@@ -9,6 +9,7 @@ import {
     parseMocks,
     type ApiOptions,
 } from "./client";
+import { mockQuestionnaire } from "./mocks";
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -24,11 +25,7 @@ function unauthorized(): ApiOptions["onUnauthorized"] {
 describe("parseMocks", () => {
     it("mocks the features without endpoints by default, not the user", () => {
         for (const value of [undefined, "", "  "]) {
-            expect([...parseMocks(value)]).toEqual([
-                "dashboard",
-                "domains",
-                "news",
-            ]);
+            expect([...parseMocks(value)]).toEqual(["dashboard", "news"]);
         }
     });
 
@@ -134,6 +131,34 @@ describe("http api", () => {
                 }),
             }),
         );
+    });
+
+    it("builds a pillar page from the real diagnostic and actions", async () => {
+        const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+            if (url.endsWith("/api/questionnaire")) {
+                return Response.json(mockQuestionnaire);
+            }
+            if (url.includes("/api/actions")) return Response.json([]);
+            return Response.json(null);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const detail = await httpApi().getDomainDetail("safety");
+
+        expect(fetchMock.mock.calls.map(([url]) => url).sort()).toEqual([
+            "http://api:8000/api/actions?domain=safety",
+            "http://api:8000/api/diagnostics/latest/result",
+            "http://api:8000/api/questionnaire",
+        ]);
+        // No diagnostic yet: no score, nothing fictitious.
+        expect(detail).toMatchObject({
+            domain: "safety",
+            score: null,
+            themes: [],
+            actions: [],
+            expiringDocuments: [],
+            latestNews: [],
+        });
     });
 
     it("calls the back office routes, and tells when the API refuses", async () => {

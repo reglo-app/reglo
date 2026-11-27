@@ -96,21 +96,19 @@ test("Diagnostic appears in the sidebar only in its branch", async ({
     ).toHaveAttribute("aria-current", "page");
 });
 
-test("opens a news article from the dashboard", async ({ page }) => {
+test("does not show fictitious news before the regulatory watch exists", async ({
+    page,
+}) => {
     await page.goto("/dashboard");
-    await page
-        .getByRole("link", { name: /Tri à la source des biodéchets/ })
-        .click();
-    await expect(page).toHaveURL(/\/news\/news-2$/);
+    const news = page.getByRole("heading", {
+        level: 2,
+        name: "Veille réglementaire",
+    });
+    await expect(news).toBeVisible();
+    await expect(page.getByText("Bientôt disponible")).toBeVisible();
     await expect(
-        page.getByRole("heading", {
-            level: 1,
-            name: /Tri à la source des biodéchets/,
-        }),
-    ).toBeVisible();
-    await expect(
-        page.getByRole("navigation", { name: "Fil d'Ariane" }),
-    ).toContainText("Article");
+        page.getByRole("link", { name: /Tri à la source des biodéchets/ }),
+    ).toHaveCount(0);
 });
 
 test("a pillar page shows its five blocks", async ({ page }) => {
@@ -129,4 +127,6 @@ test("a pillar page shows its five blocks", async ({ page }) => {
         ).toBeVisible();
     }
     await expect(page.getByText("Score par thème")).toBeVisible();
+    // Documents to renew and news: no data yet, never fictitious.
+    await expect(page.getByText("Bientôt disponible")).toHaveCount(2);
 });
