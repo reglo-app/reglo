@@ -18,6 +18,9 @@ parameters:
     # QHSE questionnaire of the diagnostic (US-05), in the format of the
     # data service. Provisional until DATA-01 delivers the real one.
     app.questionnaire_file: '%kernel.project_dir%/config/questionnaire/qhse-v1.json'
+    # Training catalog (US-13): courses and lessons. Provisional until the
+    # marketing team delivers the real content.
+    app.training_catalog_file: '%kernel.project_dir%/config/trainings/catalog.json'
     # Uploaded files (profile photos...): outside the public folder, only
     # served through the authenticated API. A Docker volume on the servers.
     app.uploads_dir: '%kernel.project_dir%/var/uploads'
@@ -43,6 +46,8 @@ when@test:
         # Kept apart from the files of the dev environment
         app.uploads_dir: '%kernel.project_dir%/var/uploads-test'
         app.documents_dir: '%kernel.project_dir%/var/documents-test'
+        # Fixed courses: the tests do not change with the real catalog
+        app.training_catalog_file: '%kernel.project_dir%/tests/Fixtures/trainings.json'
     services:
         # Answers the HTTP requests of the tests (framework.yaml)
         App\Tests\DataServiceMock: ~

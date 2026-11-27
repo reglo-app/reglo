@@ -1,0 +1,71 @@
+{
+    "courses": [
+        {
+            "id": "quality-basics",
+            "title": "Quality basics",
+            "summary": "Free course with every lesson type.",
+            "domain": "quality",
+            "level": "beginner",
+            "free": true,
+            "lessons": [
+                {
+                    "id": "intro",
+                    "title": "Introduction",
+                    "type": "text",
+                    "durationMinutes": 5,
+                    "paragraphs": ["First paragraph.", "Second paragraph."],
+                    "keyPoints": ["Key point."]
+                },
+                {
+                    "id": "video",
+                    "title": "Video lesson",
+                    "type": "video",
+                    "durationMinutes": 7,
+                    "videoUrl": "https://www.youtube-nocookie.com/embed/test",
+                    "transcript": ["Transcript paragraph."]
+                },
+                {
+                    "id": "guide",
+                    "title": "PDF guide",
+                    "type": "pdf",
+                    "durationMinutes": 3,
+                    "pdfUrl": "https://example.com/guide.pdf"
+                }
+            ]
+        },
+        {
+            "id": "safety-basics",
+            "title": "Safety basics",
+            "summary": "Free safety course.",
+            "domain": "safety",
+            "level": "intermediate",
+            "free": true,
+            "lessons": [
+                {
+                    "id": "risks",
+                    "title": "Risks",
+                    "type": "text",
+                    "durationMinutes": 10,
+                    "paragraphs": ["Risks paragraph."]
+                }
+            ]
+        },
+        {
+            "id": "hygiene-advanced",
+            "title": "Hygiene advanced",
+            "summary": "Paid course.",
+            "domain": "hygiene",
+            "level": "advanced",
+            "free": false,
+            "lessons": [
+                {
+                    "id": "secret",
+                    "title": "Paid lesson",
+                    "type": "text",
+                    "durationMinutes": 20,
+                    "paragraphs": ["Paid content."]
+                }
+            ]
+        }
+    ]
+}

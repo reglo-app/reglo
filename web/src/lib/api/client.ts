@@ -13,6 +13,11 @@ import {
 import { todayInFrance } from "@/lib/action-plan/labels";
 import { buildDomainDetail } from "@/lib/domain/detail";
 import type { DomainKey } from "@/lib/domains";
+import {
+    filterTrainings,
+    trainingFiltersQuery,
+    type TrainingFilters,
+} from "@/lib/trainings/filters";
 
 import { API_INTERNAL_URL } from "./internal-url";
 import {
@@ -36,6 +41,8 @@ import {
     mockMembers,
     mockNewsArticles,
     mockQuestionnaire,
+    mockTrainingDetails,
+    mockTrainings,
 } from "./mocks";
 import type {
     Action,
@@ -56,6 +63,8 @@ import type {
     Member,
     NewsArticle,
     Questionnaire,
+    TrainingDetail,
+    TrainingSummary,
 } from "./types";
 
 /** Parts of the app that can still run on mock data. */
@@ -69,6 +78,7 @@ export const API_FEATURES = [
     "dashboard",
     "domains",
     "news",
+    "trainings",
 ] as const;
 export type ApiFeature = (typeof API_FEATURES)[number];
 
@@ -144,6 +154,10 @@ export type Api = {
     getAdminUsers(): Promise<AdminUser[]>;
     /** The REGLO team. */
     getAdminTeam(): Promise<AdminUser[]>;
+    /** Training catalog with the progress of the user (US-13). */
+    getTrainings(filters?: TrainingFilters): Promise<TrainingSummary[]>;
+    /** null when the course does not exist. */
+    getTraining(id: string): Promise<TrainingDetail | null>;
 };
 
 export type ApiOptions = {
@@ -333,6 +347,26 @@ export function createApi(overrides: Partial<ApiOptions> = {}): Api {
                 "admin",
                 () => mockAdminTeam,
                 () => request<AdminUser[]>("/api/admin/team"),
+            ),
+        getTrainings: (filters = {}) =>
+            load(
+                "trainings",
+                () => filterTrainings(mockTrainings, filters),
+                () =>
+                    request<TrainingSummary[]>(
+                        `/api/trainings${trainingFiltersQuery(filters)}`,
+                    ),
+            ),
+        getTraining: (id) =>
+            load(
+                "trainings",
+                () => mockTrainingDetails.find((t) => t.id === id) ?? null,
+                () =>
+                    orNotFound(
+                        request<TrainingDetail>(
+                            `/api/trainings/${encodeURIComponent(id)}`,
+                        ),
+                    ),
             ),
         getDashboardSummary: () =>
             load(

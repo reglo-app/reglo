@@ -1,0 +1,183 @@
+{
+    "_avertissement": "Catalogue de formations PROVISOIRE (US-13) : textes de démonstration à remplacer par le contenu rédigé par le marketing. Remplacer ce fichier suffit, sans changer le code (format décrit dans api/src/Training/TrainingCatalog.php).",
+    "courses": [
+        {
+            "id": "initiation-duerp",
+            "title": "Initiation au DUERP",
+            "summary": "Comprendre le document unique d'évaluation des risques professionnels : à quoi il sert, comment le construire et le faire vivre.",
+            "domain": "safety",
+            "level": "beginner",
+            "free": true,
+            "lessons": [
+                {
+                    "id": "role",
+                    "title": "À quoi sert le document unique ?",
+                    "type": "text",
+                    "durationMinutes": 5,
+                    "paragraphs": [
+                        "Le document unique d'évaluation des risques professionnels (DUERP) rassemble, pour chaque unité de travail, les risques auxquels les salariés sont exposés.",
+                        "C'est le point de départ de la prévention : il permet de choisir les actions à mener en priorité et d'en garder la trace."
+                    ],
+                    "keyPoints": [
+                        "Le DUERP est une obligation de l'employeur.",
+                        "Il couvre toutes les unités de travail de l'entreprise.",
+                        "Il débouche sur des actions de prévention."
+                    ]
+                },
+                {
+                    "id": "evaluer",
+                    "title": "Identifier et évaluer les risques",
+                    "type": "text",
+                    "durationMinutes": 8,
+                    "paragraphs": [
+                        "Commencez par découper l'entreprise en unités de travail : un atelier, un poste, une équipe qui partage les mêmes situations.",
+                        "Pour chaque unité, listez les dangers (chute, bruit, produits chimiques, charge mentale…) puis estimez la gravité et la fréquence de chaque risque.",
+                        "Associez les salariés à cette étape : ce sont eux qui connaissent le mieux le travail réel."
+                    ],
+                    "keyPoints": [
+                        "Découper en unités de travail.",
+                        "Évaluer gravité et fréquence.",
+                        "Impliquer les salariés."
+                    ]
+                },
+                {
+                    "id": "faire-vivre",
+                    "title": "Faire vivre le document",
+                    "type": "text",
+                    "durationMinutes": 5,
+                    "paragraphs": [
+                        "Un document unique utile est un document à jour : revoyez-le après un accident, un changement d'organisation ou l'arrivée d'un nouvel équipement.",
+                        "Reliez chaque risque important à une action du plan d'actions REGLO, avec un responsable et une échéance."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "bases-iso-9001",
+            "title": "Les bases de l'ISO 9001",
+            "summary": "Découvrir les principes du management de la qualité et ce qu'attend la norme ISO 9001.",
+            "domain": "quality",
+            "level": "beginner",
+            "free": true,
+            "lessons": [
+                {
+                    "id": "principes",
+                    "title": "Les principes du management de la qualité",
+                    "type": "text",
+                    "durationMinutes": 6,
+                    "paragraphs": [
+                        "L'ISO 9001 est une norme internationale qui décrit les exigences d'un système de management de la qualité.",
+                        "Elle repose sur quelques idées simples : écouter le client, piloter l'entreprise par ses processus et s'améliorer en continu."
+                    ],
+                    "keyPoints": [
+                        "Orientation client.",
+                        "Approche processus.",
+                        "Amélioration continue."
+                    ]
+                },
+                {
+                    "id": "pdca",
+                    "title": "La roue de l'amélioration continue",
+                    "type": "text",
+                    "durationMinutes": 6,
+                    "paragraphs": [
+                        "La démarche suit quatre temps : planifier ce que l'on veut obtenir, le réaliser, vérifier les résultats, puis ajuster.",
+                        "Chaque tour de roue s'appuie sur des indicateurs simples, suivis régulièrement par la direction."
+                    ]
+                },
+                {
+                    "id": "premiers-pas",
+                    "title": "Premiers pas dans votre entreprise",
+                    "type": "text",
+                    "durationMinutes": 5,
+                    "paragraphs": [
+                        "Commencez par fixer deux ou trois objectifs qualité mesurables et par décrire vos principaux processus.",
+                        "Le diagnostic REGLO vous aide à repérer les points à renforcer avant de viser une certification."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "gestion-dechets",
+            "title": "Gestion des déchets en entreprise",
+            "summary": "Trier, stocker et faire traiter ses déchets correctement, et garder les preuves de cette gestion.",
+            "domain": "environment",
+            "level": "beginner",
+            "free": true,
+            "lessons": [
+                {
+                    "id": "responsabilite",
+                    "title": "Qui est responsable de ses déchets ?",
+                    "type": "text",
+                    "durationMinutes": 5,
+                    "paragraphs": [
+                        "L'entreprise qui produit un déchet reste responsable de celui-ci jusqu'à son élimination ou sa valorisation, même lorsqu'elle le confie à un prestataire.",
+                        "D'où l'importance de choisir des prestataires autorisés et de conserver les justificatifs de prise en charge."
+                    ]
+                },
+                {
+                    "id": "tri",
+                    "title": "Trier et stocker",
+                    "type": "text",
+                    "durationMinutes": 6,
+                    "paragraphs": [
+                        "Identifiez les flux de déchets de votre activité : papier et carton, plastiques, métaux, bois, déchets dangereux…",
+                        "Prévoyez des contenants clairement étiquetés, et un stockage à part pour les déchets dangereux."
+                    ],
+                    "keyPoints": [
+                        "Lister les flux de déchets.",
+                        "Étiqueter les contenants.",
+                        "Isoler les déchets dangereux."
+                    ]
+                },
+                {
+                    "id": "preuves",
+                    "title": "Garder les preuves",
+                    "type": "text",
+                    "durationMinutes": 4,
+                    "paragraphs": [
+                        "Contrats d'enlèvement, bordereaux de suivi et registres sont des preuves à présenter lors d'un contrôle.",
+                        "Déposez-les dans les justificatifs REGLO, rattachés au domaine Environnement."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "hygiene-haccp",
+            "title": "Hygiène alimentaire : la méthode HACCP",
+            "summary": "Mettre en place une démarche HACCP pour maîtriser les dangers sanitaires en restauration et en production alimentaire.",
+            "domain": "hygiene",
+            "level": "intermediate",
+            "free": false,
+            "lessons": [
+                {
+                    "id": "dangers",
+                    "title": "Les dangers sanitaires",
+                    "type": "text",
+                    "durationMinutes": 10,
+                    "paragraphs": [
+                        "Contenu réservé aux modules avancés."
+                    ]
+                },
+                {
+                    "id": "points-critiques",
+                    "title": "Identifier les points critiques",
+                    "type": "text",
+                    "durationMinutes": 12,
+                    "paragraphs": [
+                        "Contenu réservé aux modules avancés."
+                    ]
+                },
+                {
+                    "id": "plan-maitrise",
+                    "title": "Construire son plan de maîtrise sanitaire",
+                    "type": "text",
+                    "durationMinutes": 15,
+                    "paragraphs": [
+                        "Contenu réservé aux modules avancés."
+                    ]
+                }
+            ]
+        }
+    ]
+}

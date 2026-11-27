@@ -115,7 +115,7 @@ In the web app, only the Next.js server calls the API (server components and act
 ### Personal data (GDPR)
 Every user, readers included, has a "Mes données" tab in "Mon profil" (US-04):
 
-- `GET /api/me/export` (web: `/account-data`) downloads a JSON file with their profile, their organization, the actions they are responsible for or created, their status changes, the documents they uploaded (metadata only), the documents they opened (access log) and their answers to the diagnostic. Nothing about the other members.
+- `GET /api/me/export` (web: `/account-data`) downloads a JSON file with their profile, their organization, the actions they are responsible for or created, their status changes, the documents they uploaded (metadata only), the documents they opened (access log), their answers to the diagnostic and the training lessons they completed. Nothing about the other members.
 - `DELETE /api/me` (body `{"password"}`) deletes the account: the user row with its name, e-mail, password hash and photo, and every session. The organization keeps what the user did (actions, documents, answers): the foreign keys are set to null and the web app shows "Ancien membre". An e-mail confirms it to the old address. The last administrator of an organization is refused, and a REGLO team account is deleted from the back office only.
 
 These two processings belong in the processing register (CYB-05).
@@ -130,6 +130,13 @@ Features whose API endpoints do not exist yet still use the data of `web/src/lib
 The questionnaire of the diagnostic (US-05) is `api/config/questionnaire/qhse-v1.json`, in the format of the data service (`data-service/service/reglo_data/questionnaire_example.json`, checked by its `validate_questionnaire()`). The current one is **provisional**: replace the file with the one of DATA-01, no code change needed. Its `version` is stored on each diagnostic.
 
 Each organization has at most one draft, shared by its members and saved answer by answer (`PUT /api/diagnostics/current/answers`); `POST /api/diagnostics/current/submit` validates it once every mandatory question is answered. Readers only consult.
+
+## Trainings
+
+The training catalog (US-13) is `api/config/trainings/catalog.json`: courses (title, summary, QHSE domain, level, free or paid) and their lessons (text, video or PDF). The format is described at the top of `api/src/Training/TrainingCatalog.php`. The current content is **provisional**: the marketing team replaces the file, no code change needed. `TrainingCatalogTest` checks the real file, so a mistake fails the CI instead of breaking the page. Videos must use a privacy-friendly embed (`youtube-nocookie.com/embed/` or `player.vimeo.com/video/`) and come with their transcript (RGAA).
+
+- `GET /api/trainings` (filters `domain`, `access=free|paid`) and `GET /api/trainings/{id}`: a paid course gives its description and program, never the content of its lessons (no payment in the MVP).
+- `PUT|DELETE /api/me/trainings/{course}/lessons/{lesson}` marks a lesson as done, or no longer done. The progress is personal, so readers can follow trainings too. It is deleted with the account and part of the data export.
 
 ## Database
 
