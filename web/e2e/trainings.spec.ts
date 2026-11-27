@@ -62,7 +62,12 @@ test("shows only the program of a paid course", async ({ page }) => {
 test("shows a clear page for a course that does not exist", async ({
     page,
 }) => {
-    const response = await page.goto("/trainings/unknown-course");
+    // The page streams (Suspense): the status is already sent when the
+    // course turns out not to exist, so the message is checked, like for an
+    // unknown domain (dashboard.spec.ts).
+    await page.goto("/trainings/unknown-course");
 
-    expect(response?.status()).toBe(404);
+    await expect(
+        page.getByRole("heading", { level: 1, name: "Page introuvable" }),
+    ).toBeVisible();
 });
